@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase'
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
-
 import {
   Bookmark,
+  BookmarkCheck,
   Clock3,
   ExternalLink,
   LogOut,
@@ -22,6 +22,8 @@ import {
   Wand2,
 } from 'lucide-react'
 
+type Section = 'today' | 'feed' | 'sources' | 'saved' | 'ai'
+
 type Source = {
   id: string
   name: string
@@ -32,17 +34,17 @@ type Source = {
 }
 
 export default function HomePage() {
+  const [activeSection, setActiveSection] = useState<Section>('today')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
-
   const [loading, setLoading] = useState(true)
 
   const [sources, setSources] = useState<Source[]>([])
   const [articles, setArticles] = useState<any[]>([])
   const [aiPicks, setAiPicks] = useState<any[]>([])
-
+  const [savedArticles, setSavedArticles] = useState<any[]>([])
   const [query, setQuery] = useState('')
 
   const [name, setName] = useState('')
@@ -65,11 +67,14 @@ export default function HomePage() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
+  const savedIds = useMemo(
+    () => new Set(savedArticles.map((item) => item.article_id)),
+    [savedArticles]
+  )
+
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
-      const text =
-        `${article.title} ${article.excerpt ?? ''} ${article.sources?.name ?? ''}`.toLowerCase()
-
+      const text = `${article.title} ${article.excerpt ?? ''} ${article.sources?.name ?? ''}`.toLowerCase()
       return text.includes(query.toLowerCase())
     })
   }, [articles, query])
@@ -84,10 +89,7 @@ export default function HomePage() {
     setUserEmail(data.user?.email ?? null)
     setUserId(data.user?.id ?? null)
 
-    if (data.user?.id) {
-      await loadEverything(data.user.id)
-    }
-
+    if (data.user?.id) await loadEverything(data.user.id)
     setLoading(false)
   }
 
@@ -96,6 +98,7 @@ export default function HomePage() {
       loadSources(currentUserId),
       loadArticles(),
       loadAiPicks(currentUserId),
+      loadSavedArticles(currentUserId),
     ])
   }
 
@@ -122,7 +125,7 @@ export default function HomePage() {
         sources ( name )
       `)
       .order('published_at', { ascending: false })
-      .limit(80)
+      .limit(100)
 
     setArticles(data ?? [])
   }
@@ -138,6 +141,7 @@ export default function HomePage() {
         category,
         created_at,
         articles (
+          id,
           title,
           url,
           image_url,
@@ -147,17 +151,58 @@ export default function HomePage() {
       `)
       .eq('user_id', currentUserId)
       .order('score', { ascending: false })
-      .limit(10)
+      .limit(20)
 
     setAiPicks(data ?? [])
   }
 
+  async function loadSavedArticles(currentUserId: string) {
+    const { data } = await supabase
+      .from('saved_articles')
+      .select(`
+        id,
+        article_id,
+        created_at,
+        articles (
+          id,
+          title,
+          url,
+          excerpt,
+          image_url,
+          published_at,
+          sources ( name )
+        )
+      `)
+      .eq('user_id', currentUserId)
+      .order('created_at', { ascending: false })
+
+    setSavedArticles(data ?? [])
+  }
+
   async function refreshData() {
     if (!userId) return
-
     setMessage('Aggiornamento dashboard...')
     await loadEverything(userId)
     setMessage('Dashboard aggiornata.')
+  }
+
+  async function toggleSave(articleId: string) {
+    if (!userId) return
+
+    if (savedIds.has(articleId)) {
+      await supabase
+        .from('saved_articles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('article_id', articleId)
+    } else {
+      await supabase.from('saved_articles').insert({
+        user_id: userId,
+        article_id: articleId,
+      })
+    }
+
+    await loadSavedArticles(userId)
   }
 
   async function login() {
@@ -165,16 +210,10 @@ export default function HomePage() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
+      options: { emailRedirectTo: window.location.origin },
     })
 
-    setMessage(
-      error
-        ? 'Errore: ' + error.message
-        : 'Controlla la tua email e clicca il magic link.'
-    )
+    setMessage(error ? 'Errore: ' + error.message : 'Controlla la tua email e clicca il magic link.')
   }
 
   async function logout() {
@@ -185,6 +224,11 @@ export default function HomePage() {
 
   async function addSource() {
     if (!userId) return
+
+    if (!name || !rssUrl) {
+      setMessage('Inserisci almeno nome fonte e URL RSS.')
+      return
+    }
 
     const { error } = await supabase.from('sources').insert({
       user_id: userId,
@@ -204,7 +248,7 @@ export default function HomePage() {
     setWebsiteUrl('')
     setRssUrl('')
     setPriority(3)
-
+    setMessage('Fonte aggiunta.')
     await loadSources(userId)
   }
 
@@ -213,9 +257,7 @@ export default function HomePage() {
 
     await supabase
       .from('sources')
-      .update({
-        is_active: !source.is_active,
-      })
+      .update({ is_active: !source.is_active })
       .eq('id', source.id)
 
     await loadSources(userId)
@@ -223,9 +265,9 @@ export default function HomePage() {
 
   async function deleteSource(sourceId: string) {
     if (!userId) return
+    if (!confirm('Vuoi davvero eliminare questa fonte?')) return
 
     await supabase.from('sources').delete().eq('id', sourceId)
-
     await loadSources(userId)
   }
 
@@ -244,51 +286,36 @@ export default function HomePage() {
     return (
       <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
         <BackgroundGlow />
-
         <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10">
           <section className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
               <Brand />
-
               <div className="mt-12 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-neutral-400">
                 AI-curated news intelligence
               </div>
-
               <h1 className="mt-8 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.08em] text-white md:text-8xl">
                 Leggi meno.
                 <br />
                 Capisci di più.
               </h1>
-
               <p className="mt-7 max-w-xl text-lg leading-8 text-neutral-400">
-                SignalFeed trasforma le tue fonti in una rassegna AI elegante,
-                intelligente e senza rumore.
+                SignalFeed trasforma le tue fonti in una rassegna AI elegante, intelligente e senza rumore.
               </p>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7 }}
               className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl"
             >
-              <div className="mb-7">
-                <p className="text-sm text-neutral-400">Accesso privato</p>
-
-                <h2 className="mt-2 text-3xl font-medium tracking-tight">
-                  Entra nella tua rassegna
-                </h2>
-              </div>
+              <p className="text-sm text-neutral-400">Accesso privato</p>
+              <h2 className="mt-2 text-3xl font-medium tracking-tight">Entra nella tua rassegna</h2>
 
               <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="La tua email"
-                className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none placeholder:text-neutral-600 focus:border-white/30"
+                className="mt-7 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none placeholder:text-neutral-600 focus:border-white/30"
               />
 
               <button
@@ -298,11 +325,7 @@ export default function HomePage() {
                 Ricevi magic link
               </button>
 
-              {message && (
-                <p className="mt-4 text-sm leading-6 text-neutral-400">
-                  {message}
-                </p>
-              )}
+              {message && <p className="mt-4 text-sm leading-6 text-neutral-400">{message}</p>}
             </motion.div>
           </section>
         </div>
@@ -319,16 +342,15 @@ export default function HomePage() {
           <Brand />
 
           <nav className="mt-10 space-y-1">
-            <NavItem active icon={<Sparkles size={16} />} label="Today" />
-            <NavItem icon={<Newspaper size={16} />} label="Feed" />
-            <NavItem icon={<Rss size={16} />} label="Sources" />
-            <NavItem icon={<Bookmark size={16} />} label="Saved" />
-            <NavItem icon={<Wand2 size={16} />} label="AI Curation" />
+            <NavItem active={activeSection === 'today'} icon={<Sparkles size={16} />} label="Today" onClick={() => setActiveSection('today')} />
+            <NavItem active={activeSection === 'feed'} icon={<Newspaper size={16} />} label="Feed" onClick={() => setActiveSection('feed')} />
+            <NavItem active={activeSection === 'sources'} icon={<Rss size={16} />} label="Sources" onClick={() => setActiveSection('sources')} />
+            <NavItem active={activeSection === 'saved'} icon={<Bookmark size={16} />} label="Saved" onClick={() => setActiveSection('saved')} />
+            <NavItem active={activeSection === 'ai'} icon={<Wand2 size={16} />} label="AI Curation" onClick={() => setActiveSection('ai')} />
           </nav>
 
           <div className="mt-10 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-4">
             <p className="text-sm font-medium">Daily automation</p>
-
             <p className="mt-2 text-sm leading-6 text-neutral-500">
               RSS + AI aggiornati automaticamente tramite Vercel Cron.
             </p>
@@ -336,280 +358,371 @@ export default function HomePage() {
         </aside>
 
         <section className="px-5 py-6 md:px-10 md:py-9">
-          <motion.header
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-            className="mb-9 flex flex-col justify-between gap-6 xl:flex-row xl:items-start"
-          >
-            <div>
-              <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
-                {new Date().toLocaleDateString('it-IT', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </p>
+          <Header
+            activeSection={activeSection}
+            userEmail={userEmail}
+            query={query}
+            setQuery={setQuery}
+            refreshData={refreshData}
+            logout={logout}
+          />
 
-              <h1 className="max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-white md:text-7xl">
-                Il segnale migliore dalle tue fonti.
-              </h1>
+          {activeSection === 'today' && (
+            <>
+              <Metrics sources={sources} articles={articles} aiPicks={aiPicks} savedArticles={savedArticles} />
 
-              <p className="mt-5 text-sm text-neutral-500">
-                {userEmail}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5">
-                <Search size={15} className="text-neutral-500" />
-
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Cerca nel feed..."
-                  className="w-48 bg-transparent text-sm outline-none placeholder:text-neutral-600 md:w-64"
-                />
-              </div>
-
-              <button
-                onClick={refreshData}
-                className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-sm text-neutral-300 hover:bg-white/[0.07]"
-              >
-                <RefreshCcw size={15} />
-                Aggiorna
-              </button>
-
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-sm text-neutral-300 hover:bg-white/[0.07]"
-              >
-                <LogOut size={15} />
-                Esci
-              </button>
-            </div>
-          </motion.header>
-
-          <motion.section
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mb-8 grid gap-4 md:grid-cols-3"
-          >
-            <Metric label="Fonti attive" value={sources.filter((s) => s.is_active).length} />
-            <Metric label="Articoli raccolti" value={articles.length} />
-            <Metric label="Scelte AI" value={aiPicks.length} />
-          </motion.section>
-
-          {heroPick && (
-            <motion.section
-              initial={{ opacity: 0, y: 26 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.85 }}
-              className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"
-            >
-              <motion.a
-                href={heroPick.articles?.url}
-                target="_blank"
-                whileHover={{ y: -4 }}
-                className="group relative min-h-[560px] overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
-              >
-                <ArticleImage imageUrl={heroPick.articles?.image_url} />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/10" />
-
-                <div className="absolute inset-0 flex flex-col justify-between p-7 md:p-10">
-                  <div className="flex items-center justify-between">
-                    <Pill>
-                      {heroPick.articles?.sources?.name ?? 'Fonte'} · {heroPick.category}
-                    </Pill>
-
-                    <Score value={heroPick.score} />
-                  </div>
-
-                  <div>
-                    <p className="mb-4 flex items-center gap-2 text-sm text-neutral-300">
-                      <Sparkles size={15} />
-                      Scelta principale
-                    </p>
-
-                    <h2 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-white md:text-6xl">
-                      {heroPick.articles?.title}
-                    </h2>
-
-                    <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">
-                      {heroPick.summary}
-                    </p>
-                  </div>
-                </div>
-              </motion.a>
-
-              <motion.div
-                initial="hidden"
-                animate="show"
-                variants={{
-                  hidden: {},
-                  show: {
-                    transition: {
-                      staggerChildren: 0.08,
-                    },
-                  },
-                }}
-                className="grid gap-4"
-              >
-                {sidePicks.map((pick) => (
-                  <SidePick key={pick.id} pick={pick} />
-                ))}
-              </motion.div>
-            </motion.section>
-          )}
-
-          <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <div className="mb-5">
-                <h2 className="text-3xl font-medium tracking-[-0.04em] text-white">
-                  Feed completo
-                </h2>
-
-                <p className="mt-2 text-sm text-neutral-500">
-                  Tutte le ultime notizie raccolte.
-                </p>
-              </div>
-
-              <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025]">
-                {filteredArticles.map((article, index) => (
-                  <motion.a
-                    key={article.id}
-                    href={article.url}
-                    target="_blank"
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
-                    className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 md:grid-cols-[112px_1fr]"
-                  >
-                    <ArticleThumbnail
-                      imageUrl={article.image_url}
-                    />
-
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-                        <span>
-                          {article.sources?.name ?? 'Fonte'}
-                        </span>
-
-                        <span>•</span>
-
-                        <Clock3 size={13} />
-
-                        <span>
-                          {article.published_at
-                            ? formatDistanceToNow(
-                                new Date(article.published_at),
-                                {
-                                  addSuffix: true,
-                                  locale: it,
-                                }
-                              )
-                            : 'Adesso'}
-                        </span>
-                      </div>
-
-                      <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
-                        {article.title}
-                      </h3>
-
-                      {article.excerpt && (
-                        <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
-                          {article.excerpt}
-                        </p>
-                      )}
-                    </div>
-                  </motion.a>
-                ))}
-              </div>
-            </motion.div>
-
-            <motion.aside
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.7 }}
-              className="space-y-5"
-            >
-              {lowerPicks.length > 0 && (
-                <Panel title="Altre scelte AI">
-                  <div className="space-y-3">
-                    {lowerPicks.map((pick) => (
-                      <motion.a
-                        key={pick.id}
-                        href={pick.articles?.url}
-                        target="_blank"
-                        whileHover={{ y: -2 }}
-                        className="grid grid-cols-[68px_1fr] gap-3 rounded-2xl bg-black/25 p-3 hover:bg-white/[0.04]"
-                      >
-                        <ArticleThumbnail
-                          imageUrl={pick.articles?.image_url}
-                          compact
-                        />
-
-                        <div>
-                          <div className="mb-1 text-xs text-neutral-600">
-                            {pick.category} · {pick.score}
-                          </div>
-
-                          <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
-                            {pick.articles?.title}
-                          </p>
-                        </div>
-                      </motion.a>
+              {heroPick ? (
+                <section className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                  <HeroPick pick={heroPick} />
+                  <div className="grid gap-4">
+                    {sidePicks.map((pick) => (
+                      <SidePick key={pick.id} pick={pick} />
                     ))}
                   </div>
-                </Panel>
+                </section>
+              ) : (
+                <EmptyState text="Nessuna selezione AI disponibile." />
               )}
 
-              <Panel title="Aggiungi fonte">
-                <div className="space-y-3">
-                  <Input value={name} setValue={setName} placeholder="Nome fonte" />
-                  <Input value={websiteUrl} setValue={setWebsiteUrl} placeholder="Sito web" />
-                  <Input value={rssUrl} setValue={setRssUrl} placeholder="URL RSS" />
+              <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
+                <FeedList
+                  articles={filteredArticles}
+                  savedIds={savedIds}
+                  toggleSave={toggleSave}
+                  title="Feed completo"
+                  subtitle="Tutte le ultime notizie raccolte."
+                />
 
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(Number(e.target.value))}
-                    className="w-full rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-200 outline-none"
-                  >
-                    <option value={1}>Priorità 1</option>
-                    <option value={2}>Priorità 2</option>
-                    <option value={3}>Priorità 3</option>
-                    <option value={4}>Priorità 4</option>
-                    <option value={5}>Priorità 5</option>
-                  </select>
+                <aside className="space-y-5">
+                  <AiSideList picks={lowerPicks} />
+                  <SourcesPanel
+                    sources={sources}
+                    name={name}
+                    setName={setName}
+                    websiteUrl={websiteUrl}
+                    setWebsiteUrl={setWebsiteUrl}
+                    rssUrl={rssUrl}
+                    setRssUrl={setRssUrl}
+                    priority={priority}
+                    setPriority={setPriority}
+                    addSource={addSource}
+                    toggleSource={toggleSource}
+                    deleteSource={deleteSource}
+                    message={message}
+                  />
+                </aside>
+              </section>
+            </>
+          )}
 
-                  <button
-                    onClick={addSource}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200"
-                  >
-                    <Plus size={16} />
-                    Salva fonte
-                  </button>
-                </div>
-              </Panel>
-            </motion.aside>
-          </section>
+          {activeSection === 'feed' && (
+            <FeedList
+              articles={filteredArticles}
+              savedIds={savedIds}
+              toggleSave={toggleSave}
+              title="Feed"
+              subtitle="Tutte le notizie importate dalle tue fonti."
+            />
+          )}
+
+          {activeSection === 'sources' && (
+            <SourcesPanel
+              full
+              sources={sources}
+              name={name}
+              setName={setName}
+              websiteUrl={websiteUrl}
+              setWebsiteUrl={setWebsiteUrl}
+              rssUrl={rssUrl}
+              setRssUrl={setRssUrl}
+              priority={priority}
+              setPriority={setPriority}
+              addSource={addSource}
+              toggleSource={toggleSource}
+              deleteSource={deleteSource}
+              message={message}
+            />
+          )}
+
+          {activeSection === 'saved' && (
+            <SavedView savedArticles={savedArticles} toggleSave={toggleSave} />
+          )}
+
+          {activeSection === 'ai' && (
+            <AiCurationView picks={aiPicks} />
+          )}
         </section>
       </div>
     </main>
   )
 }
 
-function BackgroundGlow() {
+function Header({ activeSection, userEmail, query, setQuery, refreshData, logout }: any) {
+  const titles: Record<Section, string> = {
+    today: 'Il segnale migliore dalle tue fonti.',
+    feed: 'Tutto il feed, ordinato.',
+    sources: 'Gestisci le tue fonti.',
+    saved: 'La tua reading list.',
+    ai: 'Tutte le scelte AI.',
+  }
+
   return (
-    <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.16),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(20,184,166,0.08),transparent_26%)]" />
+    <motion.header
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-9 flex flex-col justify-between gap-6 xl:flex-row xl:items-start"
+    >
+      <div>
+        <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+          {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </p>
+        <h1 className="max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-white md:text-7xl">
+          {titles[activeSection as Section]}
+        </h1>
+        <p className="mt-5 text-sm text-neutral-500">{userEmail}</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5">
+          <Search size={15} className="text-neutral-500" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cerca nel feed..."
+            className="w-48 bg-transparent text-sm outline-none placeholder:text-neutral-600 md:w-64"
+          />
+        </div>
+
+        <button onClick={refreshData} className="nav-button">
+          <RefreshCcw size={15} />
+          Aggiorna
+        </button>
+
+        <button onClick={logout} className="nav-button">
+          <LogOut size={15} />
+          Esci
+        </button>
+      </div>
+    </motion.header>
   )
+}
+
+function Metrics({ sources, articles, aiPicks, savedArticles }: any) {
+  return (
+    <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="mb-8 grid gap-4 md:grid-cols-4">
+      <Metric label="Fonti attive" value={sources.filter((s: Source) => s.is_active).length} />
+      <Metric label="Articoli raccolti" value={articles.length} />
+      <Metric label="Scelte AI" value={aiPicks.length} />
+      <Metric label="Salvati" value={savedArticles.length} />
+    </motion.section>
+  )
+}
+
+function HeroPick({ pick }: any) {
+  return (
+    <motion.a
+      href={pick.articles?.url}
+      target="_blank"
+      whileHover={{ y: -4 }}
+      className="group relative min-h-[560px] overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
+    >
+      <ArticleImage imageUrl={pick.articles?.image_url} />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/10" />
+
+      <div className="absolute inset-0 flex flex-col justify-between p-7 md:p-10">
+        <div className="flex items-center justify-between">
+          <Pill>{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</Pill>
+          <Score value={pick.score} />
+        </div>
+
+        <div>
+          <p className="mb-4 flex items-center gap-2 text-sm text-neutral-300">
+            <Sparkles size={15} />
+            Scelta principale
+          </p>
+          <h2 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-white md:text-6xl">
+            {pick.articles?.title}
+          </h2>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">{pick.summary}</p>
+        </div>
+      </div>
+    </motion.a>
+  )
+}
+
+function FeedList({ articles, savedIds, toggleSave, title, subtitle }: any) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <div className="mb-5">
+        <h2 className="text-3xl font-medium tracking-[-0.04em] text-white">{title}</h2>
+        <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
+      </div>
+
+      <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025]">
+        {articles.length === 0 ? (
+          <EmptyState text="Nessun articolo trovato." />
+        ) : (
+          articles.map((article: any, index: number) => (
+            <motion.div
+              key={article.id}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.015 }}
+              className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_44px]"
+            >
+              <a href={article.url} target="_blank">
+                <ArticleThumbnail imageUrl={article.image_url} />
+              </a>
+
+              <a href={article.url} target="_blank">
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                  <span>{article.sources?.name ?? 'Fonte'}</span>
+                  <span>•</span>
+                  <Clock3 size={13} />
+                  <span>
+                    {article.published_at
+                      ? formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: it })
+                      : 'Adesso'}
+                  </span>
+                </div>
+
+                <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
+                  {article.title}
+                </h3>
+
+                {article.excerpt && (
+                  <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
+                    {article.excerpt}
+                  </p>
+                )}
+              </a>
+
+              <button
+                onClick={() => toggleSave(article.id)}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.035] text-neutral-400 hover:bg-white/[0.08] hover:text-white"
+              >
+                {savedIds.has(article.id) ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+              </button>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
+function SavedView({ savedArticles, toggleSave }: any) {
+  const articles = savedArticles.map((item: any) => item.articles).filter(Boolean)
+
+  return (
+    <FeedList
+      articles={articles}
+      savedIds={new Set(articles.map((a: any) => a.id))}
+      toggleSave={toggleSave}
+      title="Saved"
+      subtitle="Articoli salvati per leggerli dopo."
+    />
+  )
+}
+
+function AiCurationView({ picks }: any) {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      {picks.map((pick: any) => (
+        <SidePick key={pick.id} pick={pick} />
+      ))}
+    </div>
+  )
+}
+
+function AiSideList({ picks }: any) {
+  if (!picks.length) return null
+
+  return (
+    <Panel title="Altre scelte AI">
+      <div className="space-y-3">
+        {picks.map((pick: any) => (
+          <a key={pick.id} href={pick.articles?.url} target="_blank" className="grid grid-cols-[68px_1fr] gap-3 rounded-2xl bg-black/25 p-3 hover:bg-white/[0.04]">
+            <ArticleThumbnail imageUrl={pick.articles?.image_url} compact />
+            <div>
+              <div className="mb-1 text-xs text-neutral-600">{pick.category} · {pick.score}</div>
+              <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">{pick.articles?.title}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </Panel>
+  )
+}
+
+function SourcesPanel(props: any) {
+  return (
+    <div className={props.full ? 'grid gap-6 xl:grid-cols-[430px_1fr]' : 'space-y-5'}>
+      <Panel title="Aggiungi fonte">
+        <div className="space-y-3">
+          <Input value={props.name} setValue={props.setName} placeholder="Nome fonte" />
+          <Input value={props.websiteUrl} setValue={props.setWebsiteUrl} placeholder="Sito web" />
+          <Input value={props.rssUrl} setValue={props.setRssUrl} placeholder="URL RSS" />
+
+          <select
+            value={props.priority}
+            onChange={(e) => props.setPriority(Number(e.target.value))}
+            className="w-full rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-200 outline-none"
+          >
+            <option value={1}>Priorità 1</option>
+            <option value={2}>Priorità 2</option>
+            <option value={3}>Priorità 3</option>
+            <option value={4}>Priorità 4</option>
+            <option value={5}>Priorità 5</option>
+          </select>
+
+          <button onClick={props.addSource} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-black transition hover:bg-neutral-200">
+            <Plus size={16} />
+            Salva fonte
+          </button>
+
+          {props.message && <p className="text-sm leading-6 text-neutral-500">{props.message}</p>}
+        </div>
+      </Panel>
+
+      <Panel title="Fonti">
+        <div className="space-y-3">
+          {props.sources.map((source: Source) => (
+            <div key={source.id} className="rounded-2xl border border-white/[0.07] bg-black/25 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-medium">{source.name}</div>
+                  <div className="mt-1 text-xs text-neutral-600">
+                    Priorità {source.priority} · {source.is_active ? 'Attiva' : 'Disattivata'}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => props.toggleSource(source)} className="rounded-xl bg-white/[0.05] p-2">
+                    <Power size={14} className={source.is_active ? 'text-emerald-400' : 'text-neutral-600'} />
+                  </button>
+                  <button onClick={() => props.deleteSource(source.id)} className="rounded-xl bg-white/[0.05] p-2">
+                    <Trash2 size={14} className="text-neutral-500" />
+                  </button>
+                </div>
+              </div>
+
+              {source.website_url && (
+                <a href={source.website_url} target="_blank" className="mt-3 flex items-center gap-2 text-xs text-neutral-600 hover:text-neutral-300">
+                  <ExternalLink size={12} />
+                  Apri sito
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      </Panel>
+    </div>
+  )
+}
+
+function BackgroundGlow() {
+  return <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.16),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(20,184,166,0.08),transparent_26%)]" />
 }
 
 function Brand() {
@@ -618,126 +731,61 @@ function Brand() {
       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black">
         <Rss size={18} />
       </div>
-
       <div>
-        <div className="font-medium tracking-tight text-white">
-          SignalFeed
-        </div>
-
-        <div className="text-xs text-neutral-500">
-          AI curated news
-        </div>
+        <div className="font-medium tracking-tight text-white">SignalFeed</div>
+        <div className="text-xs text-neutral-500">AI curated news</div>
       </div>
     </div>
   )
 }
 
-function NavItem({
-  icon,
-  label,
-  active = false,
-}: {
-  icon: ReactNode
-  label: string
-  active?: boolean
-}) {
+function NavItem({ icon, label, active = false, onClick }: { icon: ReactNode; label: string; active?: boolean; onClick: () => void }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
-        active
-          ? 'bg-white text-black'
-          : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
+    <button
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
+        active ? 'bg-white text-black' : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
       }`}
     >
       {icon}
       {label}
-    </div>
+    </button>
   )
 }
 
-function Metric({
-  label,
-  value,
-}: {
-  label: string
-  value: number
-}) {
+function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5"
-    >
-      <div className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-600">
-        {label}
-      </div>
-
-      <div className="mt-4 text-4xl font-semibold tracking-[-0.055em] text-white">
-        {value}
-      </div>
+    <motion.div whileHover={{ y: -3 }} className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5">
+      <div className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-600">{label}</div>
+      <div className="mt-4 text-4xl font-semibold tracking-[-0.055em] text-white">{value}</div>
     </motion.div>
   )
 }
 
 function Score({ value }: { value: number }) {
-  return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-base font-semibold text-black">
-      {value}
-    </div>
-  )
+  return <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-base font-semibold text-black">{value}</div>
 }
 
 function Pill({ children }: { children: ReactNode }) {
-  return (
-    <div className="rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs text-neutral-300 backdrop-blur">
-      {children}
-    </div>
-  )
+  return <div className="rounded-full border border-white/15 bg-black/35 px-3 py-1 text-xs text-neutral-300 backdrop-blur">{children}</div>
 }
 
-function ArticleImage({
-  imageUrl,
-}: {
-  imageUrl?: string | null
-}) {
+function ArticleImage({ imageUrl }: { imageUrl?: string | null }) {
   if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-      />
-    )
+    return <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
   }
 
-  return (
-    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/50 via-fuchsia-500/20 to-orange-400/30" />
-  )
+  return <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/50 via-fuchsia-500/20 to-orange-400/30" />
 }
 
-function ArticleThumbnail({
-  imageUrl,
-  compact = false,
-}: {
-  imageUrl?: string | null
-  compact?: boolean
-}) {
+function ArticleThumbnail({ imageUrl, compact = false }: { imageUrl?: string | null; compact?: boolean }) {
   const size = compact ? 'h-16' : 'h-24'
 
   if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt=""
-        className={`hidden ${size} w-full rounded-2xl object-cover md:block`}
-      />
-    )
+    return <img src={imageUrl} alt="" className={`hidden ${size} w-full rounded-2xl object-cover md:block`} />
   }
 
-  return (
-    <div
-      className={`hidden ${size} rounded-2xl bg-gradient-to-br from-indigo-400/45 to-fuchsia-400/20 md:block`}
-    />
-  )
+  return <div className={`hidden ${size} rounded-2xl bg-gradient-to-br from-indigo-400/45 to-fuchsia-400/20 md:block`} />
 }
 
 function SidePick({ pick }: { pick: any }) {
@@ -752,15 +800,11 @@ function SidePick({ pick }: { pick: any }) {
       className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 p-5"
     >
       <ArticleImage imageUrl={pick.articles?.image_url} />
-
       <div className="absolute inset-0 bg-black/68" />
 
       <div className="relative">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-neutral-400">
-            {pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}
-          </p>
-
+          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</p>
           <Score value={pick.score} />
         </div>
 
@@ -772,33 +816,16 @@ function SidePick({ pick }: { pick: any }) {
   )
 }
 
-function Panel({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5">
-      <h3 className="mb-5 text-lg font-medium tracking-tight text-white">
-        {title}
-      </h3>
-
+      <h3 className="mb-5 text-lg font-medium tracking-tight text-white">{title}</h3>
       {children}
     </div>
   )
 }
 
-function Input({
-  value,
-  setValue,
-  placeholder,
-}: {
-  value: string
-  setValue: (value: string) => void
-  placeholder: string
-}) {
+function Input({ value, setValue, placeholder }: { value: string; setValue: (value: string) => void; placeholder: string }) {
   return (
     <input
       value={value}
@@ -806,5 +833,13 @@ function Input({
       placeholder={placeholder}
       className="w-full rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-white/20"
     />
+  )
+}
+
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-[2rem] border border-dashed border-white/[0.08] bg-white/[0.02] p-10 text-center text-neutral-500">
+      {text}
+    </div>
   )
 }
