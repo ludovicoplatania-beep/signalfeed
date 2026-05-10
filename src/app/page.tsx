@@ -2,20 +2,24 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabase'
+import { motion } from 'framer-motion'
+import { formatDistanceToNow } from 'date-fns'
+import { it } from 'date-fns/locale'
+
 import {
   Bookmark,
-  Clock,
+  Clock3,
   ExternalLink,
   LogOut,
+  Newspaper,
   Plus,
   Power,
+  RefreshCcw,
   Rss,
   Search,
   Sparkles,
   Trash2,
   Wand2,
-  Newspaper,
-  RefreshCcw,
 } from 'lucide-react'
 
 type Source = {
@@ -32,11 +36,13 @@ export default function HomePage() {
   const [message, setMessage] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+
   const [loading, setLoading] = useState(true)
 
   const [sources, setSources] = useState<Source[]>([])
   const [articles, setArticles] = useState<any[]>([])
   const [aiPicks, setAiPicks] = useState<any[]>([])
+
   const [query, setQuery] = useState('')
 
   const [name, setName] = useState('')
@@ -52,9 +58,7 @@ export default function HomePage() {
       setUserId(session?.user?.id ?? null)
 
       if (session?.user?.id) {
-        loadSources(session.user.id)
-        loadArticles()
-        loadAiPicks(session.user.id)
+        loadEverything(session.user.id)
       }
     })
 
@@ -63,7 +67,9 @@ export default function HomePage() {
 
   const filteredArticles = useMemo(() => {
     return articles.filter((article) => {
-      const text = `${article.title} ${article.excerpt ?? ''} ${article.sources?.name ?? ''}`.toLowerCase()
+      const text =
+        `${article.title} ${article.excerpt ?? ''} ${article.sources?.name ?? ''}`.toLowerCase()
+
       return text.includes(query.toLowerCase())
     })
   }, [articles, query])
@@ -71,7 +77,6 @@ export default function HomePage() {
   const heroPick = aiPicks[0]
   const sidePicks = aiPicks.slice(1, 4)
   const lowerPicks = aiPicks.slice(4, 10)
-  const activeSources = sources.filter((source) => source.is_active)
 
   async function checkUser() {
     const { data } = await supabase.auth.getUser()
@@ -80,12 +85,18 @@ export default function HomePage() {
     setUserId(data.user?.id ?? null)
 
     if (data.user?.id) {
-      await loadSources(data.user.id)
-      await loadArticles()
-      await loadAiPicks(data.user.id)
+      await loadEverything(data.user.id)
     }
 
     setLoading(false)
+  }
+
+  async function loadEverything(currentUserId: string) {
+    await Promise.all([
+      loadSources(currentUserId),
+      loadArticles(),
+      loadAiPicks(currentUserId),
+    ])
   }
 
   async function loadSources(currentUserId: string) {
@@ -141,15 +152,29 @@ export default function HomePage() {
     setAiPicks(data ?? [])
   }
 
+  async function refreshData() {
+    if (!userId) return
+
+    setMessage('Aggiornamento dashboard...')
+    await loadEverything(userId)
+    setMessage('Dashboard aggiornata.')
+  }
+
   async function login() {
-    setMessage('Invio link di accesso...')
+    setMessage('Invio magic link...')
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
     })
 
-    setMessage(error ? 'Errore: ' + error.message : 'Controlla la tua email e clicca il link di accesso.')
+    setMessage(
+      error
+        ? 'Errore: ' + error.message
+        : 'Controlla la tua email e clicca il magic link.'
+    )
   }
 
   async function logout() {
@@ -158,23 +183,8 @@ export default function HomePage() {
     setUserId(null)
   }
 
-  async function refreshData() {
-    if (!userId) return
-
-    setMessage('Aggiornamento dati...')
-    await loadSources(userId)
-    await loadArticles()
-    await loadAiPicks(userId)
-    setMessage('Dashboard aggiornata.')
-  }
-
   async function addSource() {
     if (!userId) return
-
-    if (!name || !rssUrl) {
-      setMessage('Inserisci almeno nome fonte e URL RSS.')
-      return
-    }
 
     const { error } = await supabase.from('sources').insert({
       user_id: userId,
@@ -186,7 +196,7 @@ export default function HomePage() {
     })
 
     if (error) {
-      setMessage('Errore: ' + error.message)
+      setMessage(error.message)
       return
     }
 
@@ -194,30 +204,37 @@ export default function HomePage() {
     setWebsiteUrl('')
     setRssUrl('')
     setPriority(3)
-    setMessage('Fonte aggiunta.')
+
     await loadSources(userId)
   }
 
   async function toggleSource(source: Source) {
     if (!userId) return
 
-    await supabase.from('sources').update({ is_active: !source.is_active }).eq('id', source.id)
+    await supabase
+      .from('sources')
+      .update({
+        is_active: !source.is_active,
+      })
+      .eq('id', source.id)
+
     await loadSources(userId)
   }
 
   async function deleteSource(sourceId: string) {
     if (!userId) return
-    if (!confirm('Vuoi davvero eliminare questa fonte?')) return
 
     await supabase.from('sources').delete().eq('id', sourceId)
+
     await loadSources(userId)
   }
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#050505] text-neutral-400">
-        <div className="rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm">
-          Caricamento SignalFeed...
+      <main className="flex min-h-screen items-center justify-center bg-[#050505]">
+        <div className="space-y-3">
+          <div className="h-5 w-52 animate-pulse rounded-full bg-white/10" />
+          <div className="h-5 w-40 animate-pulse rounded-full bg-white/10" />
         </div>
       </main>
     )
@@ -226,29 +243,45 @@ export default function HomePage() {
   if (!userEmail) {
     return (
       <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.24),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(20,184,166,0.12),transparent_32%)]" />
+        <BackgroundGlow />
+
         <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10">
-          <section className="grid w-full gap-12 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
-            <div>
+          <section className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
               <Brand />
 
               <div className="mt-12 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-neutral-400">
-                AI-curated personal news intelligence
+                AI-curated news intelligence
               </div>
 
-              <h1 className="mt-8 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.075em] text-white md:text-8xl">
-                Leggi meno. Capisci di più.
+              <h1 className="mt-8 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.08em] text-white md:text-8xl">
+                Leggi meno.
+                <br />
+                Capisci di più.
               </h1>
 
               <p className="mt-7 max-w-xl text-lg leading-8 text-neutral-400">
-                SignalFeed raccoglie le tue fonti, filtra il rumore e trasforma le notizie in una rassegna intelligente.
+                SignalFeed trasforma le tue fonti in una rassegna AI elegante,
+                intelligente e senza rumore.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7 }}
+              className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl"
+            >
               <div className="mb-7">
                 <p className="text-sm text-neutral-400">Accesso privato</p>
-                <h2 className="mt-2 text-3xl font-medium tracking-tight">Entra nella tua rassegna</h2>
+
+                <h2 className="mt-2 text-3xl font-medium tracking-tight">
+                  Entra nella tua rassegna
+                </h2>
               </div>
 
               <input
@@ -265,8 +298,12 @@ export default function HomePage() {
                 Ricevi magic link
               </button>
 
-              {message && <p className="mt-4 text-sm leading-6 text-neutral-400">{message}</p>}
-            </div>
+              {message && (
+                <p className="mt-4 text-sm leading-6 text-neutral-400">
+                  {message}
+                </p>
+              )}
+            </motion.div>
           </section>
         </div>
       </main>
@@ -275,9 +312,9 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#050505] text-neutral-100">
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.16),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(20,184,166,0.08),transparent_26%)]" />
+      <BackgroundGlow />
 
-      <div className="relative mx-auto grid max-w-[1640px] grid-cols-1 lg:grid-cols-[260px_1fr]">
+      <div className="relative mx-auto grid max-w-[1650px] grid-cols-1 lg:grid-cols-[260px_1fr]">
         <aside className="hidden min-h-screen border-r border-white/[0.07] px-5 py-6 lg:block">
           <Brand />
 
@@ -291,29 +328,42 @@ export default function HomePage() {
 
           <div className="mt-10 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-4">
             <p className="text-sm font-medium">Daily automation</p>
+
             <p className="mt-2 text-sm leading-6 text-neutral-500">
-              Aggiornamento automatico tramite Vercel Cron.
+              RSS + AI aggiornati automaticamente tramite Vercel Cron.
             </p>
           </div>
         </aside>
 
         <section className="px-5 py-6 md:px-10 md:py-9">
-          <header className="mb-9 flex flex-col justify-between gap-6 xl:flex-row xl:items-start">
+          <motion.header
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="mb-9 flex flex-col justify-between gap-6 xl:flex-row xl:items-start"
+          >
             <div>
               <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
-                {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {new Date().toLocaleDateString('it-IT', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
               </p>
 
               <h1 className="max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-white md:text-7xl">
                 Il segnale migliore dalle tue fonti.
               </h1>
 
-              <p className="mt-5 text-sm text-neutral-500">{userEmail}</p>
+              <p className="mt-5 text-sm text-neutral-500">
+                {userEmail}
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5">
                 <Search size={15} className="text-neutral-500" />
+
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
@@ -338,139 +388,184 @@ export default function HomePage() {
                 Esci
               </button>
             </div>
-          </header>
+          </motion.header>
 
-          <section className="mb-8 grid gap-4 md:grid-cols-3">
-            <Metric label="Fonti attive" value={activeSources.length} />
+          <motion.section
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="mb-8 grid gap-4 md:grid-cols-3"
+          >
+            <Metric label="Fonti attive" value={sources.filter((s) => s.is_active).length} />
             <Metric label="Articoli raccolti" value={articles.length} />
             <Metric label="Scelte AI" value={aiPicks.length} />
-          </section>
+          </motion.section>
 
-          <section className="mb-10">
-            {!heroPick ? (
-              <EmptyState text="Nessuna selezione AI disponibile. Attendi il prossimo aggiornamento automatico." />
-            ) : (
-              <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-                <a
-                  href={heroPick.articles?.url}
-                  target="_blank"
-                  className="group relative min-h-[540px] overflow-hidden rounded-[2.4rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
-                >
-                  <ArticleImage imageUrl={heroPick.articles?.image_url} index={1} large />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/62 to-black/10" />
+          {heroPick && (
+            <motion.section
+              initial={{ opacity: 0, y: 26 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.85 }}
+              className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"
+            >
+              <motion.a
+                href={heroPick.articles?.url}
+                target="_blank"
+                whileHover={{ y: -4 }}
+                className="group relative min-h-[560px] overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
+              >
+                <ArticleImage imageUrl={heroPick.articles?.image_url} />
 
-                  <div className="absolute inset-0 flex flex-col justify-between p-7 md:p-9">
-                    <div className="flex items-center justify-between gap-4">
-                      <Pill>
-                        {heroPick.articles?.sources?.name ?? 'Fonte'} · {heroPick.category ?? 'Generale'}
-                      </Pill>
-                      <Score value={heroPick.score} />
-                    </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/10" />
 
-                    <div>
-                      <p className="mb-4 flex items-center gap-2 text-sm text-neutral-300">
-                        <Sparkles size={15} />
-                        Scelta principale
-                      </p>
+                <div className="absolute inset-0 flex flex-col justify-between p-7 md:p-10">
+                  <div className="flex items-center justify-between">
+                    <Pill>
+                      {heroPick.articles?.sources?.name ?? 'Fonte'} · {heroPick.category}
+                    </Pill>
 
-                      <h2 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-white md:text-6xl">
-                        {heroPick.articles?.title}
-                      </h2>
-
-                      <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">
-                        {heroPick.summary}
-                      </p>
-
-                      {heroPick.reason && (
-                        <div className="mt-6 max-w-2xl rounded-3xl border border-white/10 bg-black/35 p-5 text-sm leading-7 text-neutral-300 backdrop-blur">
-                          <span className="font-medium text-white">Perché conta: </span>
-                          {heroPick.reason}
-                        </div>
-                      )}
-                    </div>
+                    <Score value={heroPick.score} />
                   </div>
-                </a>
 
-                <div className="grid gap-4">
-                  {sidePicks.map((pick, index) => (
-                    <SidePick key={pick.id} pick={pick} index={index + 2} />
-                  ))}
+                  <div>
+                    <p className="mb-4 flex items-center gap-2 text-sm text-neutral-300">
+                      <Sparkles size={15} />
+                      Scelta principale
+                    </p>
+
+                    <h2 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-white md:text-6xl">
+                      {heroPick.articles?.title}
+                    </h2>
+
+                    <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">
+                      {heroPick.summary}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </section>
+              </motion.a>
+
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: {},
+                  show: {
+                    transition: {
+                      staggerChildren: 0.08,
+                    },
+                  },
+                }}
+                className="grid gap-4"
+              >
+                {sidePicks.map((pick) => (
+                  <SidePick key={pick.id} pick={pick} />
+                ))}
+              </motion.div>
+            </motion.section>
+          )}
 
           <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
-            <div>
-              <div className="mb-5 flex items-end justify-between">
-                <div>
-                  <h2 className="text-3xl font-medium tracking-[-0.04em] text-white">Feed completo</h2>
-                  <p className="mt-2 text-sm text-neutral-500">Tutte le ultime notizie raccolte.</p>
-                </div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <div className="mb-5">
+                <h2 className="text-3xl font-medium tracking-[-0.04em] text-white">
+                  Feed completo
+                </h2>
+
+                <p className="mt-2 text-sm text-neutral-500">
+                  Tutte le ultime notizie raccolte.
+                </p>
               </div>
 
               <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025]">
-                {filteredArticles.length === 0 ? (
-                  <EmptyState text="Nessun articolo trovato." />
-                ) : (
-                  filteredArticles.map((article, index) => (
-                    <a
-                      key={article.id}
-                      href={article.url}
-                      target="_blank"
-                      className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr]"
-                    >
-                      <ArticleThumbnail imageUrl={article.image_url} index={index} />
+                {filteredArticles.map((article, index) => (
+                  <motion.a
+                    key={article.id}
+                    href={article.url}
+                    target="_blank"
+                    initial={{ opacity: 0, y: 18 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
+                    className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 md:grid-cols-[112px_1fr]"
+                  >
+                    <ArticleThumbnail
+                      imageUrl={article.image_url}
+                    />
 
-                      <div>
-                        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-                          <span>{article.sources?.name ?? 'Fonte sconosciuta'}</span>
-                          <span>•</span>
-                          <Clock size={13} />
-                          <span>
-                            {article.published_at
-                              ? new Date(article.published_at).toLocaleString('it-IT')
-                              : 'Data non disponibile'}
-                          </span>
-                        </div>
+                    <div>
+                      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                        <span>
+                          {article.sources?.name ?? 'Fonte'}
+                        </span>
 
-                        <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
-                          {article.title}
-                        </h3>
+                        <span>•</span>
 
-                        {article.excerpt && (
-                          <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
-                            {article.excerpt}
-                          </p>
-                        )}
+                        <Clock3 size={13} />
+
+                        <span>
+                          {article.published_at
+                            ? formatDistanceToNow(
+                                new Date(article.published_at),
+                                {
+                                  addSuffix: true,
+                                  locale: it,
+                                }
+                              )
+                            : 'Adesso'}
+                        </span>
                       </div>
-                    </a>
-                  ))
-                )}
-              </div>
-            </div>
 
-            <aside className="space-y-5">
+                      <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
+                        {article.title}
+                      </h3>
+
+                      {article.excerpt && (
+                        <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
+                          {article.excerpt}
+                        </p>
+                      )}
+                    </div>
+                  </motion.a>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.aside
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7 }}
+              className="space-y-5"
+            >
               {lowerPicks.length > 0 && (
                 <Panel title="Altre scelte AI">
                   <div className="space-y-3">
                     {lowerPicks.map((pick) => (
-                      <a
+                      <motion.a
                         key={pick.id}
                         href={pick.articles?.url}
                         target="_blank"
+                        whileHover={{ y: -2 }}
                         className="grid grid-cols-[68px_1fr] gap-3 rounded-2xl bg-black/25 p-3 hover:bg-white/[0.04]"
                       >
-                        <ArticleThumbnail imageUrl={pick.articles?.image_url} index={pick.score ?? 1} compact />
+                        <ArticleThumbnail
+                          imageUrl={pick.articles?.image_url}
+                          compact
+                        />
+
                         <div>
                           <div className="mb-1 text-xs text-neutral-600">
                             {pick.category} · {pick.score}
                           </div>
+
                           <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
                             {pick.articles?.title}
                           </p>
                         </div>
-                      </a>
+                      </motion.a>
                     ))}
                   </div>
                 </Panel>
@@ -501,53 +596,19 @@ export default function HomePage() {
                     <Plus size={16} />
                     Salva fonte
                   </button>
-
-                  {message && <p className="text-sm leading-6 text-neutral-500">{message}</p>}
                 </div>
               </Panel>
-
-              <Panel title="Fonti">
-                <div className="space-y-3">
-                  {sources.map((source) => (
-                    <div key={source.id} className="rounded-2xl border border-white/[0.07] bg-black/25 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-medium">{source.name}</div>
-                          <div className="mt-1 text-xs text-neutral-600">
-                            Priorità {source.priority} · {source.is_active ? 'Attiva' : 'Disattivata'}
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button onClick={() => toggleSource(source)} className="rounded-xl bg-white/[0.05] p-2">
-                            <Power size={14} className={source.is_active ? 'text-emerald-400' : 'text-neutral-600'} />
-                          </button>
-
-                          <button onClick={() => deleteSource(source.id)} className="rounded-xl bg-white/[0.05] p-2">
-                            <Trash2 size={14} className="text-neutral-500" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {source.website_url && (
-                        <a
-                          href={source.website_url}
-                          target="_blank"
-                          className="mt-3 flex items-center gap-2 text-xs text-neutral-600 hover:text-neutral-300"
-                        >
-                          <ExternalLink size={12} />
-                          Apri sito
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            </aside>
+            </motion.aside>
           </section>
         </section>
       </div>
     </main>
+  )
+}
+
+function BackgroundGlow() {
+  return (
+    <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.16),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(20,184,166,0.08),transparent_26%)]" />
   )
 }
 
@@ -557,19 +618,35 @@ function Brand() {
       <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-black">
         <Rss size={18} />
       </div>
+
       <div>
-        <div className="font-medium tracking-tight text-white">SignalFeed</div>
-        <div className="text-xs text-neutral-500">AI curated news</div>
+        <div className="font-medium tracking-tight text-white">
+          SignalFeed
+        </div>
+
+        <div className="text-xs text-neutral-500">
+          AI curated news
+        </div>
       </div>
     </div>
   )
 }
 
-function NavItem({ icon, label, active = false }: { icon: ReactNode; label: string; active?: boolean }) {
+function NavItem({
+  icon,
+  label,
+  active = false,
+}: {
+  icon: ReactNode
+  label: string
+  active?: boolean
+}) {
   return (
     <div
       className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
-        active ? 'bg-white text-black' : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
+        active
+          ? 'bg-white text-black'
+          : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
       }`}
     >
       {icon}
@@ -578,12 +655,26 @@ function NavItem({ icon, label, active = false }: { icon: ReactNode; label: stri
   )
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({
+  label,
+  value,
+}: {
+  label: string
+  value: number
+}) {
   return (
-    <div className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5">
-      <div className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-600">{label}</div>
-      <div className="mt-4 text-4xl font-semibold tracking-[-0.055em] text-white">{value}</div>
-    </div>
+    <motion.div
+      whileHover={{ y: -3 }}
+      className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5"
+    >
+      <div className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-600">
+        {label}
+      </div>
+
+      <div className="mt-4 text-4xl font-semibold tracking-[-0.055em] text-white">
+        {value}
+      </div>
+    </motion.div>
   )
 }
 
@@ -605,12 +696,8 @@ function Pill({ children }: { children: ReactNode }) {
 
 function ArticleImage({
   imageUrl,
-  index,
-  large = false,
 }: {
   imageUrl?: string | null
-  index: number
-  large?: boolean
 }) {
   if (imageUrl) {
     return (
@@ -622,16 +709,16 @@ function ArticleImage({
     )
   }
 
-  return <EditorialVisual index={index} large={large} />
+  return (
+    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/50 via-fuchsia-500/20 to-orange-400/30" />
+  )
 }
 
 function ArticleThumbnail({
   imageUrl,
-  index,
   compact = false,
 }: {
   imageUrl?: string | null
-  index: number
   compact?: boolean
 }) {
   const size = compact ? 'h-16' : 'h-24'
@@ -646,53 +733,26 @@ function ArticleThumbnail({
     )
   }
 
-  return <MiniVisual index={index} compact={compact} />
-}
-
-function EditorialVisual({ index, large = false }: { index: number; large?: boolean }) {
-  const gradients = [
-    'from-indigo-500/55 via-fuchsia-500/25 to-orange-400/30',
-    'from-emerald-500/45 via-cyan-500/25 to-blue-500/30',
-    'from-amber-500/45 via-rose-500/25 to-purple-500/30',
-    'from-sky-500/45 via-violet-500/25 to-fuchsia-500/30',
-  ]
-
-  return (
-    <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index % gradients.length]}`}>
-      <div
-        className={`absolute inset-0 ${
-          large ? 'opacity-40' : 'opacity-25'
-        } [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_18%),radial-gradient(circle_at_80%_30%,white_0,transparent_14%),radial-gradient(circle_at_50%_80%,white_0,transparent_20%)]`}
-      />
-    </div>
-  )
-}
-
-function MiniVisual({ index, compact = false }: { index: number; compact?: boolean }) {
-  const gradients = [
-    'from-indigo-400/45 to-fuchsia-400/20',
-    'from-emerald-400/40 to-cyan-400/20',
-    'from-orange-400/40 to-rose-400/20',
-    'from-sky-400/40 to-violet-400/20',
-  ]
-
   return (
     <div
-      className={`hidden ${compact ? 'h-16' : 'h-24'} rounded-2xl bg-gradient-to-br ${
-        gradients[index % gradients.length]
-      } md:block`}
+      className={`hidden ${size} rounded-2xl bg-gradient-to-br from-indigo-400/45 to-fuchsia-400/20 md:block`}
     />
   )
 }
 
-function SidePick({ pick, index }: { pick: any; index: number }) {
+function SidePick({ pick }: { pick: any }) {
   return (
-    <a
+    <motion.a
       href={pick.articles?.url}
       target="_blank"
-      className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 p-5 transition hover:border-white/15"
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.35 }}
+      className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 p-5"
     >
-      <ArticleImage imageUrl={pick.articles?.image_url} index={index} />
+      <ArticleImage imageUrl={pick.articles?.image_url} />
+
       <div className="absolute inset-0 bg-black/68" />
 
       <div className="relative">
@@ -700,6 +760,7 @@ function SidePick({ pick, index }: { pick: any; index: number }) {
           <p className="text-xs text-neutral-400">
             {pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}
           </p>
+
           <Score value={pick.score} />
         </div>
 
@@ -707,16 +768,25 @@ function SidePick({ pick, index }: { pick: any; index: number }) {
           {pick.articles?.title}
         </h3>
       </div>
-    </a>
+    </motion.a>
   )
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function Panel({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) {
   return (
-    <section className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5">
-      <h3 className="mb-5 text-lg font-medium tracking-tight text-white">{title}</h3>
+    <div className="rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5">
+      <h3 className="mb-5 text-lg font-medium tracking-tight text-white">
+        {title}
+      </h3>
+
       {children}
-    </section>
+    </div>
   )
 }
 
@@ -736,13 +806,5 @@ function Input({
       placeholder={placeholder}
       className="w-full rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-white/20"
     />
-  )
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div className="rounded-[2rem] border border-dashed border-white/[0.08] bg-white/[0.02] p-10 text-center text-neutral-500">
-      {text}
-    </div>
   )
 }
