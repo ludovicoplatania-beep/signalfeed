@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/update?secret=OrsoNero_84!LunaRossa%23Ponte21",
-      "schedule": "0 7,13,19 * * *"
+      "schedule": "0 7 * * *"
     }
   ]
 }
