@@ -14,6 +14,8 @@ import {
   Sparkles,
   Trash2,
   Wand2,
+  Newspaper,
+  RefreshCcw,
 } from 'lucide-react'
 
 type Source = {
@@ -69,6 +71,7 @@ export default function HomePage() {
   const heroPick = aiPicks[0]
   const sidePicks = aiPicks.slice(1, 4)
   const lowerPicks = aiPicks.slice(4, 10)
+  const activeSources = sources.filter((source) => source.is_active)
 
   async function checkUser() {
     const { data } = await supabase.auth.getUser()
@@ -103,6 +106,7 @@ export default function HomePage() {
         title,
         url,
         excerpt,
+        image_url,
         published_at,
         sources ( name )
       `)
@@ -125,6 +129,7 @@ export default function HomePage() {
         articles (
           title,
           url,
+          image_url,
           published_at,
           sources ( name )
         )
@@ -151,6 +156,16 @@ export default function HomePage() {
     await supabase.auth.signOut()
     setUserEmail(null)
     setUserId(null)
+  }
+
+  async function refreshData() {
+    if (!userId) return
+
+    setMessage('Aggiornamento dati...')
+    await loadSources(userId)
+    await loadArticles()
+    await loadAiPicks(userId)
+    setMessage('Dashboard aggiornata.')
   }
 
   async function addSource() {
@@ -185,6 +200,7 @@ export default function HomePage() {
 
   async function toggleSource(source: Source) {
     if (!userId) return
+
     await supabase.from('sources').update({ is_active: !source.is_active }).eq('id', source.id)
     await loadSources(userId)
   }
@@ -200,7 +216,9 @@ export default function HomePage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#050505] text-neutral-400">
-        Caricamento SignalFeed...
+        <div className="rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm">
+          Caricamento SignalFeed...
+        </div>
       </main>
     )
   }
@@ -208,16 +226,22 @@ export default function HomePage() {
   if (!userEmail) {
     return (
       <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(120,119,198,0.22),transparent_34%),radial-gradient(circle_at_80%_20%,rgba(34,197,94,0.10),transparent_30%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.24),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(20,184,166,0.12),transparent_32%)]" />
         <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10">
-          <section className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <section className="grid w-full gap-12 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
             <div>
               <Brand />
-              <h1 className="mt-12 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.07em] text-white md:text-8xl">
-                News intelligence, senza rumore.
+
+              <div className="mt-12 inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-neutral-400">
+                AI-curated personal news intelligence
+              </div>
+
+              <h1 className="mt-8 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.075em] text-white md:text-8xl">
+                Leggi meno. Capisci di più.
               </h1>
+
               <p className="mt-7 max-w-xl text-lg leading-8 text-neutral-400">
-                Raccogli le fonti che contano, lascia che l’AI selezioni il segnale e leggi solo ciò che merita davvero attenzione.
+                SignalFeed raccoglie le tue fonti, filtra il rumore e trasforma le notizie in una rassegna intelligente.
               </p>
             </div>
 
@@ -234,7 +258,10 @@ export default function HomePage() {
                 className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none placeholder:text-neutral-600 focus:border-white/30"
               />
 
-              <button onClick={login} className="mt-3 w-full rounded-2xl bg-white px-4 py-4 font-medium text-black transition hover:bg-neutral-200">
+              <button
+                onClick={login}
+                className="mt-3 w-full rounded-2xl bg-white px-4 py-4 font-medium text-black transition hover:bg-neutral-200"
+              >
                 Ricevi magic link
               </button>
 
@@ -250,12 +277,13 @@ export default function HomePage() {
     <main className="min-h-screen bg-[#050505] text-neutral-100">
       <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(120,119,198,0.16),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(20,184,166,0.08),transparent_26%)]" />
 
-      <div className="relative mx-auto grid max-w-[1600px] grid-cols-1 lg:grid-cols-[260px_1fr]">
+      <div className="relative mx-auto grid max-w-[1640px] grid-cols-1 lg:grid-cols-[260px_1fr]">
         <aside className="hidden min-h-screen border-r border-white/[0.07] px-5 py-6 lg:block">
           <Brand />
 
           <nav className="mt-10 space-y-1">
             <NavItem active icon={<Sparkles size={16} />} label="Today" />
+            <NavItem icon={<Newspaper size={16} />} label="Feed" />
             <NavItem icon={<Rss size={16} />} label="Sources" />
             <NavItem icon={<Bookmark size={16} />} label="Saved" />
             <NavItem icon={<Wand2 size={16} />} label="AI Curation" />
@@ -264,7 +292,7 @@ export default function HomePage() {
           <div className="mt-10 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-4">
             <p className="text-sm font-medium">Daily automation</p>
             <p className="mt-2 text-sm leading-6 text-neutral-500">
-              RSS + AI update automatico ogni mattina.
+              Aggiornamento automatico tramite Vercel Cron.
             </p>
           </div>
         </aside>
@@ -275,22 +303,32 @@ export default function HomePage() {
               <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
                 {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
-              <h1 className="max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.07em] text-white md:text-7xl">
+
+              <h1 className="max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-white md:text-7xl">
                 Il segnale migliore dalle tue fonti.
               </h1>
+
               <p className="mt-5 text-sm text-neutral-500">{userEmail}</p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 md:flex">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5">
                 <Search size={15} className="text-neutral-500" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Cerca nel feed..."
-                  className="w-64 bg-transparent text-sm outline-none placeholder:text-neutral-600"
+                  className="w-48 bg-transparent text-sm outline-none placeholder:text-neutral-600 md:w-64"
                 />
               </div>
+
+              <button
+                onClick={refreshData}
+                className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-sm text-neutral-300 hover:bg-white/[0.07]"
+              >
+                <RefreshCcw size={15} />
+                Aggiorna
+              </button>
 
               <button
                 onClick={logout}
@@ -303,27 +341,29 @@ export default function HomePage() {
           </header>
 
           <section className="mb-8 grid gap-4 md:grid-cols-3">
-            <Metric label="Fonti attive" value={sources.filter((s) => s.is_active).length} />
+            <Metric label="Fonti attive" value={activeSources.length} />
             <Metric label="Articoli raccolti" value={articles.length} />
             <Metric label="Scelte AI" value={aiPicks.length} />
           </section>
 
           <section className="mb-10">
             {!heroPick ? (
-              <EmptyState text="Nessuna selezione AI disponibile." />
+              <EmptyState text="Nessuna selezione AI disponibile. Attendi il prossimo aggiornamento automatico." />
             ) : (
               <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
                 <a
                   href={heroPick.articles?.url}
                   target="_blank"
-                  className="group relative min-h-[520px] overflow-hidden rounded-[2.4rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
+                  className="group relative min-h-[540px] overflow-hidden rounded-[2.4rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
                 >
-                  <EditorialVisual index={1} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
+                  <ArticleImage imageUrl={heroPick.articles?.image_url} index={1} large />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/62 to-black/10" />
 
                   <div className="absolute inset-0 flex flex-col justify-between p-7 md:p-9">
-                    <div className="flex items-center justify-between">
-                      <Pill>{heroPick.articles?.sources?.name ?? 'Fonte'} · {heroPick.category ?? 'Generale'}</Pill>
+                    <div className="flex items-center justify-between gap-4">
+                      <Pill>
+                        {heroPick.articles?.sources?.name ?? 'Fonte'} · {heroPick.category ?? 'Generale'}
+                      </Pill>
                       <Score value={heroPick.score} />
                     </div>
 
@@ -332,12 +372,21 @@ export default function HomePage() {
                         <Sparkles size={15} />
                         Scelta principale
                       </p>
+
                       <h2 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-white md:text-6xl">
                         {heroPick.articles?.title}
                       </h2>
+
                       <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">
                         {heroPick.summary}
                       </p>
+
+                      {heroPick.reason && (
+                        <div className="mt-6 max-w-2xl rounded-3xl border border-white/10 bg-black/35 p-5 text-sm leading-7 text-neutral-300 backdrop-blur">
+                          <span className="font-medium text-white">Perché conta: </span>
+                          {heroPick.reason}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </a>
@@ -361,38 +410,43 @@ export default function HomePage() {
               </div>
 
               <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025]">
-                {filteredArticles.map((article, index) => (
-                  <a
-                    key={article.id}
-                    href={article.url}
-                    target="_blank"
-                    className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[92px_1fr]"
-                  >
-                    <MiniVisual index={index} />
-                    <div>
-                      <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-                        <span>{article.sources?.name ?? 'Fonte sconosciuta'}</span>
-                        <span>•</span>
-                        <Clock size={13} />
-                        <span>
-                          {article.published_at
-                            ? new Date(article.published_at).toLocaleString('it-IT')
-                            : 'Data non disponibile'}
-                        </span>
+                {filteredArticles.length === 0 ? (
+                  <EmptyState text="Nessun articolo trovato." />
+                ) : (
+                  filteredArticles.map((article, index) => (
+                    <a
+                      key={article.id}
+                      href={article.url}
+                      target="_blank"
+                      className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr]"
+                    >
+                      <ArticleThumbnail imageUrl={article.image_url} index={index} />
+
+                      <div>
+                        <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                          <span>{article.sources?.name ?? 'Fonte sconosciuta'}</span>
+                          <span>•</span>
+                          <Clock size={13} />
+                          <span>
+                            {article.published_at
+                              ? new Date(article.published_at).toLocaleString('it-IT')
+                              : 'Data non disponibile'}
+                          </span>
+                        </div>
+
+                        <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
+                          {article.title}
+                        </h3>
+
+                        {article.excerpt && (
+                          <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
+                            {article.excerpt}
+                          </p>
+                        )}
                       </div>
-
-                      <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
-                        {article.title}
-                      </h3>
-
-                      {article.excerpt && (
-                        <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
-                          {article.excerpt}
-                        </p>
-                      )}
-                    </div>
-                  </a>
-                ))}
+                    </a>
+                  ))
+                )}
               </div>
             </div>
 
@@ -401,9 +455,21 @@ export default function HomePage() {
                 <Panel title="Altre scelte AI">
                   <div className="space-y-3">
                     {lowerPicks.map((pick) => (
-                      <a key={pick.id} href={pick.articles?.url} target="_blank" className="block rounded-2xl bg-black/25 p-4 hover:bg-white/[0.04]">
-                        <div className="mb-2 text-xs text-neutral-600">{pick.category} · {pick.score}</div>
-                        <p className="text-sm font-medium leading-5 text-neutral-200">{pick.articles?.title}</p>
+                      <a
+                        key={pick.id}
+                        href={pick.articles?.url}
+                        target="_blank"
+                        className="grid grid-cols-[68px_1fr] gap-3 rounded-2xl bg-black/25 p-3 hover:bg-white/[0.04]"
+                      >
+                        <ArticleThumbnail imageUrl={pick.articles?.image_url} index={pick.score ?? 1} compact />
+                        <div>
+                          <div className="mb-1 text-xs text-neutral-600">
+                            {pick.category} · {pick.score}
+                          </div>
+                          <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
+                            {pick.articles?.title}
+                          </p>
+                        </div>
                       </a>
                     ))}
                   </div>
@@ -447,13 +513,16 @@ export default function HomePage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="text-sm font-medium">{source.name}</div>
-                          <div className="mt-1 text-xs text-neutral-600">Priorità {source.priority}</div>
+                          <div className="mt-1 text-xs text-neutral-600">
+                            Priorità {source.priority} · {source.is_active ? 'Attiva' : 'Disattivata'}
+                          </div>
                         </div>
 
                         <div className="flex gap-2">
                           <button onClick={() => toggleSource(source)} className="rounded-xl bg-white/[0.05] p-2">
                             <Power size={14} className={source.is_active ? 'text-emerald-400' : 'text-neutral-600'} />
                           </button>
+
                           <button onClick={() => deleteSource(source.id)} className="rounded-xl bg-white/[0.05] p-2">
                             <Trash2 size={14} className="text-neutral-500" />
                           </button>
@@ -461,7 +530,11 @@ export default function HomePage() {
                       </div>
 
                       {source.website_url && (
-                        <a href={source.website_url} target="_blank" className="mt-3 flex items-center gap-2 text-xs text-neutral-600 hover:text-neutral-300">
+                        <a
+                          href={source.website_url}
+                          target="_blank"
+                          className="mt-3 flex items-center gap-2 text-xs text-neutral-600 hover:text-neutral-300"
+                        >
                           <ExternalLink size={12} />
                           Apri sito
                         </a>
@@ -494,9 +567,11 @@ function Brand() {
 
 function NavItem({ icon, label, active = false }: { icon: ReactNode; label: string; active?: boolean }) {
   return (
-    <div className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
-      active ? 'bg-white text-black' : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
-    }`}>
+    <div
+      className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
+        active ? 'bg-white text-black' : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
+      }`}
+    >
       {icon}
       {label}
     </div>
@@ -528,43 +603,106 @@ function Pill({ children }: { children: ReactNode }) {
   )
 }
 
-function EditorialVisual({ index }: { index: number }) {
+function ArticleImage({
+  imageUrl,
+  index,
+  large = false,
+}: {
+  imageUrl?: string | null
+  index: number
+  large?: boolean
+}) {
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+      />
+    )
+  }
+
+  return <EditorialVisual index={index} large={large} />
+}
+
+function ArticleThumbnail({
+  imageUrl,
+  index,
+  compact = false,
+}: {
+  imageUrl?: string | null
+  index: number
+  compact?: boolean
+}) {
+  const size = compact ? 'h-16' : 'h-24'
+
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        className={`hidden ${size} w-full rounded-2xl object-cover md:block`}
+      />
+    )
+  }
+
+  return <MiniVisual index={index} compact={compact} />
+}
+
+function EditorialVisual({ index, large = false }: { index: number; large?: boolean }) {
   const gradients = [
-    'from-indigo-500/50 via-fuchsia-500/25 to-orange-400/30',
-    'from-emerald-500/40 via-cyan-500/20 to-blue-500/30',
-    'from-amber-500/40 via-rose-500/20 to-purple-500/30',
+    'from-indigo-500/55 via-fuchsia-500/25 to-orange-400/30',
+    'from-emerald-500/45 via-cyan-500/25 to-blue-500/30',
+    'from-amber-500/45 via-rose-500/25 to-purple-500/30',
+    'from-sky-500/45 via-violet-500/25 to-fuchsia-500/30',
   ]
 
   return (
     <div className={`absolute inset-0 bg-gradient-to-br ${gradients[index % gradients.length]}`}>
-      <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_18%),radial-gradient(circle_at_80%_30%,white_0,transparent_14%),radial-gradient(circle_at_50%_80%,white_0,transparent_20%)]" />
+      <div
+        className={`absolute inset-0 ${
+          large ? 'opacity-40' : 'opacity-25'
+        } [background-image:radial-gradient(circle_at_20%_20%,white_0,transparent_18%),radial-gradient(circle_at_80%_30%,white_0,transparent_14%),radial-gradient(circle_at_50%_80%,white_0,transparent_20%)]`}
+      />
     </div>
   )
 }
 
-function MiniVisual({ index }: { index: number }) {
+function MiniVisual({ index, compact = false }: { index: number; compact?: boolean }) {
   const gradients = [
-    'from-indigo-400/40 to-fuchsia-400/20',
-    'from-emerald-400/35 to-cyan-400/20',
-    'from-orange-400/35 to-rose-400/20',
-    'from-sky-400/35 to-violet-400/20',
+    'from-indigo-400/45 to-fuchsia-400/20',
+    'from-emerald-400/40 to-cyan-400/20',
+    'from-orange-400/40 to-rose-400/20',
+    'from-sky-400/40 to-violet-400/20',
   ]
 
   return (
-    <div className={`hidden h-24 rounded-2xl bg-gradient-to-br ${gradients[index % gradients.length]} md:block`} />
+    <div
+      className={`hidden ${compact ? 'h-16' : 'h-24'} rounded-2xl bg-gradient-to-br ${
+        gradients[index % gradients.length]
+      } md:block`}
+    />
   )
 }
 
 function SidePick({ pick, index }: { pick: any; index: number }) {
   return (
-    <a href={pick.articles?.url} target="_blank" className="group relative min-h-[160px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 p-5 transition hover:border-white/15">
-      <EditorialVisual index={index} />
-      <div className="absolute inset-0 bg-black/65" />
+    <a
+      href={pick.articles?.url}
+      target="_blank"
+      className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 p-5 transition hover:border-white/15"
+    >
+      <ArticleImage imageUrl={pick.articles?.image_url} index={index} />
+      <div className="absolute inset-0 bg-black/68" />
+
       <div className="relative">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</p>
+          <p className="text-xs text-neutral-400">
+            {pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}
+          </p>
           <Score value={pick.score} />
         </div>
+
         <h3 className="text-xl font-medium leading-tight tracking-[-0.03em] group-hover:underline">
           {pick.articles?.title}
         </h3>
@@ -582,7 +720,15 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-function Input({ value, setValue, placeholder }: { value: string; setValue: (value: string) => void; placeholder: string }) {
+function Input({
+  value,
+  setValue,
+  placeholder,
+}: {
+  value: string
+  setValue: (value: string) => void
+  placeholder: string
+}) {
   return (
     <input
       value={value}
