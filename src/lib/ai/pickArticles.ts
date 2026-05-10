@@ -69,10 +69,12 @@ ${JSON.stringify(articles)}
   }
 
   for (const pick of picks) {
-    const article = articles.find((a: any) => a.id === pick.id)
-    const userId = Array.isArray(article?.sources)
-      ? article?.sources?.[0]?.user_id
-      : article?.sources?.user_id
+    const article: any = articles.find((a: any) => a.id === pick.id)
+    const sourceData: any = article?.sources
+
+    const userId = Array.isArray(sourceData)
+      ? sourceData[0]?.user_id
+      : sourceData?.user_id
 
     if (!userId) continue
 
