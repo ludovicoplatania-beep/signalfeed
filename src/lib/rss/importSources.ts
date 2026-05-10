@@ -2,7 +2,15 @@ import Parser from 'rss-parser'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 
-const parser = new Parser()
+const parser = new Parser({
+  customFields: {
+    item: [
+      ['media:content', 'mediaContent'],
+      ['media:thumbnail', 'mediaThumbnail'],
+      ['content:encoded', 'contentEncoded'],
+    ],
+  },
+})
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,6 +19,17 @@ const supabase = createClient(
 
 function makeHash(text: string) {
   return crypto.createHash('sha256').update(text).digest('hex')
+}
+
+function getImage(item: any) {
+  return (
+    item.enclosure?.url ||
+    item.mediaContent?.$?.url ||
+    item.mediaContent?.url ||
+    item.mediaThumbnail?.$?.url ||
+    item.mediaThumbnail?.url ||
+    null
+  )
 }
 
 export async function importSources() {
@@ -30,7 +49,7 @@ export async function importSources() {
         const link = item.link ?? ''
         const excerpt = item.contentSnippet ?? ''
         const published = item.pubDate ?? null
-
+        const image = getImage(item)
         const hash = makeHash(title + link)
 
         await supabase.from('articles').upsert({
@@ -39,6 +58,7 @@ export async function importSources() {
           url: link,
           excerpt,
           published_at: published,
+          image_url: image,
           hash,
         })
       }
