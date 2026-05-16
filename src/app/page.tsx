@@ -222,11 +222,23 @@ export default function HomePage() {
   }
 
   async function refreshData() {
-    if (!userId) return
-    setMessage('Aggiornamento dashboard...')
-    await loadEverything(userId)
-    setMessage('Dashboard aggiornata.')
+  if (!userId) return
+
+  alert('Aggiornamento avviato. Attendi 30-60 secondi.')
+
+  const response = await fetch('/api/update-now', {
+    method: 'POST',
+  })
+
+  if (!response.ok) {
+    alert('Errore durante aggiornamento.')
+    return
   }
+
+  await loadEverything(userId)
+
+  alert('Aggiornamento completato.')
+}
 
   async function login() {
     setMessage('Invio magic link...')
