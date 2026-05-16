@@ -11,6 +11,7 @@ import {
   BookmarkCheck,
   Clock3,
   ExternalLink,
+  Flame,
   LogOut,
   Newspaper,
   Plus,
@@ -48,6 +49,7 @@ export default function HomePage() {
   const [articles, setArticles] = useState<any[]>([])
   const [aiPicks, setAiPicks] = useState<any[]>([])
   const [savedArticles, setSavedArticles] = useState<any[]>([])
+  const [trendingTopics, setTrendingTopics] = useState<any[]>([])
   const [query, setQuery] = useState('')
 
   const [name, setName] = useState('')
@@ -105,6 +107,7 @@ export default function HomePage() {
       loadArticles(),
       loadAiPicks(currentUserId),
       loadSavedArticles(currentUserId),
+      loadTrendingTopics(),
     ])
   }
 
@@ -187,6 +190,16 @@ export default function HomePage() {
       .order('created_at', { ascending: false })
 
     setSavedArticles(data ?? [])
+  }
+
+  async function loadTrendingTopics() {
+    const { data } = await supabase
+      .from('trending_topics')
+      .select('*')
+      .order('score', { ascending: false })
+      .limit(8)
+
+    setTrendingTopics(data ?? [])
   }
 
   async function toggleSave(articleId?: string) {
@@ -426,6 +439,7 @@ export default function HomePage() {
                 />
 
                 <aside className="space-y-5">
+                  <TrendingTopics topics={trendingTopics} />
                   <AiSideList picks={lowerPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={setSelectedArticle} />
 
                   <SourcesPanel
@@ -777,6 +791,37 @@ function AiSideList({ picks, savedIds, toggleSave, openReader }: any) {
             </button>
 
             <SaveButton saved={savedIds.has(pick.articles?.id)} onClick={() => toggleSave(pick.articles?.id)} small />
+          </div>
+        ))}
+      </div>
+    </Panel>
+  )
+}
+
+function TrendingTopics({ topics }: { topics: any[] }) {
+  if (!topics.length) return null
+
+  return (
+    <Panel title="Temi caldi">
+      <div className="space-y-3">
+        {topics.map((topic) => (
+          <div key={topic.id} className="rounded-2xl border border-white/[0.07] bg-black/25 p-4">
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-white">
+                <Flame size={15} />
+                {topic.title}
+              </div>
+
+              <div className="rounded-xl bg-white px-2 py-1 text-xs font-semibold text-black">
+                {topic.score}
+              </div>
+            </div>
+
+            {topic.description && (
+              <p className="text-sm leading-6 text-neutral-500">
+                {topic.description}
+              </p>
+            )}
           </div>
         ))}
       </div>
