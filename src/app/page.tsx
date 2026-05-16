@@ -127,6 +127,7 @@ export default function HomePage() {
         url,
         excerpt,
         image_url,
+        article_content,
         published_at,
         sources ( name )
       `)
@@ -152,6 +153,7 @@ export default function HomePage() {
           url,
           excerpt,
           image_url,
+          article_content,
           published_at,
           sources ( name )
         )
@@ -176,6 +178,7 @@ export default function HomePage() {
           url,
           excerpt,
           image_url,
+          article_content,
           published_at,
           sources ( name )
         )
@@ -548,9 +551,15 @@ function ReaderMode({ article, saved, toggleSave, close }: any) {
               </p>
             )}
 
-            <div className="mt-10 rounded-3xl border border-white/[0.08] bg-black/25 p-6 text-sm leading-7 text-neutral-400">
-              Questa è la modalità lettura di SignalFeed. Per ora mostra titolo, fonte, data e anteprima importata dal feed RSS. Per leggere il testo completo, apri la fonte originale.
-            </div>
+            {article.article_content ? (
+              <div className="mt-10 whitespace-pre-line text-lg leading-9 text-neutral-300">
+                {article.article_content}
+              </div>
+            ) : (
+              <div className="mt-10 rounded-3xl border border-white/[0.08] bg-black/25 p-6 text-sm leading-7 text-neutral-400">
+                Testo completo non disponibile per questo articolo. Puoi comunque aprire la fonte originale.
+              </div>
+            )}
           </div>
         </article>
       </div>
