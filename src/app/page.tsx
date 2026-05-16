@@ -193,14 +193,11 @@ export default function HomePage() {
   }
 
   async function loadTrendingTopics() {
-    const { data } = await supabase
-      .from('trending_topics')
-      .select('*')
-      .order('score', { ascending: false })
-      .limit(8)
+  const response = await fetch('/api/topics')
+  const data = await response.json()
 
-    setTrendingTopics(data ?? [])
-  }
+  setTrendingTopics(data.topics ?? [])
+}
 
   async function toggleSave(articleId?: string) {
     if (!userId || !articleId) return
