@@ -25,16 +25,9 @@ export async function updateInterestProfile(userId: string) {
   if (!events?.length) return
 
   const prompt = `
-Restituisci SOLO JSON valido.
-
-Analizza comportamento utente.
-
-Capisci:
-- temi preferiti
-- categorie ricorrenti
-- interessi strategici
-- pattern cognitivi
-- fonti preferite
+Restituisci ESCLUSIVAMENTE JSON valido.
+Nessun markdown.
+Nessun testo extra.
 
 Formato:
 [
@@ -45,34 +38,53 @@ Formato:
 ]
 
 Massimo 15 interessi.
-Score 1-100.
-Niente categorie generiche tipo "tech".
+
+Analizza questi eventi utente e deduci:
+- temi ricorrenti
+- interessi cognitivi
+- argomenti strategici preferiti
+- pattern editoriali
 
 Eventi:
 ${JSON.stringify(events)}
 `
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.2,
-  })
-
-  let interests = []
-
   try {
-    interests = JSON.parse(
-      response.choices[0].message.content || '[]'
-    )
-  } catch {
-    return
-  }
-
-  await supabase
-    .from('user_interests')
-    .upsert({
-      user_id: userId,
-      interests,
-      updated_at: new Date().toISOString(),
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Rispondi sempre con JSON valido. Nessun markdown.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.2,
     })
+
+    const raw = response.choices[0].message.content || '{}'
+
+    const parsed = JSON.parse(raw)
+
+    const interests = Array.isArray(parsed)
+      ? parsed
+      : parsed.interests || []
+
+    if (!Array.isArray(interests)) return
+
+    await supabase
+      .from('user_interests')
+      .upsert({
+        user_id: userId,
+        interests,
+        updated_at: new Date().toISOString(),
+      })
+  } catch (error) {
+    console.error('Interest profiling error:', error)
+  }
 }
