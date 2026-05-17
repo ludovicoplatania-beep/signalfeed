@@ -95,9 +95,7 @@ export default function HomePage() {
     setUserEmail(data.user?.email ?? null)
     setUserId(data.user?.id ?? null)
 
-    if (data.user?.id) {
-      await loadEverything(data.user.id)
-    }
+    if (data.user?.id) await loadEverything(data.user.id)
 
     setLoading(false)
   }
@@ -363,8 +361,10 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-neutral-100">
+    <main className="min-h-screen bg-[#050505] pb-28 text-neutral-100 lg:pb-0">
       <BackgroundGlow />
+
+      <MobileNav activeSection={activeSection} setActiveSection={setActiveSection} />
 
       <AnimatePresence>
         {selectedArticle && (
@@ -397,7 +397,7 @@ export default function HomePage() {
           </div>
         </aside>
 
-        <section className="px-5 py-6 md:px-10 md:py-9">
+        <section className="px-4 py-5 md:px-10 md:py-9">
           <Header
             activeSection={activeSection}
             userEmail={userEmail}
@@ -530,6 +530,37 @@ export default function HomePage() {
   )
 }
 
+function MobileNav({ activeSection, setActiveSection }: any) {
+  const items = [
+    { key: 'today', label: 'Today', icon: <Sparkles size={18} /> },
+    { key: 'feed', label: 'Feed', icon: <Newspaper size={18} /> },
+    { key: 'saved', label: 'Saved', icon: <Bookmark size={18} /> },
+    { key: 'ai', label: 'AI', icon: <Wand2 size={18} /> },
+    { key: 'sources', label: 'Sources', icon: <Rss size={18} /> },
+  ]
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#050505]/90 px-2 pb-3 pt-2 backdrop-blur-xl lg:hidden">
+      <div className="grid grid-cols-5 gap-1">
+        {items.map((item) => (
+          <button
+            key={item.key}
+            onClick={() => setActiveSection(item.key)}
+            className={`flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition ${
+              activeSection === item.key
+                ? 'bg-white text-black'
+                : 'text-neutral-500 hover:bg-white/[0.05] hover:text-neutral-200'
+            }`}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ReaderMode({ article, saved, toggleSave, close }: any) {
   return (
     <motion.div
@@ -538,8 +569,8 @@ function ReaderMode({ article, saved, toggleSave, close }: any) {
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 overflow-y-auto bg-[#050505]/95 text-white backdrop-blur-xl"
     >
-      <div className="mx-auto max-w-5xl px-5 py-6 md:px-10 md:py-10">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+      <div className="mx-auto max-w-5xl px-4 py-5 md:px-10 md:py-10">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <button
             onClick={close}
             className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm text-neutral-300 hover:bg-white/[0.08]"
@@ -548,7 +579,7 @@ function ReaderMode({ article, saved, toggleSave, close }: any) {
             Torna
           </button>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <SaveButton saved={saved} onClick={() => toggleSave(article.id)} />
 
             <a
@@ -557,18 +588,18 @@ function ReaderMode({ article, saved, toggleSave, close }: any) {
               className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-white px-4 py-3 text-sm font-medium text-black hover:bg-neutral-200"
             >
               <ExternalLink size={16} />
-              Apri fonte originale
+              Fonte originale
             </a>
           </div>
         </div>
 
-        <article className="overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-white/[0.035]">
-          <div className="relative h-[340px] overflow-hidden md:h-[460px]">
+        <article className="overflow-hidden rounded-[2rem] border border-white/[0.08] bg-white/[0.035] md:rounded-[2.5rem]">
+          <div className="relative h-[260px] overflow-hidden md:h-[460px]">
             <ArticleImage imageUrl={article.image_url} />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
           </div>
 
-          <div className="mx-auto max-w-3xl px-6 py-10 md:px-0 md:py-14">
+          <div className="mx-auto max-w-3xl px-5 py-8 md:px-0 md:py-14">
             <div className="mb-5 flex flex-wrap items-center gap-2 text-sm text-neutral-500">
               <span>{article.sources?.name ?? 'Fonte'}</span>
               <span>•</span>
@@ -580,18 +611,18 @@ function ReaderMode({ article, saved, toggleSave, close }: any) {
               </span>
             </div>
 
-            <h1 className="text-4xl font-semibold leading-[1.05] tracking-[-0.055em] md:text-6xl">
+            <h1 className="text-3xl font-semibold leading-[1.06] tracking-[-0.055em] md:text-6xl">
               {article.title}
             </h1>
 
             {article.excerpt && (
-              <p className="mt-8 text-xl leading-9 text-neutral-300">
+              <p className="mt-7 text-lg leading-8 text-neutral-300 md:text-xl md:leading-9">
                 {article.excerpt}
               </p>
             )}
 
             {article.article_content ? (
-              <div className="mt-10 whitespace-pre-line text-lg leading-9 text-neutral-300">
+              <div className="mt-10 whitespace-pre-line text-base leading-8 text-neutral-300 md:text-lg md:leading-9">
                 {article.article_content}
               </div>
             ) : (
@@ -620,14 +651,14 @@ function Header({ activeSection, userEmail, query, setQuery, refreshData, logout
     <motion.header
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-9 flex flex-col justify-between gap-6 xl:flex-row xl:items-start"
+      className="mb-8 flex flex-col justify-between gap-5 xl:flex-row xl:items-start"
     >
       <div>
-        <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+        <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-neutral-500 md:tracking-[0.35em]">
           {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
         </p>
 
-        <h1 className="max-w-5xl text-5xl font-semibold leading-[0.94] tracking-[-0.075em] text-white md:text-7xl">
+        <h1 className="max-w-5xl text-4xl font-semibold leading-[0.96] tracking-[-0.075em] text-white md:text-7xl">
           {titles[activeSection as Section]}
         </h1>
 
@@ -635,13 +666,13 @@ function Header({ activeSection, userEmail, query, setQuery, refreshData, logout
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5">
+        <div className="flex w-full items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 md:w-auto">
           <Search size={15} className="text-neutral-500" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Cerca nel feed..."
-            className="w-48 bg-transparent text-sm outline-none placeholder:text-neutral-600 md:w-64"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-600 md:w-64"
           />
         </div>
 
@@ -661,7 +692,7 @@ function Header({ activeSection, userEmail, query, setQuery, refreshData, logout
 
 function Metrics({ sources, articles, aiPicks, savedArticles }: any) {
   return (
-    <section className="mb-8 grid gap-4 md:grid-cols-4">
+    <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
       <Metric label="Fonti attive" value={sources.filter((s: Source) => s.is_active).length} />
       <Metric label="Articoli raccolti" value={articles.length} />
       <Metric label="Scelte AI" value={aiPicks.length} />
@@ -674,18 +705,18 @@ function HeroPick({ pick, saved, toggleSave, openReader }: any) {
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative min-h-[560px] overflow-hidden rounded-[2.5rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40"
+      className="group relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40 md:min-h-[560px] md:rounded-[2.5rem]"
     >
       <button onClick={() => openReader(pick.articles)} className="absolute inset-0 z-10 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/10" />
       </button>
 
-      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-7 md:p-10">
-        <div className="flex items-center justify-between">
+      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-5 md:p-10">
+        <div className="flex items-center justify-between gap-3">
           <Pill>{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</Pill>
 
-          <div className="pointer-events-auto flex items-center gap-3">
+          <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
             <SaveButton saved={saved} onClick={() => toggleSave(pick.articles?.id)} />
             <Score value={pick.score} />
           </div>
@@ -698,12 +729,12 @@ function HeroPick({ pick, saved, toggleSave, openReader }: any) {
           </p>
 
           <button onClick={() => openReader(pick.articles)} className="pointer-events-auto text-left">
-            <h2 className="max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.055em] text-white md:text-6xl">
+            <h2 className="max-w-4xl text-3xl font-semibold leading-[1.04] tracking-[-0.055em] text-white md:text-6xl">
               {pick.articles?.title}
             </h2>
           </button>
 
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-300">{pick.summary}</p>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-300 md:text-lg md:leading-8">{pick.summary}</p>
         </div>
       </div>
     </motion.div>
@@ -728,7 +759,7 @@ function FeedList({ articles, savedIds, toggleSave, openReader, title, subtitle 
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.015 }}
-              className="grid gap-4 border-b border-white/[0.06] p-5 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_120px]"
+              className="grid gap-4 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_120px] md:p-5"
             >
               <button onClick={() => openReader(article)} className="text-left">
                 <ArticleThumbnail imageUrl={article.image_url} />
@@ -746,7 +777,7 @@ function FeedList({ articles, savedIds, toggleSave, openReader, title, subtitle 
                   </span>
                 </div>
 
-                <h3 className="text-xl font-medium leading-snug tracking-[-0.025em] text-neutral-100">
+                <h3 className="text-lg font-medium leading-snug tracking-[-0.025em] text-neutral-100 md:text-xl">
                   {article.title}
                 </h3>
 
@@ -868,18 +899,18 @@ function TopicView({ topic, articles, savedIds, toggleSave, openReader }: any) {
 
   return (
     <section>
-      <div className="mb-8 rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-7">
+      <div className="mb-8 rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-6 md:p-7">
         <div className="mb-3 flex items-center gap-2 text-sm text-neutral-400">
           <Flame size={16} />
           Tema caldo
         </div>
 
-        <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white">
+        <h2 className="text-4xl font-semibold tracking-[-0.06em] text-white md:text-5xl">
           {topic.title}
         </h2>
 
         {topic.description && (
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-neutral-400">
+          <p className="mt-5 max-w-3xl text-base leading-7 text-neutral-400 md:text-lg md:leading-8">
             {topic.description}
           </p>
         )}
@@ -1060,17 +1091,17 @@ function Metric({ label, value }: { label: string; value: number }) {
   return (
     <motion.div
       whileHover={{ y: -3 }}
-      className="flex min-h-[145px] flex-col justify-between rounded-[1.7rem] border border-white/[0.07] bg-white/[0.025] p-5"
+      className="flex min-h-[120px] flex-col justify-between rounded-[1.5rem] border border-white/[0.07] bg-white/[0.025] p-4 md:min-h-[145px] md:rounded-[1.7rem] md:p-5"
     >
-      <div className="text-xs font-medium uppercase tracking-[0.18em] text-neutral-600">{label}</div>
-      <div className="mt-4 text-4xl font-semibold tracking-[-0.055em] text-white">{value}</div>
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-neutral-600 md:text-xs md:tracking-[0.18em]">{label}</div>
+      <div className="mt-4 text-3xl font-semibold tracking-[-0.055em] text-white md:text-4xl">{value}</div>
     </motion.div>
   )
 }
 
 function Score({ value }: { value: number }) {
   return (
-    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-base font-semibold text-black">
+    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-semibold text-black md:h-12 md:w-12 md:text-base">
       {value}
     </div>
   )
