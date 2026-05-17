@@ -24,7 +24,7 @@ import {
   Wand2,
 } from 'lucide-react'
 
-type Section = 'today' | 'feed' | 'sources' | 'saved' | 'ai'
+type Section = 'today' | 'feed' | 'sources' | 'saved' | 'ai' | 'topic'
 
 type Source = {
   id: string
@@ -38,6 +38,7 @@ type Source = {
 export default function HomePage() {
   const [activeSection, setActiveSection] = useState<Section>('today')
   const [selectedArticle, setSelectedArticle] = useState<any | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<any | null>(null)
 
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
@@ -193,11 +194,10 @@ export default function HomePage() {
   }
 
   async function loadTrendingTopics() {
-  const response = await fetch('/api/topics')
-  const data = await response.json()
-
-  setTrendingTopics(data.topics ?? [])
-}
+    const response = await fetch('/api/topics')
+    const data = await response.json()
+    setTrendingTopics(data.topics ?? [])
+  }
 
   async function toggleSave(articleId?: string) {
     if (!userId || !articleId) return
@@ -219,23 +219,22 @@ export default function HomePage() {
   }
 
   async function refreshData() {
-  if (!userId) return
+    if (!userId) return
 
-  alert('Aggiornamento avviato. Attendi 30-60 secondi.')
+    alert('Aggiornamento avviato. Attendi 30-60 secondi.')
 
-  const response = await fetch('/api/update-now', {
-    method: 'POST',
-  })
+    const response = await fetch('/api/update-now', {
+      method: 'POST',
+    })
 
-  if (!response.ok) {
-    alert('Errore durante aggiornamento.')
-    return
+    if (!response.ok) {
+      alert('Errore durante aggiornamento.')
+      return
+    }
+
+    await loadEverything(userId)
+    alert('Aggiornamento completato.')
   }
-
-  await loadEverything(userId)
-
-  alert('Aggiornamento completato.')
-}
 
   async function login() {
     setMessage('Invio magic link...')
@@ -448,7 +447,14 @@ export default function HomePage() {
                 />
 
                 <aside className="space-y-5">
-                  <TrendingTopics topics={trendingTopics} />
+                  <TrendingTopics
+                    topics={trendingTopics}
+                    onSelect={(topic: any) => {
+                      setSelectedTopic(topic)
+                      setActiveSection('topic')
+                    }}
+                  />
+
                   <AiSideList picks={lowerPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={setSelectedArticle} />
 
                   <SourcesPanel
@@ -507,6 +513,16 @@ export default function HomePage() {
 
           {activeSection === 'ai' && (
             <AiCurationView picks={aiPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={setSelectedArticle} />
+          )}
+
+          {activeSection === 'topic' && selectedTopic && (
+            <TopicView
+              topic={selectedTopic}
+              articles={articles}
+              savedIds={savedIds}
+              toggleSave={toggleSave}
+              openReader={setSelectedArticle}
+            />
           )}
         </section>
       </div>
@@ -597,6 +613,7 @@ function Header({ activeSection, userEmail, query, setQuery, refreshData, logout
     sources: 'Gestisci le tue fonti.',
     saved: 'La tua reading list.',
     ai: 'Tutte le scelte AI.',
+    topic: 'Tema caldo.',
   }
 
   return (
@@ -807,14 +824,18 @@ function AiSideList({ picks, savedIds, toggleSave, openReader }: any) {
   )
 }
 
-function TrendingTopics({ topics }: { topics: any[] }) {
+function TrendingTopics({ topics, onSelect }: { topics: any[]; onSelect: (topic: any) => void }) {
   if (!topics.length) return null
 
   return (
     <Panel title="Temi caldi">
       <div className="space-y-3">
         {topics.map((topic) => (
-          <div key={topic.id} className="rounded-2xl border border-white/[0.07] bg-black/25 p-4">
+          <button
+            key={topic.id}
+            onClick={() => onSelect(topic)}
+            className="w-full rounded-2xl border border-white/[0.07] bg-black/25 p-4 text-left transition hover:bg-white/[0.05]"
+          >
             <div className="mb-2 flex items-start justify-between gap-3">
               <div className="flex items-center gap-2 text-sm font-medium text-white">
                 <Flame size={15} />
@@ -831,10 +852,52 @@ function TrendingTopics({ topics }: { topics: any[] }) {
                 {topic.description}
               </p>
             )}
-          </div>
+          </button>
         ))}
       </div>
     </Panel>
+  )
+}
+
+function TopicView({ topic, articles, savedIds, toggleSave, openReader }: any) {
+  const topicArticleIds = Array.isArray(topic.articles) ? topic.articles : []
+
+  const relatedArticles = articles.filter((article: any) =>
+    topicArticleIds.includes(article.id)
+  )
+
+  return (
+    <section>
+      <div className="mb-8 rounded-[2rem] border border-white/[0.07] bg-white/[0.025] p-7">
+        <div className="mb-3 flex items-center gap-2 text-sm text-neutral-400">
+          <Flame size={16} />
+          Tema caldo
+        </div>
+
+        <h2 className="text-5xl font-semibold tracking-[-0.06em] text-white">
+          {topic.title}
+        </h2>
+
+        {topic.description && (
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-neutral-400">
+            {topic.description}
+          </p>
+        )}
+
+        <div className="mt-5 inline-flex rounded-full bg-white px-3 py-1 text-sm font-semibold text-black">
+          Score {topic.score}
+        </div>
+      </div>
+
+      <FeedList
+        articles={relatedArticles}
+        savedIds={savedIds}
+        toggleSave={toggleSave}
+        openReader={openReader}
+        title="Articoli collegati"
+        subtitle="Notizie che compongono questo tema."
+      />
+    </section>
   )
 }
 
