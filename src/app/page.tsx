@@ -72,14 +72,16 @@ export default function HomePage() {
   const heroPick = aiPicks[0]
   const sidePicks = aiPicks.slice(1, 4)
   const lowerPicks = aiPicks.slice(4, 10)
+
   const onboardingStep =
-  sources.length === 0
-    ? 'sources'
-    : articles.length === 0
-      ? 'refresh'
-      : aiPicks.length === 0
-        ? 'ai'
-        : null
+    sources.length === 0
+      ? 'sources'
+      : articles.length === 0
+        ? 'refresh'
+        : aiPicks.length === 0
+          ? 'ai'
+          : null
+
   async function checkUser() {
     const { data } = await supabase.auth.getUser()
 
@@ -188,6 +190,32 @@ export default function HomePage() {
     setTrendingTopics(data.topics ?? [])
   }
 
+  async function trackEvent({
+    event_type,
+    article_id,
+    topic_id,
+    metadata,
+  }: {
+    event_type: string
+    article_id?: string
+    topic_id?: string
+    metadata?: any
+  }) {
+    if (!userId) return
+
+    await fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        user_id: userId,
+        event_type,
+        article_id,
+        topic_id,
+        metadata,
+      }),
+    })
+  }
+
   async function toggleSave(articleId?: string) {
     if (!userId || !articleId) return
 
@@ -197,9 +225,19 @@ export default function HomePage() {
         .delete()
         .eq('user_id', userId)
         .eq('article_id', articleId)
+
+      await trackEvent({
+        event_type: 'article_unsaved',
+        article_id: articleId,
+      })
     } else {
       await supabase.from('saved_articles').insert({
         user_id: userId,
+        article_id: articleId,
+      })
+
+      await trackEvent({
+        event_type: 'article_saved',
         article_id: articleId,
       })
     }
@@ -207,25 +245,51 @@ export default function HomePage() {
     await loadSavedArticles(userId)
   }
 
-  async function refreshData() {
-  if (!userId) return
+  async function openArticle(article: any) {
+    setSelectedArticle(article)
 
-  setRefreshing(true)
-
-  const response = await fetch('/api/update-now', {
-    method: 'POST',
-  })
-
-  if (!response.ok) {
-    alert('Errore durante aggiornamento.')
-    setRefreshing(false)
-    return
+    await trackEvent({
+      event_type: 'article_opened',
+      article_id: article.id,
+      metadata: {
+        title: article.title,
+        source: article.sources?.name ?? null,
+      },
+    })
   }
 
-  await loadEverything(userId)
+  async function openTopic(topic: any) {
+    setSelectedTopic(topic)
+    setActiveSection('topic')
 
-  setRefreshing(false)
-}
+    await trackEvent({
+      event_type: 'topic_opened',
+      topic_id: topic.id,
+      metadata: {
+        title: topic.title,
+        score: topic.score,
+      },
+    })
+  }
+
+  async function refreshData() {
+    if (!userId) return
+
+    setRefreshing(true)
+
+    const response = await fetch('/api/update-now', {
+      method: 'POST',
+    })
+
+    if (!response.ok) {
+      alert('Errore durante aggiornamento.')
+      setRefreshing(false)
+      return
+    }
+
+    await loadEverything(userId)
+    setRefreshing(false)
+  }
 
   async function login() {
     setMessage('Invio magic link...')
@@ -341,33 +405,34 @@ export default function HomePage() {
 
           {activeSection === 'today' && (
             <>
-          {onboardingStep && (
-  <Onboarding
-    step={onboardingStep}
-    goToSources={() => setActiveSection('sources')}
-    refreshData={refreshData}
-  />
-)}
-              {refreshing ? (
-  <MetricsSkeleton />
-) : (
-  <Metrics
-    sources={sources}
-    articles={articles}
-    aiPicks={aiPicks}
-    savedArticles={savedArticles}
-  />
-)}
+              {onboardingStep && (
+                <Onboarding
+                  step={onboardingStep}
+                  goToSources={() => setActiveSection('sources')}
+                  refreshData={refreshData}
+                />
+              )}
 
               {refreshing ? (
-  <HeroSkeleton />
-) : heroPick ? (
+                <MetricsSkeleton />
+              ) : (
+                <Metrics
+                  sources={sources}
+                  articles={articles}
+                  aiPicks={aiPicks}
+                  savedArticles={savedArticles}
+                />
+              )}
+
+              {refreshing ? (
+                <HeroSkeleton />
+              ) : heroPick ? (
                 <section className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
                   <HeroPick
                     pick={heroPick}
                     saved={savedIds.has(heroPick.articles?.id)}
                     toggleSave={toggleSave}
-                    openReader={setSelectedArticle}
+                    openReader={openArticle}
                   />
 
                   <div className="grid gap-4">
@@ -377,7 +442,7 @@ export default function HomePage() {
                         pick={pick}
                         saved={savedIds.has(pick.articles?.id)}
                         toggleSave={toggleSave}
-                        openReader={setSelectedArticle}
+                        openReader={openArticle}
                       />
                     ))}
                   </div>
@@ -388,28 +453,25 @@ export default function HomePage() {
 
               <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
                 {refreshing ? (
-  <FeedSkeleton />
-) : (
-  <FeedList
-    articles={filteredArticles}
-    savedIds={savedIds}
-    toggleSave={toggleSave}
-    openReader={setSelectedArticle}
-    title="Feed completo"
-    subtitle="Tutte le ultime notizie raccolte."
-  />
-)}
+                  <FeedSkeleton />
+                ) : (
+                  <FeedList
+                    articles={filteredArticles}
+                    savedIds={savedIds}
+                    toggleSave={toggleSave}
+                    openReader={openArticle}
+                    title="Feed completo"
+                    subtitle="Tutte le ultime notizie raccolte."
+                  />
+                )}
 
                 <aside className="space-y-5">
                   <TrendingTopics
                     topics={trendingTopics}
-                    onSelect={(topic: any) => {
-                      setSelectedTopic(topic)
-                      setActiveSection('topic')
-                    }}
+                    onSelect={openTopic}
                   />
 
-                  <AiSideList picks={lowerPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={setSelectedArticle} />
+                  <AiSideList picks={lowerPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
 
                   <SourcesPanel
                     sources={sources}
@@ -436,7 +498,7 @@ export default function HomePage() {
               articles={filteredArticles}
               savedIds={savedIds}
               toggleSave={toggleSave}
-              openReader={setSelectedArticle}
+              openReader={openArticle}
               title="Feed"
               subtitle="Tutte le notizie importate dalle tue fonti."
             />
@@ -462,11 +524,11 @@ export default function HomePage() {
           )}
 
           {activeSection === 'saved' && (
-            <SavedView savedArticles={savedArticles} toggleSave={toggleSave} openReader={setSelectedArticle} />
+            <SavedView savedArticles={savedArticles} toggleSave={toggleSave} openReader={openArticle} />
           )}
 
           {activeSection === 'ai' && (
-            <AiCurationView picks={aiPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={setSelectedArticle} />
+            <AiCurationView picks={aiPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
           )}
 
           {activeSection === 'topic' && selectedTopic && (
@@ -475,7 +537,7 @@ export default function HomePage() {
               articles={articles}
               savedIds={savedIds}
               toggleSave={toggleSave}
-              openReader={setSelectedArticle}
+              openReader={openArticle}
             />
           )}
         </section>
