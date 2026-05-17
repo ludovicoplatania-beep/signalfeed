@@ -10,13 +10,20 @@ const supabase = createClient(
   process.env.SUPABASE_SECRET_KEY!
 )
 
+function getUserId(article: any) {
+  return Array.isArray(article?.sources)
+    ? article.sources[0]?.user_id
+    : article?.sources?.user_id
+}
+
 export async function pickArticles() {
-  const { data: articles } = await supabase
+  const { data: articles, error } = await supabase
     .from('articles')
     .select(`
       id,
       title,
       excerpt,
+      article_content,
       published_at,
       sources (
         name,
@@ -24,61 +31,75 @@ export async function pickArticles() {
       )
     `)
     .order('published_at', { ascending: false })
-    .limit(25)
+    .limit(50)
 
-  if (!articles || articles.length === 0) return
+  if (error || !articles?.length) return
+
+  const compactArticles = articles.map((article: any) => ({
+    id: article.id,
+    title: article.title,
+    source: Array.isArray(article.sources)
+      ? article.sources[0]?.name
+      : article.sources?.name,
+    excerpt: article.excerpt,
+    content: article.article_content?.slice(0, 1000) ?? '',
+    published_at: article.published_at,
+  }))
 
   const prompt = `
-Restituisci SOLO JSON valido.
-Non usare markdown.
-Non usare blocchi di codice.
+Restituisci SOLO JSON valido. Nessun markdown.
 
-Scegli i 10 articoli migliori tra questi.
-Evita gossip, duplicati e clickbait.
+Scegli i 10 articoli migliori.
+Non scegliere semplicemente i più recenti.
+Devi fare ranking editoriale intelligente.
 
-Formato esatto:
+Formato:
 [
   {
     "id": "uuid articolo",
-    "score": 90,
-    "summary": "riassunto breve",
-    "reason": "motivo della scelta",
-    "category": "categoria"
+    "score": 1-100,
+    "summary": "riassunto utile, massimo 220 caratteri",
+    "reason": "perché merita attenzione, massimo 180 caratteri",
+    "category": "categoria specifica",
+    "priority": "high|medium|low"
   }
 ]
 
+Criteri:
+- rilevanza strategica
+- impatto futuro
+- originalità
+- qualità informativa
+- evita duplicati semantici
+- penalizza gossip, clickbait, articoli deboli
+- diversifica fonti e categorie
+- preferisci contenuti con sostanza rispetto a titoli sensazionalistici
+
 Articoli:
-${JSON.stringify(articles)}
+${JSON.stringify(compactArticles)}
 `
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.2,
+    temperature: 0.15,
   })
-
-  const text = response.choices[0].message.content || '[]'
 
   let picks: any[] = []
 
   try {
-    picks = JSON.parse(text)
+    picks = JSON.parse(response.choices[0].message.content || '[]')
   } catch {
-    console.log('JSON non valido:', text)
     return
   }
 
   for (const pick of picks) {
-    const article: any = articles.find((a: any) => a.id === pick.id)
-    const sourceData: any = article?.sources
-
-    const userId = Array.isArray(sourceData)
-      ? sourceData[0]?.user_id
-      : sourceData?.user_id
+    const article = articles.find((a: any) => a.id === pick.id)
+    const userId = getUserId(article)
 
     if (!userId) continue
 
-    const { error } = await supabase.from('ai_picks').upsert({
+    await supabase.from('ai_picks').upsert({
       user_id: userId,
       article_id: pick.id,
       score: pick.score,
@@ -86,9 +107,5 @@ ${JSON.stringify(articles)}
       reason: pick.reason,
       category: pick.category,
     })
-
-    if (error) {
-      console.log('Errore salvataggio pick:', error.message)
-    }
   }
 }

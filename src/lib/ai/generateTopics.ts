@@ -17,76 +17,83 @@ export async function generateTopics() {
       id,
       title,
       excerpt,
+      article_content,
       published_at,
       sources ( name )
     `)
     .order('published_at', { ascending: false })
-    .limit(60)
+    .limit(80)
 
-  if (error) {
-    console.log('Errore caricamento articoli topics:', error.message)
-    return
-  }
+  if (error || !articles?.length) return
 
-  if (!articles || articles.length === 0) return
+  const compactArticles = articles.map((article: any) => ({
+    id: article.id,
+    title: article.title,
+    source: Array.isArray(article.sources)
+      ? article.sources[0]?.name
+      : article.sources?.name,
+    excerpt: article.excerpt,
+    content: article.article_content?.slice(0, 1200) ?? '',
+    published_at: article.published_at,
+  }))
 
   const prompt = `
-Restituisci SOLO JSON valido.
-Non usare markdown.
-Non usare blocchi di codice.
+Restituisci SOLO JSON valido. Nessun markdown.
 
-Analizza questi articoli e individua massimo 8 temi ricorrenti/trending.
+Devi creare cluster tematici intelligenti dagli articoli.
+Non limitarti a keyword. Raggruppa notizie che parlano dello stesso fenomeno, anche se usano parole diverse.
 
-Formato esatto:
+Formato:
 [
   {
-    "title": "nome breve del tema",
-    "description": "spiegazione sintetica del perché è rilevante",
-    "score": 90,
-    "articles": ["id articolo 1", "id articolo 2"]
+    "title": "massimo 4 parole",
+    "description": "perché questo tema è rilevante, massimo 220 caratteri",
+    "score": 1-100,
+    "articles": ["id1", "id2"],
+    "angle": "lettura interpretativa del tema, massimo 160 caratteri"
   }
 ]
 
 Regole:
-- score da 1 a 100
-- title massimo 4 parole
-- description massimo 180 caratteri
-- articles deve contenere gli id degli articoli collegati
-- evita temi generici tipo "notizie", "attualità", "mondo"
+- massimo 8 topic
+- ogni topic deve avere almeno 2 articoli se possibile
+- niente topic generici tipo "Politica", "Tecnologia", "Notizie"
+- preferisci fenomeni specifici: "Crisi chip AI", "Guerra commerciale USA-Cina", "Energia nucleare europea"
+- score alto se il tema è ricorrente, urgente o strategico
+- evita duplicati semantici tra topic
+- usa solo id realmente presenti
 
 Articoli:
-${JSON.stringify(articles)}
+${JSON.stringify(compactArticles)}
 `
 
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    temperature: 0.2,
+    temperature: 0.15,
   })
-
-  const text = response.choices[0].message.content || '[]'
 
   let topics: any[] = []
 
   try {
-    topics = JSON.parse(text)
+    topics = JSON.parse(response.choices[0].message.content || '[]')
   } catch {
-    console.log('JSON topics non valido:', text)
     return
   }
 
-  await supabase.from('trending_topics').delete().neq('id', '00000000-0000-0000-0000-000000000000')
+  await supabase
+    .from('trending_topics')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
 
   for (const topic of topics) {
-    const { error: insertError } = await supabase.from('trending_topics').insert({
+    await supabase.from('trending_topics').insert({
       title: topic.title,
-      description: topic.description,
+      description: topic.angle
+        ? `${topic.description} ${topic.angle}`
+        : topic.description,
       score: topic.score,
       articles: topic.articles,
     })
-
-    if (insertError) {
-      console.log('Errore salvataggio topic:', insertError.message)
-    }
   }
 }
