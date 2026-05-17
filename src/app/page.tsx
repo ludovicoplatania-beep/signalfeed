@@ -15,6 +15,7 @@ import { FeedList, SavedView } from './components/feed'
 import { TrendingTopics, TopicView } from './components/topics'
 import { SourcesPanel } from './components/sources'
 import { LoginView } from './components/login-view'
+import { Onboarding } from './components/onboarding'
 
 export default function HomePage() {
   const [activeSection, setActiveSection] = useState<Section>('today')
@@ -69,7 +70,14 @@ export default function HomePage() {
   const heroPick = aiPicks[0]
   const sidePicks = aiPicks.slice(1, 4)
   const lowerPicks = aiPicks.slice(4, 10)
-
+  const onboardingStep =
+  sources.length === 0
+    ? 'sources'
+    : articles.length === 0
+      ? 'refresh'
+      : aiPicks.length === 0
+        ? 'ai'
+        : null
   async function checkUser() {
     const { data } = await supabase.auth.getUser()
 
@@ -329,6 +337,13 @@ export default function HomePage() {
 
           {activeSection === 'today' && (
             <>
+          {onboardingStep && (
+  <Onboarding
+    step={onboardingStep}
+    goToSources={() => setActiveSection('sources')}
+    refreshData={refreshData}
+  />
+)}
               <Metrics sources={sources} articles={articles} aiPicks={aiPicks} savedArticles={savedArticles} />
 
               {heroPick ? (
