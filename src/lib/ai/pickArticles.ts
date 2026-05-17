@@ -31,27 +31,50 @@ export async function pickArticles() {
       )
     `)
     .order('published_at', { ascending: false })
-    .limit(50)
+    .limit(80)
 
   if (error || !articles?.length) return
 
-  const compactArticles = articles.map((article: any) => ({
-    id: article.id,
-    title: article.title,
-    source: Array.isArray(article.sources)
-      ? article.sources[0]?.name
-      : article.sources?.name,
-    excerpt: article.excerpt,
-    content: article.article_content?.slice(0, 1000) ?? '',
-    published_at: article.published_at,
-  }))
+  const userIds = Array.from(
+    new Set(
+      articles
+        .map((article: any) => getUserId(article))
+        .filter(Boolean)
+    )
+  )
 
-  const prompt = `
+  for (const userId of userIds) {
+    const userArticles = articles.filter(
+      (article: any) => getUserId(article) === userId
+    )
+
+    const { data: profile } = await supabase
+      .from('user_interests')
+      .select('interests')
+      .eq('user_id', userId)
+      .single()
+
+    const compactArticles = userArticles.map((article: any) => ({
+      id: article.id,
+      title: article.title,
+      source: Array.isArray(article.sources)
+        ? article.sources[0]?.name
+        : article.sources?.name,
+      excerpt: article.excerpt,
+      content: article.article_content?.slice(0, 1000) ?? '',
+      published_at: article.published_at,
+    }))
+
+    const prompt = `
 Restituisci SOLO JSON valido. Nessun markdown.
 
-Scegli i 10 articoli migliori.
-Non scegliere semplicemente i più recenti.
-Devi fare ranking editoriale intelligente.
+Scegli i 10 articoli migliori per QUESTO utente.
+
+Profilo interessi utente:
+${JSON.stringify(profile?.interests ?? [])}
+
+Articoli disponibili:
+${JSON.stringify(compactArticles)}
 
 Formato:
 [
@@ -59,53 +82,65 @@ Formato:
     "id": "uuid articolo",
     "score": 1-100,
     "summary": "riassunto utile, massimo 220 caratteri",
-    "reason": "perché merita attenzione, massimo 180 caratteri",
+    "reason": "perché merita attenzione per questo utente, massimo 180 caratteri",
     "category": "categoria specifica",
     "priority": "high|medium|low"
   }
 ]
 
 Criteri:
-- rilevanza strategica
-- impatto futuro
-- originalità
-- qualità informativa
-- evita duplicati semantici
-- penalizza gossip, clickbait, articoli deboli
+- usa il profilo interessi, ma non diventare cieco: segnala anche notizie importanti fuori profilo
+- aumenta score se articolo combacia con interessi forti
+- penalizza contenuti deboli, gossip, duplicati, clickbait
 - diversifica fonti e categorie
-- preferisci contenuti con sostanza rispetto a titoli sensazionalistici
-
-Articoli:
-${JSON.stringify(compactArticles)}
+- preferisci articoli con sostanza e impatto futuro
+- non scegliere più articoli sullo stesso micro-tema se non necessario
 `
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.15,
-  })
-
-  let picks: any[] = []
-
-  try {
-    picks = JSON.parse(response.choices[0].message.content || '[]')
-  } catch {
-    return
-  }
-
-  for (const pick of picks) {
-    const article = articles.find((a: any) => a.id === pick.id)
-    const userId = getUserId(article)
-
-    if (!userId) continue
-
-    await supabase.from('ai_picks').upsert({
-      user_id: userId,
-      article_id: pick.id,
-      score: pick.score,
-      summary: pick.summary,
-      reason: pick.reason,
-      category: pick.category,
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Rispondi sempre con JSON valido. Se devi restituire una lista, usa la chiave "picks".',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.15,
     })
+
+    let picks: any[] = []
+
+    try {
+      const raw = response.choices[0].message.content || '{}'
+      const parsed = JSON.parse(raw)
+
+      picks = Array.isArray(parsed)
+        ? parsed
+        : parsed.picks || []
+    } catch {
+      continue
+    }
+
+    await supabase
+      .from('ai_picks')
+      .delete()
+      .eq('user_id', userId)
+
+    for (const pick of picks.slice(0, 10)) {
+      await supabase.from('ai_picks').insert({
+        user_id: userId,
+        article_id: pick.id,
+        score: pick.score,
+        summary: pick.summary,
+        reason: pick.reason,
+        category: pick.category,
+      })
+    }
   }
 }
