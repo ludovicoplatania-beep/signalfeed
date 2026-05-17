@@ -16,6 +16,7 @@ import { TrendingTopics, TopicView } from './components/topics'
 import { SourcesPanel } from './components/sources'
 import { LoginView } from './components/login-view'
 import { Onboarding } from './components/onboarding'
+import { FeedSkeleton, HeroSkeleton, MetricsSkeleton } from './components/skeletons'
 
 export default function HomePage() {
   const [activeSection, setActiveSection] = useState<Section>('today')
@@ -27,6 +28,7 @@ export default function HomePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
 
   const [sources, setSources] = useState<Source[]>([])
   const [articles, setArticles] = useState<any[]>([])
@@ -206,22 +208,24 @@ export default function HomePage() {
   }
 
   async function refreshData() {
-    if (!userId) return
+  if (!userId) return
 
-    alert('Aggiornamento avviato. Attendi 30-60 secondi.')
+  setRefreshing(true)
 
-    const response = await fetch('/api/update-now', {
-      method: 'POST',
-    })
+  const response = await fetch('/api/update-now', {
+    method: 'POST',
+  })
 
-    if (!response.ok) {
-      alert('Errore durante aggiornamento.')
-      return
-    }
-
-    await loadEverything(userId)
-    alert('Aggiornamento completato.')
+  if (!response.ok) {
+    alert('Errore durante aggiornamento.')
+    setRefreshing(false)
+    return
   }
+
+  await loadEverything(userId)
+
+  setRefreshing(false)
+}
 
   async function login() {
     setMessage('Invio magic link...')
@@ -344,9 +348,20 @@ export default function HomePage() {
     refreshData={refreshData}
   />
 )}
-              <Metrics sources={sources} articles={articles} aiPicks={aiPicks} savedArticles={savedArticles} />
+              {refreshing ? (
+  <MetricsSkeleton />
+) : (
+  <Metrics
+    sources={sources}
+    articles={articles}
+    aiPicks={aiPicks}
+    savedArticles={savedArticles}
+  />
+)}
 
-              {heroPick ? (
+              {refreshing ? (
+  <HeroSkeleton />
+) : heroPick ? (
                 <section className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
                   <HeroPick
                     pick={heroPick}
@@ -372,14 +387,18 @@ export default function HomePage() {
               )}
 
               <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
-                <FeedList
-                  articles={filteredArticles}
-                  savedIds={savedIds}
-                  toggleSave={toggleSave}
-                  openReader={setSelectedArticle}
-                  title="Feed completo"
-                  subtitle="Tutte le ultime notizie raccolte."
-                />
+                {refreshing ? (
+  <FeedSkeleton />
+) : (
+  <FeedList
+    articles={filteredArticles}
+    savedIds={savedIds}
+    toggleSave={toggleSave}
+    openReader={setSelectedArticle}
+    title="Feed completo"
+    subtitle="Tutte le ultime notizie raccolte."
+  />
+)}
 
                 <aside className="space-y-5">
                   <TrendingTopics
