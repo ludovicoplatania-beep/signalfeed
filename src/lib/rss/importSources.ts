@@ -1,9 +1,10 @@
 import Parser from 'rss-parser'
 import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
+import { sourceAdapters } from '@/lib/sources/adapters'
 
 const parser = new Parser({
-  timeout: 10000,
+  timeout: 8000,
   headers: {
     'User-Agent':
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
@@ -66,33 +67,47 @@ function absoluteUrl(base: string, href: string) {
   }
 }
 
-async function discoverFeedUrl(inputUrl: string) {
-  const url = normalizeUrl(inputUrl)
+async function tryParseFeed(url: string) {
+  try {
+    const feed = await parser.parseURL(url)
+    if (feed.items?.length) return { url, feed }
+  } catch {}
+
+  return null
+}
+
+async function discoverFeedUrl(source: any) {
+  const inputUrl = normalizeUrl(source.rss_url || source.website_url)
+
+  const adapter = sourceAdapters.find((adapter) => adapter.match(source))
+
+  const adapterCandidates = adapter?.feedUrls(source) ?? []
+
+  const normalizedBase = inputUrl.replace(/\/$/, '')
 
   const candidates = [
-    url,
-    `${url.replace(/\/$/, '')}/feed`,
-    `${url.replace(/\/$/, '')}/rss`,
-    `${url.replace(/\/$/, '')}/rss.xml`,
-    `${url.replace(/\/$/, '')}/feed.xml`,
-    `${url.replace(/\/$/, '')}/atom.xml`,
-  ]
+    ...adapterCandidates,
+    inputUrl,
+    `${normalizedBase}/feed`,
+    `${normalizedBase}/rss`,
+    `${normalizedBase}/rss.xml`,
+    `${normalizedBase}/feed.xml`,
+    `${normalizedBase}/atom.xml`,
+  ].filter(Boolean)
 
   for (const candidate of candidates) {
-    try {
-      await parser.parseURL(candidate)
-      return candidate
-    } catch {}
+    const result = await tryParseFeed(candidate)
+    if (result) return result
   }
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(inputUrl, {
       headers: {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36',
         Accept: 'text/html,application/xhtml+xml',
       },
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(7000),
     })
 
     if (!response.ok) return null
@@ -109,12 +124,10 @@ async function discoverFeedUrl(inputUrl: string) {
       const hrefMatch = tag.match(/href=["']([^"']+)["']/i)
       if (!hrefMatch?.[1]) continue
 
-      const feedUrl = absoluteUrl(url, hrefMatch[1])
+      const feedUrl = absoluteUrl(inputUrl, hrefMatch[1])
+      const result = await tryParseFeed(feedUrl)
 
-      try {
-        await parser.parseURL(feedUrl)
-        return feedUrl
-      } catch {}
+      if (result) return result
     }
   } catch {}
 
@@ -123,16 +136,13 @@ async function discoverFeedUrl(inputUrl: string) {
 
 async function importSingleSource(source: any) {
   try {
-    const feedUrl =
-      source.rss_url && source.rss_url.includes('xml')
-        ? source.rss_url
-        : (await discoverFeedUrl(source.rss_url || source.website_url))
+    const discovered = await discoverFeedUrl(source)
 
-    if (!feedUrl) {
+    if (!discovered) {
       throw new Error('Nessun feed RSS/Atom trovato')
     }
 
-    const feed = await parser.parseURL(feedUrl)
+    const { feed, url: feedUrl } = discovered
     const items = feed.items.slice(0, 6)
 
     for (const item of items) {
@@ -164,6 +174,8 @@ async function importSingleSource(source: any) {
         hash,
       })
     }
+
+    console.log('Feed importato:', source.name, feedUrl, items.length)
 
     return {
       source: source.name,
