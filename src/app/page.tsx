@@ -17,6 +17,7 @@ import { SourcesPanel } from './components/sources'
 import { LoginView } from './components/login-view'
 import { Onboarding } from './components/onboarding'
 import { FeedSkeleton, HeroSkeleton, MetricsSkeleton } from './components/skeletons'
+import { DigestPanel } from './components/digest'
 
 export default function HomePage() {
   const [activeSection, setActiveSection] = useState<Section>('today')
@@ -35,6 +36,7 @@ export default function HomePage() {
   const [aiPicks, setAiPicks] = useState<any[]>([])
   const [savedArticles, setSavedArticles] = useState<any[]>([])
   const [trendingTopics, setTrendingTopics] = useState<any[]>([])
+  const [digests, setDigests] = useState<any[]>([])
   const [query, setQuery] = useState('')
 
   const [name, setName] = useState('')
@@ -100,6 +102,7 @@ export default function HomePage() {
       loadAiPicks(currentUserId),
       loadSavedArticles(currentUserId),
       loadTrendingTopics(),
+      loadDigests(currentUserId),
     ])
   }
 
@@ -188,6 +191,17 @@ export default function HomePage() {
     const response = await fetch('/api/topics')
     const data = await response.json()
     setTrendingTopics(data.topics ?? [])
+  }
+
+  async function loadDigests(currentUserId: string) {
+    const { data } = await supabase
+      .from('daily_digests')
+      .select('*')
+      .eq('user_id', currentUserId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    setDigests(data ?? [])
   }
 
   async function trackEvent({
@@ -466,6 +480,12 @@ export default function HomePage() {
                 )}
 
                 <aside className="space-y-5">
+                  <DigestPanel
+                    digest={digests[0]}
+                    articles={articles}
+                    openReader={openArticle}
+                  />
+
                   <TrendingTopics
                     topics={trendingTopics}
                     onSelect={openTopic}
