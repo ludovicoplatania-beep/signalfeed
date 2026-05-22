@@ -16,6 +16,40 @@ function getUserId(article: any) {
     : article?.sources?.user_id
 }
 
+function hoursSince(date?: string | null) {
+  if (!date) return 999
+  return Math.max(
+    0,
+    (Date.now() - new Date(date).getTime()) / 1000 / 60 / 60
+  )
+}
+
+function recencyScore(date?: string | null) {
+  const hours = hoursSince(date)
+
+  if (hours <= 6) return 100
+  if (hours <= 24) return 85
+  if (hours <= 72) return 65
+  if (hours <= 168) return 45
+
+  return 20
+}
+
+function getEventWeight(eventType: string) {
+  if (eventType === 'article_saved') return 5
+  if (eventType === 'article_opened') return 2
+  if (eventType === 'topic_opened') return 3
+  if (eventType === 'article_unsaved') return -4
+
+  return 1
+}
+
+function safeSourceName(article: any) {
+  return Array.isArray(article.sources)
+    ? article.sources[0]?.name
+    : article.sources?.name
+}
+
 export async function pickArticles() {
   const { data: articles, error } = await supabase
     .from('articles')
@@ -31,7 +65,7 @@ export async function pickArticles() {
       )
     `)
     .order('published_at', { ascending: false })
-    .limit(80)
+    .limit(120)
 
   if (error || !articles?.length) return
 
@@ -48,53 +82,78 @@ export async function pickArticles() {
       (article: any) => getUserId(article) === userId
     )
 
-    const { data: profile } = await supabase
-      .from('user_interests')
-      .select('interests')
-      .eq('user_id', userId)
-      .single()
+    const [{ data: profile }, { data: events }] = await Promise.all([
+      supabase
+        .from('user_interests')
+        .select('interests')
+        .eq('user_id', userId)
+        .single(),
+
+      supabase
+        .from('user_events')
+        .select('event_type, article_id, topic_id, metadata, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(200),
+    ])
+
+    const eventSignals = (events ?? []).map((event: any) => ({
+      event_type: event.event_type,
+      weight: getEventWeight(event.event_type),
+      article_id: event.article_id,
+      topic_id: event.topic_id,
+      metadata: event.metadata,
+      hours_ago: hoursSince(event.created_at),
+    }))
 
     const compactArticles = userArticles.map((article: any) => ({
       id: article.id,
       title: article.title,
-      source: Array.isArray(article.sources)
-        ? article.sources[0]?.name
-        : article.sources?.name,
+      source: safeSourceName(article),
       excerpt: article.excerpt,
-      content: article.article_content?.slice(0, 1000) ?? '',
+      content: article.article_content?.slice(0, 1200) ?? '',
       published_at: article.published_at,
+      recency_score: recencyScore(article.published_at),
     }))
 
     const prompt = `
 Restituisci SOLO JSON valido. Nessun markdown.
 
-Scegli i 10 articoli migliori per QUESTO utente.
+Devi selezionare i 10 articoli migliori per QUESTO utente usando ranking editoriale personalizzato.
 
-Profilo interessi utente:
+Profilo interessi:
 ${JSON.stringify(profile?.interests ?? [])}
+
+Segnali comportamentali recenti:
+${JSON.stringify(eventSignals)}
 
 Articoli disponibili:
 ${JSON.stringify(compactArticles)}
 
 Formato:
-[
-  {
-    "id": "uuid articolo",
-    "score": 1-100,
-    "summary": "riassunto utile, massimo 220 caratteri",
-    "reason": "perché merita attenzione per questo utente, massimo 180 caratteri",
-    "category": "categoria specifica",
-    "priority": "high|medium|low"
-  }
-]
+{
+  "picks": [
+    {
+      "id": "uuid articolo",
+      "score": 1-100,
+      "summary": "riassunto utile, massimo 220 caratteri",
+      "reason": "perché merita attenzione per questo utente, massimo 180 caratteri",
+      "category": "categoria specifica",
+      "priority": "high|medium|low"
+    }
+  ]
+}
 
-Criteri:
-- usa il profilo interessi, ma non diventare cieco: segnala anche notizie importanti fuori profilo
-- aumenta score se articolo combacia con interessi forti
-- penalizza contenuti deboli, gossip, duplicati, clickbait
-- diversifica fonti e categorie
-- preferisci articoli con sostanza e impatto futuro
-- non scegliere più articoli sullo stesso micro-tema se non necessario
+Criteri obbligatori:
+- usa gli interessi utente, ma non creare una bolla informativa
+- applica novelty: premia temi nuovi ma coerenti
+- applica diversity: evita 10 articoli sulla stessa micro-notizia
+- applica recency decay: notizie vecchie devono essere scelte solo se ancora strategiche
+- applica anti-clickbait: penalizza titoli rumorosi senza sostanza
+- usa segnali forti: salvataggi > topic cliccati > aperture
+- evita duplicati semantici
+- scegli anche 1-2 articoli fuori profilo se hanno forte impatto generale
+- reason deve spiegare il valore per questo specifico utente
 `
 
     const response = await openai.chat.completions.create({
@@ -104,14 +163,14 @@ Criteri:
         {
           role: 'system',
           content:
-            'Rispondi sempre con JSON valido. Se devi restituire una lista, usa la chiave "picks".',
+            'Rispondi sempre con JSON valido nel formato { "picks": [...] }.',
         },
         {
           role: 'user',
           content: prompt,
         },
       ],
-      temperature: 0.15,
+      temperature: 0.12,
     })
 
     let picks: any[] = []
@@ -119,10 +178,7 @@ Criteri:
     try {
       const raw = response.choices[0].message.content || '{}'
       const parsed = JSON.parse(raw)
-
-      picks = Array.isArray(parsed)
-        ? parsed
-        : parsed.picks || []
+      picks = parsed.picks || []
     } catch {
       continue
     }
@@ -132,15 +188,34 @@ Criteri:
       .delete()
       .eq('user_id', userId)
 
-    for (const pick of picks.slice(0, 10)) {
+    const usedSources = new Set<string>()
+    const usedCategories = new Set<string>()
+
+    for (const pick of picks) {
+      const article = userArticles.find((article: any) => article.id === pick.id)
+      if (!article) continue
+
+      const sourceName = safeSourceName(article) ?? 'unknown'
+      const category = pick.category ?? 'Generale'
+
+      const tooMuchSource = usedSources.has(sourceName) && usedSources.size < 4
+      const tooMuchCategory = usedCategories.has(category) && usedCategories.size < 4
+
+      if (tooMuchSource && tooMuchCategory) continue
+
       await supabase.from('ai_picks').insert({
         user_id: userId,
         article_id: pick.id,
         score: pick.score,
         summary: pick.summary,
         reason: pick.reason,
-        category: pick.category,
+        category,
       })
+
+      usedSources.add(sourceName)
+      usedCategories.add(category)
+
+      if (usedSources.size >= 10 || usedCategories.size >= 10) break
     }
   }
 }
