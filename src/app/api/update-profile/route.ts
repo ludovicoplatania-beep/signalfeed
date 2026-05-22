@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
+import { generateDigest } from '@/lib/ai/generateDigest'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,8 +19,9 @@ export async function POST() {
     )
 
     for (const userId of userIds) {
-      await updateInterestProfile(userId)
-    }
+  await updateInterestProfile(userId)
+  await generateDigest(userId)
+}
 
     return NextResponse.json({
       success: true,
