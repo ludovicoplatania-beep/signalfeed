@@ -15,7 +15,7 @@ export function Brand() {
         <Rss size={18} />
       </div>
       <div>
-        <div className="font-medium tracking-tight text-white">SignalFeed</div>
+        <div className="font-medium tracking-tight text-white">Athena</div>
         <div className="text-xs text-neutral-500">AI curated news</div>
       </div>
     </div>

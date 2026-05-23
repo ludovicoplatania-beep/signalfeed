@@ -22,7 +22,7 @@ export function LoginView({ email, setEmail, message, login }: any) {
             </h1>
 
             <p className="mt-7 max-w-xl text-lg leading-8 text-neutral-400">
-              SignalFeed trasforma le tue fonti in una rassegna AI elegante, intelligente e senza rumore.
+              Athena trasforma le tue fonti in una rassegna AI elegante, intelligente e senza rumore.
             </p>
           </motion.div>
 
