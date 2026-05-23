@@ -1,26 +1,11 @@
 import { Compass, Cpu, Newspaper, Sparkles, Star } from 'lucide-react'
 
 const items = [
-  {
-    id: 'today',
-    icon: Sparkles,
-  },
-  {
-    id: 'feed',
-    icon: Newspaper,
-  },
-  {
-    id: 'ai',
-    icon: Cpu,
-  },
-  {
-    id: 'saved',
-    icon: Star,
-  },
-  {
-    id: 'sources',
-    icon: Compass,
-  },
+  { id: 'today', icon: Sparkles },
+  { id: 'feed', icon: Newspaper },
+  { id: 'ai', icon: Cpu },
+  { id: 'saved', icon: Star },
+  { id: 'sources', icon: Compass },
 ]
 
 export function MobileNav({ activeSection, setActiveSection }: any) {
@@ -36,8 +21,8 @@ export function MobileNav({ activeSection, setActiveSection }: any) {
             onClick={() => setActiveSection(item.id)}
             className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${
               active
-                ? 'bg-[#B88A44] text-black shadow-[0_0_24px_rgba(212,176,106,0.28)]'
-                : 'text-neutral-500 hover:bg-white/[0.05] hover:text-white'
+                ? 'border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.18),rgba(0,0,0,0.35))] text-[#E2C188] backdrop-blur-xl'
+                : 'border border-transparent text-neutral-500 hover:border-white/[0.06] hover:bg-white/[0.05] hover:text-white'
             }`}
           >
             <Icon size={20} />

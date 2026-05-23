@@ -2,31 +2,11 @@ import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star } from 'l
 import { Brand } from './ui'
 
 const sections = [
-  {
-    id: 'today',
-    label: 'Today',
-    icon: Sparkles,
-  },
-  {
-    id: 'feed',
-    label: 'Feed',
-    icon: Newspaper,
-  },
-  {
-    id: 'ai',
-    label: 'AI Picks',
-    icon: Cpu,
-  },
-  {
-    id: 'saved',
-    label: 'Saved',
-    icon: Star,
-  },
-  {
-    id: 'sources',
-    label: 'Sources',
-    icon: Compass,
-  },
+  { id: 'today', label: 'Today', icon: Sparkles },
+  { id: 'feed', label: 'Feed', icon: Newspaper },
+  { id: 'ai', label: 'AI Picks', icon: Cpu },
+  { id: 'saved', label: 'Saved', icon: Star },
+  { id: 'sources', label: 'Sources', icon: Compass },
 ]
 
 export function Sidebar({ activeSection, setActiveSection }: any) {
@@ -45,8 +25,8 @@ export function Sidebar({ activeSection, setActiveSection }: any) {
               onClick={() => setActiveSection(section.id)}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
                 active
-                  ? 'bg-[#B88A44] text-black shadow-[0_0_30px_rgba(212,176,106,0.25)]'
-                  : 'text-neutral-400 hover:bg-white/[0.04] hover:text-white'
+                  ? 'border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.18),rgba(0,0,0,0.35))] text-[#E2C188] shadow-[0_0_30px_rgba(197,154,82,0.08)] backdrop-blur-xl'
+                  : 'border border-transparent text-neutral-400 hover:border-white/[0.06] hover:bg-white/[0.04] hover:text-white'
               }`}
             >
               <Icon size={18} />
@@ -57,7 +37,7 @@ export function Sidebar({ activeSection, setActiveSection }: any) {
       </nav>
 
       <div className="mt-auto rounded-[1.8rem] border border-[#8b5cf6]/20 bg-gradient-to-br from-[#8b5cf6]/15 to-[#B88A44]/10 p-5">
-        <div className="flex items-center gap-2 text-[#B88A44]">
+        <div className="flex items-center gap-2 text-[#C59A52]">
           <Bell size={16} />
           <span className="text-xs font-medium uppercase tracking-[0.18em]">
             Athena Signal
@@ -83,7 +63,7 @@ export function Header({
   return (
     <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
       <div>
-        <div className="text-xs uppercase tracking-[0.24em] text-[#B88A44]">
+        <div className="text-xs uppercase tracking-[0.24em] text-[#C59A52]">
           Athena
         </div>
 
@@ -106,7 +86,7 @@ export function Header({
 
         <button
           onClick={refreshData}
-          className="rounded-2xl bg-[#B88A44] px-5 py-3 text-sm font-medium text-black transition hover:bg-[#C59A52]"
+          className="relative overflow-hidden rounded-2xl border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.22),rgba(0,0,0,0.35))] px-5 py-3 text-sm font-medium text-[#E2C188] backdrop-blur-xl transition hover:border-[#C59A52]/50"
         >
           Aggiorna
         </button>
@@ -127,22 +107,16 @@ function getSectionTitle(section: string) {
   switch (section) {
     case 'today':
       return 'Strategic Briefing'
-
     case 'feed':
       return 'Signal Stream'
-
     case 'ai':
       return 'AI Priorities'
-
     case 'saved':
       return 'Saved Intelligence'
-
     case 'sources':
       return 'Source Network'
-
     case 'topic':
       return 'Topic Analysis'
-
     default:
       return 'Athena'
   }

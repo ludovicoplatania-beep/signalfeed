@@ -47,12 +47,15 @@ export function Metric({ label, value }: { label: string; value: number }) {
 
 export function Score({ value }: { value: number }) {
   return (
-    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#B88A44] text-sm font-semibold text-black shadow-[0_0_22px_rgba(212,176,106,0.22)] md:h-12 md:w-12 md:text-base">
-      {value}
+    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-[#B88A44]/30 bg-black/45 text-sm font-semibold text-[#C59A52] backdrop-blur-xl">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.16),transparent_70%)]" />
+
+      <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" />
+
+      <span className="relative z-10">{value}</span>
     </div>
   )
 }
-
 export function Pill({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-full border border-[#B88A44]/20 bg-black/40 px-3 py-1 text-xs text-neutral-300 backdrop-blur">
@@ -124,12 +127,25 @@ export function SaveButton({ saved, onClick, small = false }: any) {
         event.stopPropagation()
         onClick()
       }}
-      className={`flex items-center gap-2 rounded-2xl border border-[#B88A44]/15 bg-black/45 text-sm font-medium text-white backdrop-blur transition hover:bg-[#B88A44] hover:text-black ${
+      className={`group relative flex items-center gap-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/45 text-sm font-medium text-white backdrop-blur-xl transition hover:border-[#B88A44]/30 ${
         small ? 'px-3 py-2' : 'px-4 py-3'
       }`}
     >
-      {saved ? <BookmarkCheck size={16} /> : <Bookmark size={16} />}
-      {!small && <span>{saved ? 'Salvato' : 'Salva'}</span>}
+      <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.18),transparent_70%)]" />
+
+      <div className="relative z-10 flex items-center gap-2">
+        {saved ? (
+          <BookmarkCheck size={16} className="text-[#C59A52]" />
+        ) : (
+          <Bookmark size={16} className="text-[#C59A52]" />
+        )}
+
+        {!small && (
+          <span className="text-neutral-200">
+            {saved ? 'Salvato' : 'Salva'}
+          </span>
+        )}
+      </div>
     </button>
   )
 }
