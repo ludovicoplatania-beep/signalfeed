@@ -1,94 +1,149 @@
-import { motion } from 'framer-motion'
-import { Bookmark, LogOut, Newspaper, RefreshCcw, Rss, Search, Sparkles, Wand2 } from 'lucide-react'
-import type { Section } from './types'
+import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star } from 'lucide-react'
 import { Brand } from './ui'
 
-export function Header({ activeSection, userEmail, query, setQuery, refreshData, logout }: any) {
-  const titles: Record<Section, string> = {
-    today: 'Il segnale migliore dalle tue fonti.',
-    feed: 'Tutto il feed, ordinato.',
-    sources: 'Gestisci le tue fonti.',
-    saved: 'La tua reading list.',
-    ai: 'Tutte le scelte AI.',
-    topic: 'Tema caldo.',
-  }
-
-  return (
-    <motion.header
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-8 flex flex-col justify-between gap-5 xl:flex-row xl:items-start"
-    >
-      <div>
-        <p className="mb-4 text-xs font-medium uppercase tracking-[0.3em] text-neutral-500 md:tracking-[0.35em]">
-          {new Date().toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
-
-        <h1 className="max-w-5xl text-4xl font-semibold leading-[0.96] tracking-[-0.075em] text-white md:text-7xl">
-          {titles[activeSection as Section]}
-        </h1>
-
-        <p className="mt-5 text-sm text-neutral-500">{userEmail}</p>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex w-full items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 md:w-auto">
-          <Search size={15} className="text-neutral-500" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cerca nel feed..."
-            className="w-full bg-transparent text-sm outline-none placeholder:text-neutral-600 md:w-64"
-          />
-        </div>
-
-        <button onClick={refreshData} className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-sm text-neutral-300 hover:bg-white/[0.07]">
-          <RefreshCcw size={15} />
-          Aggiorna
-        </button>
-
-        <button onClick={logout} className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.035] px-4 py-2.5 text-sm text-neutral-300 hover:bg-white/[0.07]">
-          <LogOut size={15} />
-          Esci
-        </button>
-      </div>
-    </motion.header>
-  )
-}
+const sections = [
+  {
+    id: 'today',
+    label: 'Today',
+    icon: Sparkles,
+  },
+  {
+    id: 'feed',
+    label: 'Feed',
+    icon: Newspaper,
+  },
+  {
+    id: 'ai',
+    label: 'AI Picks',
+    icon: Cpu,
+  },
+  {
+    id: 'saved',
+    label: 'Saved',
+    icon: Star,
+  },
+  {
+    id: 'sources',
+    label: 'Sources',
+    icon: Compass,
+  },
+]
 
 export function Sidebar({ activeSection, setActiveSection }: any) {
   return (
-    <aside className="hidden min-h-screen border-r border-white/[0.07] px-5 py-6 lg:block">
+    <aside className="sticky top-0 hidden h-screen border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl lg:flex lg:flex-col">
       <Brand />
 
-      <nav className="mt-10 space-y-1">
-        <NavItem active={activeSection === 'today'} icon={<Sparkles size={16} />} label="Today" onClick={() => setActiveSection('today')} />
-        <NavItem active={activeSection === 'feed'} icon={<Newspaper size={16} />} label="Feed" onClick={() => setActiveSection('feed')} />
-        <NavItem active={activeSection === 'sources'} icon={<Rss size={16} />} label="Sources" onClick={() => setActiveSection('sources')} />
-        <NavItem active={activeSection === 'saved'} icon={<Bookmark size={16} />} label="Saved" onClick={() => setActiveSection('saved')} />
-        <NavItem active={activeSection === 'ai'} icon={<Wand2 size={16} />} label="AI Curation" onClick={() => setActiveSection('ai')} />
+      <nav className="mt-10 space-y-2">
+        {sections.map((section) => {
+          const Icon = section.icon
+          const active = activeSection === section.id
+
+          return (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
+                active
+                  ? 'bg-[#d4b06a] text-black shadow-[0_0_30px_rgba(212,176,106,0.25)]'
+                  : 'text-neutral-400 hover:bg-white/[0.04] hover:text-white'
+              }`}
+            >
+              <Icon size={18} />
+              <span className="text-sm font-medium">{section.label}</span>
+            </button>
+          )
+        })}
       </nav>
 
-      <div className="mt-10 rounded-3xl border border-white/[0.07] bg-white/[0.035] p-4">
-        <p className="text-sm font-medium">Daily automation</p>
-        <p className="mt-2 text-sm leading-6 text-neutral-500">
-          RSS + AI aggiornati automaticamente tramite Vercel Cron.
+      <div className="mt-auto rounded-[1.8rem] border border-[#8b5cf6]/20 bg-gradient-to-br from-[#8b5cf6]/15 to-[#d4b06a]/10 p-5">
+        <div className="flex items-center gap-2 text-[#d4b06a]">
+          <Bell size={16} />
+          <span className="text-xs font-medium uppercase tracking-[0.18em]">
+            Athena Signal
+          </span>
+        </div>
+
+        <p className="mt-4 text-sm leading-6 text-neutral-300">
+          Il tuo flusso informativo viene continuamente raffinato in base ai segnali comportamentali.
         </p>
       </div>
     </aside>
   )
 }
 
-function NavItem({ icon, label, active = false, onClick }: any) {
+export function Header({
+  activeSection,
+  userEmail,
+  query,
+  setQuery,
+  refreshData,
+  logout,
+}: any) {
   return (
-    <button
-      onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition ${
-        active ? 'bg-white text-black' : 'text-neutral-500 hover:bg-white/[0.04] hover:text-neutral-300'
-      }`}
-    >
-      {icon}
-      {label}
-    </button>
+    <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+      <div>
+        <div className="text-xs uppercase tracking-[0.24em] text-[#d4b06a]">
+          Athena
+        </div>
+
+        <h1 className="mt-2 text-4xl font-semibold tracking-[-0.06em] text-white">
+          {getSectionTitle(activeSection)}
+        </h1>
+      </div>
+
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/35 px-4 py-3">
+          <Search size={16} className="text-neutral-500" />
+
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cerca segnali, temi, fonti..."
+            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-neutral-600 md:w-56"
+          />
+        </div>
+
+        <button
+          onClick={refreshData}
+          className="rounded-2xl bg-[#d4b06a] px-5 py-3 text-sm font-medium text-black transition hover:bg-[#e4c57f]"
+        >
+          Aggiorna
+        </button>
+
+        <button
+          onClick={logout}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-300 transition hover:bg-white/[0.05]"
+        >
+          <LogOut size={15} />
+          Logout
+        </button>
+      </div>
+    </header>
   )
+}
+
+function getSectionTitle(section: string) {
+  switch (section) {
+    case 'today':
+      return 'Strategic Briefing'
+
+    case 'feed':
+      return 'Signal Stream'
+
+    case 'ai':
+      return 'AI Priorities'
+
+    case 'saved':
+      return 'Saved Intelligence'
+
+    case 'sources':
+      return 'Source Network'
+
+    case 'topic':
+      return 'Topic Analysis'
+
+    default:
+      return 'Athena'
+  }
 }

@@ -1,32 +1,49 @@
-import { Bookmark, Newspaper, Rss, Sparkles, Wand2 } from 'lucide-react'
+import { Compass, Cpu, Newspaper, Sparkles, Star } from 'lucide-react'
+
+const items = [
+  {
+    id: 'today',
+    icon: Sparkles,
+  },
+  {
+    id: 'feed',
+    icon: Newspaper,
+  },
+  {
+    id: 'ai',
+    icon: Cpu,
+  },
+  {
+    id: 'saved',
+    icon: Star,
+  },
+  {
+    id: 'sources',
+    icon: Compass,
+  },
+]
 
 export function MobileNav({ activeSection, setActiveSection }: any) {
-  const items = [
-    { key: 'today', label: 'Today', icon: <Sparkles size={18} /> },
-    { key: 'feed', label: 'Feed', icon: <Newspaper size={18} /> },
-    { key: 'saved', label: 'Saved', icon: <Bookmark size={18} /> },
-    { key: 'ai', label: 'AI', icon: <Wand2 size={18} /> },
-    { key: 'sources', label: 'Sources', icon: <Rss size={18} /> },
-  ]
-
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/[0.08] bg-[#050505]/90 px-2 pb-3 pt-2 backdrop-blur-xl lg:hidden">
-      <div className="grid grid-cols-5 gap-1">
-        {items.map((item) => (
+    <nav className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-[2rem] border border-white/[0.08] bg-black/70 px-3 py-3 shadow-2xl shadow-black/50 backdrop-blur-2xl lg:hidden">
+      {items.map((item) => {
+        const Icon = item.icon
+        const active = activeSection === item.id
+
+        return (
           <button
-            key={item.key}
-            onClick={() => setActiveSection(item.key)}
-            className={`flex flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] transition ${
-              activeSection === item.key
-                ? 'bg-white text-black'
-                : 'text-neutral-500 hover:bg-white/[0.05] hover:text-neutral-200'
+            key={item.id}
+            onClick={() => setActiveSection(item.id)}
+            className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${
+              active
+                ? 'bg-[#d4b06a] text-black shadow-[0_0_24px_rgba(212,176,106,0.28)]'
+                : 'text-neutral-500 hover:bg-white/[0.05] hover:text-white'
             }`}
           >
-            {item.icon}
-            {item.label}
+            <Icon size={20} />
           </button>
-        ))}
-      </div>
-    </div>
+        )
+      })}
+    </nav>
   )
 }
