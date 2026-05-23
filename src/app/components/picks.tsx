@@ -1,16 +1,26 @@
 import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
-import { ArticleImage, ArticleThumbnail, Panel, Pill, SaveButton, Score } from './ui'
+import { ArticleImage, ArticleThumbnail, Panel, Pill, SaveButton } from './ui'
+
+function GlassScore({ value }: { value: number }) {
+  return (
+    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-[#B88A44]/35 bg-black/55 text-sm font-semibold text-[#E2C188] shadow-[0_0_22px_rgba(184,138,68,0.10)] backdrop-blur-xl">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.20),transparent_72%)]" />
+      <span className="relative z-10">{value}</span>
+    </div>
+  )
+}
 
 export function HeroPick({ pick, saved, toggleSave, openReader }: any) {
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative min-h-[520px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 shadow-2xl shadow-black/40 md:min-h-[560px] md:rounded-[2.5rem]"
+      className="group relative min-h-[560px] overflow-hidden rounded-[2.4rem] border border-[#B88A44]/15 bg-neutral-950 shadow-2xl shadow-black/50"
     >
       <button onClick={() => openReader(pick.articles)} className="absolute inset-0 z-10 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/62 to-black/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(184,138,68,0.16),transparent_32%),radial-gradient(circle_at_82%_12%,rgba(139,92,246,0.18),transparent_30%)]" />
       </button>
 
       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-5 md:p-10">
@@ -19,12 +29,12 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: any) {
 
           <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
             <SaveButton saved={saved} onClick={() => toggleSave(pick.articles?.id)} />
-            <Score value={pick.score} />
+            <GlassScore value={pick.score} />
           </div>
         </div>
 
         <div>
-          <p className="mb-4 flex items-center gap-2 text-sm text-neutral-300">
+          <p className="mb-4 flex items-center gap-2 text-sm text-[#E2C188]">
             <Sparkles size={15} />
             Scelta principale
           </p>
@@ -35,7 +45,9 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: any) {
             </h2>
           </button>
 
-          <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-300 md:text-lg md:leading-8">{pick.summary}</p>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-300 md:text-lg md:leading-8">
+            {pick.summary}
+          </p>
         </div>
       </div>
     </motion.div>
@@ -49,11 +61,12 @@ export function SidePick({ pick, saved, toggleSave, openReader }: any) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.35 }}
-      className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-900 p-5"
+      className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-[#B88A44]/12 bg-neutral-950 p-5 shadow-xl shadow-black/25"
     >
       <button onClick={() => openReader(pick.articles)} className="absolute inset-0 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
-        <div className="absolute inset-0 bg-black/68" />
+        <div className="absolute inset-0 bg-black/72" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(139,92,246,0.16),transparent_34%)]" />
       </button>
 
       <div className="relative pointer-events-none">
@@ -62,12 +75,12 @@ export function SidePick({ pick, saved, toggleSave, openReader }: any) {
 
           <div className="pointer-events-auto flex items-center gap-3">
             <SaveButton saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
-            <Score value={pick.score} />
+            <GlassScore value={pick.score} />
           </div>
         </div>
 
         <button onClick={() => openReader(pick.articles)} className="pointer-events-auto text-left">
-          <h3 className="text-xl font-medium leading-tight tracking-[-0.03em] group-hover:underline">
+          <h3 className="text-xl font-medium leading-tight tracking-[-0.03em] text-white group-hover:underline">
             {pick.articles?.title}
           </h3>
         </button>
@@ -80,17 +93,22 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: any) {
   if (!picks.length) return null
 
   return (
-    <Panel title="Altre scelte AI">
+    <Panel title="Altre priorità AI">
       <div className="space-y-3">
         {picks.map((pick: any) => (
-          <div key={pick.id} className="grid grid-cols-[68px_1fr_auto] gap-3 rounded-2xl bg-black/25 p-3 hover:bg-white/[0.04]">
+          <div
+            key={pick.id}
+            className="grid grid-cols-[68px_1fr_auto] gap-3 rounded-2xl border border-white/[0.06] bg-black/25 p-3 hover:border-[#B88A44]/20 hover:bg-white/[0.04]"
+          >
             <button onClick={() => openReader(pick.articles)} className="text-left">
               <ArticleThumbnail imageUrl={pick.articles?.image_url} compact />
             </button>
 
             <button onClick={() => openReader(pick.articles)} className="text-left">
               <div className="mb-1 text-xs text-neutral-600">{pick.category} · {pick.score}</div>
-              <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">{pick.articles?.title}</p>
+              <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
+                {pick.articles?.title}
+              </p>
             </button>
 
             <SaveButton saved={savedIds.has(pick.articles?.id)} onClick={() => toggleSave(pick.articles?.id)} small />
