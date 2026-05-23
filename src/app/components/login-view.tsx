@@ -11,7 +11,7 @@ export function LoginView({ email, setEmail, message, login }: any) {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
             <Brand />
 
-            <div className="mt-12 inline-flex rounded-full border border-[#d4b06a]/20 bg-[#d4b06a]/10 px-4 py-2 text-sm text-[#d4b06a]">
+            <div className="mt-12 inline-flex rounded-full border border-[#B88A44]/20 bg-[#B88A44]/10 px-4 py-2 text-sm text-[#B88A44]">
               AI Strategic Intelligence
             </div>
 
@@ -29,9 +29,9 @@ export function LoginView({ email, setEmail, message, login }: any) {
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-[2rem] border border-[#d4b06a]/15 bg-white/[0.055] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl"
+            className="rounded-[2rem] border border-[#B88A44]/15 bg-white/[0.055] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl"
           >
-            <p className="text-sm uppercase tracking-[0.22em] text-[#d4b06a]">
+            <p className="text-sm uppercase tracking-[0.22em] text-[#B88A44]">
               Accesso Athena
             </p>
             <h2 className="mt-3 text-3xl font-medium tracking-tight">
@@ -42,12 +42,12 @@ export function LoginView({ email, setEmail, message, login }: any) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="La tua email"
-              className="mt-7 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none placeholder:text-neutral-600 focus:border-[#d4b06a]/40"
+              className="mt-7 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-4 text-white outline-none placeholder:text-neutral-600 focus:border-[#B88A44]/40"
             />
 
             <button
               onClick={login}
-              className="mt-3 w-full rounded-2xl bg-[#d4b06a] px-4 py-4 font-medium text-black transition hover:bg-[#e4c57f]"
+              className="mt-3 w-full rounded-2xl bg-[#B88A44] px-4 py-4 font-medium text-black transition hover:bg-[#C59A52]"
             >
               Ricevi magic link
             </button>

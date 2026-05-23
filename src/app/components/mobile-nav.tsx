@@ -36,7 +36,7 @@ export function MobileNav({ activeSection, setActiveSection }: any) {
             onClick={() => setActiveSection(item.id)}
             className={`flex h-14 w-14 items-center justify-center rounded-2xl transition ${
               active
-                ? 'bg-[#d4b06a] text-black shadow-[0_0_24px_rgba(212,176,106,0.28)]'
+                ? 'bg-[#B88A44] text-black shadow-[0_0_24px_rgba(212,176,106,0.28)]'
                 : 'text-neutral-500 hover:bg-white/[0.05] hover:text-white'
             }`}
           >

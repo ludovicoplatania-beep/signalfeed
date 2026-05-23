@@ -45,7 +45,7 @@ export function Sidebar({ activeSection, setActiveSection }: any) {
               onClick={() => setActiveSection(section.id)}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
                 active
-                  ? 'bg-[#d4b06a] text-black shadow-[0_0_30px_rgba(212,176,106,0.25)]'
+                  ? 'bg-[#B88A44] text-black shadow-[0_0_30px_rgba(212,176,106,0.25)]'
                   : 'text-neutral-400 hover:bg-white/[0.04] hover:text-white'
               }`}
             >
@@ -56,8 +56,8 @@ export function Sidebar({ activeSection, setActiveSection }: any) {
         })}
       </nav>
 
-      <div className="mt-auto rounded-[1.8rem] border border-[#8b5cf6]/20 bg-gradient-to-br from-[#8b5cf6]/15 to-[#d4b06a]/10 p-5">
-        <div className="flex items-center gap-2 text-[#d4b06a]">
+      <div className="mt-auto rounded-[1.8rem] border border-[#8b5cf6]/20 bg-gradient-to-br from-[#8b5cf6]/15 to-[#B88A44]/10 p-5">
+        <div className="flex items-center gap-2 text-[#B88A44]">
           <Bell size={16} />
           <span className="text-xs font-medium uppercase tracking-[0.18em]">
             Athena Signal
@@ -83,7 +83,7 @@ export function Header({
   return (
     <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
       <div>
-        <div className="text-xs uppercase tracking-[0.24em] text-[#d4b06a]">
+        <div className="text-xs uppercase tracking-[0.24em] text-[#B88A44]">
           Athena
         </div>
 
@@ -106,7 +106,7 @@ export function Header({
 
         <button
           onClick={refreshData}
-          className="rounded-2xl bg-[#d4b06a] px-5 py-3 text-sm font-medium text-black transition hover:bg-[#e4c57f]"
+          className="rounded-2xl bg-[#B88A44] px-5 py-3 text-sm font-medium text-black transition hover:bg-[#C59A52]"
         >
           Aggiorna
         </button>
