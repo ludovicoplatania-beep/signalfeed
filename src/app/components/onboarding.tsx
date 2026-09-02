@@ -17,7 +17,7 @@ export function Onboarding({
       icon: <Rss size={24} />,
       title: 'Aggiungi le tue prime fonti',
       description:
-        'Inserisci feed RSS di siti, blog o newsletter per iniziare a costruire il tuo SignalFeed.',
+        'Inserisci feed RSS di siti, blog o newsletter per iniziare a costruire Athena.',
       action: 'Apri Sources',
       onClick: goToSources,
     },
@@ -35,7 +35,7 @@ export function Onboarding({
       icon: <Brain size={24} />,
       title: 'Generazione AI in corso',
       description:
-        'SignalFeed sta preparando topic, ranking e selezione intelligente degli articoli.',
+        'Athena sta preparando temi, priorità e selezione intelligente degli articoli.',
       action: 'Aggiorna feed',
       onClick: refreshData,
     },

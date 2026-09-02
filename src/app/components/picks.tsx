@@ -124,7 +124,7 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
             </button>
 
             <button onClick={() => pick.articles && openReader(pick.articles)} className="text-left">
-              <div className="mb-1 text-xs text-neutral-600">{pick.category} · {pick.score}</div>
+              <div className="mb-1 text-xs text-neutral-400">{pick.category} · {pick.score}</div>
               <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
                 {pick.articles?.title}
               </p>

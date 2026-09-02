@@ -16,7 +16,7 @@ function AthenaMetric({
 
       <div className="relative z-10 flex h-full flex-col justify-between">
         <div>
-          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-neutral-600">
+          <div className="text-[10px] font-medium uppercase tracking-[0.22em] text-neutral-400">
             {label}
           </div>
 
@@ -25,7 +25,7 @@ function AthenaMetric({
           </div>
         </div>
 
-        <div className="mt-5 text-xs leading-5 text-neutral-500">
+        <div className="mt-5 text-xs leading-5 text-neutral-400">
           {detail}
         </div>
       </div>

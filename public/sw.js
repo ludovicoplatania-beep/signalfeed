@@ -1,4 +1,4 @@
-const CACHE_NAME = 'signalfeed-shell-v2'
+const CACHE_NAME = 'athena-shell-v3'
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',

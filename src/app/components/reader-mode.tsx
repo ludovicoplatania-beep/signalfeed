@@ -21,7 +21,7 @@ export function ReaderMode({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-[#050505]/96 text-white backdrop-blur-2xl"
+      className="fixed inset-0 z-50 overflow-y-auto bg-[#070708]/96 text-white backdrop-blur-2xl"
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(197,154,82,0.14),transparent_34%),radial-gradient(circle_at_top_left,rgba(139,92,246,0.18),transparent_30%)]" />
 

@@ -33,7 +33,7 @@ export default function AccessPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
+    <main className="min-h-screen overflow-hidden bg-[#070708] text-white">
       <BackgroundGlow />
       <div className="relative mx-auto flex min-h-screen max-w-7xl items-center px-6 py-10">
         <section className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -59,7 +59,7 @@ export default function AccessPage() {
             className="rounded-[2rem] border border-[#B88A44]/15 bg-white/[0.055] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl"
           >
             <p className="text-sm uppercase tracking-[0.22em] text-[#B88A44]">Accesso privato</p>
-            <h2 className="mt-3 text-3xl font-medium tracking-tight">Apri SignalFeed</h2>
+            <h2 className="mt-3 text-3xl font-medium tracking-tight">Apri Athena</h2>
             <input
               type="password"
               value={password}

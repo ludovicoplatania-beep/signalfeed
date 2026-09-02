@@ -265,7 +265,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#050505]">
+      <main className="flex min-h-screen items-center justify-center bg-[#070708]">
         <div className="space-y-3">
           <div className="h-5 w-52 animate-pulse rounded-full bg-white/10" />
           <div className="h-5 w-40 animate-pulse rounded-full bg-white/10" />
@@ -275,7 +275,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] pb-32 text-neutral-100 lg:pb-0">
+    <main className="min-h-screen bg-[#070708] pb-32 text-neutral-100 lg:pb-0">
       <BackgroundGlow />
 
       <MobileNav activeSection={activeSection} setActiveSection={setActiveSection} />

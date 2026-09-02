@@ -14,7 +14,7 @@ export function Brand() {
     <div className="flex items-center gap-3">
       <Image
         src="/icons/icon-192.png"
-        alt="SignalFeed"
+        alt="Athena"
         width={44}
         height={44}
         className="h-11 w-11 rounded-2xl border border-[#B88A44]/25 shadow-[0_0_24px_rgba(139,92,246,0.22)]"
@@ -22,7 +22,7 @@ export function Brand() {
 
       <div>
         <div className="text-sm font-semibold tracking-[0.32em] text-white">
-          SIGNALFEED
+          ATHENA
         </div>
         <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[#B88A44]">
           Il tuo briefing personale
@@ -38,7 +38,7 @@ export function Metric({ label, value }: { label: string; value: number }) {
       whileHover={{ y: -3 }}
       className="flex min-h-[120px] flex-col justify-between rounded-[1.5rem] border border-[#B88A44]/10 bg-white/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:min-h-[145px] md:rounded-[1.7rem] md:p-5"
     >
-      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-neutral-600 md:text-xs md:tracking-[0.18em]">
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-neutral-400 md:text-xs md:tracking-[0.18em]">
         {label}
       </div>
       <div className="mt-4 text-3xl font-semibold tracking-[-0.055em] text-white md:text-4xl">

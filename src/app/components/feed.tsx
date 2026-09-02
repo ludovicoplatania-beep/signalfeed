@@ -19,7 +19,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="mb-5">
         <h2 className="text-3xl font-medium tracking-[-0.04em] text-white">{title}</h2>
-        <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
+        <p className="mt-2 text-sm text-neutral-400">{subtitle}</p>
       </div>
 
       <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025]">
@@ -39,7 +39,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
               </button>
 
               <button onClick={() => openReader(article)} className="min-w-0 text-left">
-                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
                   <span>{article.sources?.name ?? 'Fonte'}</span>
                   <span>•</span>
                   <Clock3 size={13} />
@@ -55,7 +55,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
                 </h3>
 
                 {article.excerpt && (
-                  <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-500">
+                  <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-400">
                     {article.excerpt}
                   </p>
                 )}

@@ -3,12 +3,12 @@ import './globals.css'
 import { PwaRegistration } from './components/pwa-registration'
 
 export const metadata: Metadata = {
-  title: 'SignalFeed — briefing personale',
+  title: 'Athena — briefing personale',
   description: 'AI curated news intelligence',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    title: 'SignalFeed',
+    title: 'Athena',
     statusBarStyle: 'black-translucent',
   },
   icons: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#050505',
+  themeColor: '#070708',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
