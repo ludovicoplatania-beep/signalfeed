@@ -43,6 +43,12 @@ export default function HomePage() {
   const [trendingTopics, setTrendingTopics] = useState<Topic[]>([])
   const [digests, setDigests] = useState<Digest[]>([])
   const [query, setQuery] = useState('')
+  const [archiveArticles, setArchiveArticles] = useState<Article[]>([])
+  const [archiveTotal, setArchiveTotal] = useState(0)
+  const [archiveLoading, setArchiveLoading] = useState(false)
+  const [sourceFilter, setSourceFilter] = useState('')
+  const [period, setPeriod] = useState('all')
+  const [updateStatus, setUpdateStatus] = useState('')
 
   const [name, setName] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
@@ -53,6 +59,18 @@ export default function HomePage() {
     loadEverything().finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (activeSection !== 'feed') return
+    const timer = window.setTimeout(() => {
+      searchArchive().catch(() => {
+        setArchiveLoading(false)
+        setUpdateStatus('Ricerca archivio non disponibile.')
+      })
+    }, 300)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection, query, sourceFilter, period])
 
   const savedIds = useMemo(
     () => new Set(savedArticles.map((item) => item.article_id)),
@@ -109,6 +127,18 @@ export default function HomePage() {
     setSavedArticles(data.savedArticles)
     setTrendingTopics(data.trendingTopics)
     setDigests(data.digests)
+  }
+
+  async function searchArchive(offset = 0, append = false) {
+    setArchiveLoading(true)
+    const params = new URLSearchParams({ q: query, period, offset: String(offset) })
+    if (sourceFilter) params.set('source', sourceFilter)
+    const response = await apiFetch(`/api/articles?${params}`)
+    if (!response.ok) throw new Error('Ricerca non disponibile')
+    const data = await response.json() as { articles: Article[]; total: number }
+    setArchiveArticles((current) => append ? [...current, ...data.articles] : data.articles)
+    setArchiveTotal(data.total)
+    setArchiveLoading(false)
   }
 
   async function trackEvent({
@@ -193,18 +223,24 @@ export default function HomePage() {
 
   async function refreshData() {
     setRefreshing(true)
+    setUpdateStatus('Controllo delle fonti e aggiornamento delle selezioni in corso…')
 
     const response = await apiFetch('/api/update-now', {
       method: 'POST',
     })
 
     if (!response.ok) {
-      alert('Errore durante aggiornamento.')
+      setUpdateStatus('Aggiornamento non riuscito. Riprova tra qualche minuto.')
       setRefreshing(false)
       return
     }
 
+    const result = await response.json() as { summary?: { sourcesChecked: number; sourcesOk: number; sourcesFailed: number; itemsProcessed: number } }
     await loadEverything()
+    const summary = result.summary
+    setUpdateStatus(summary
+      ? `${summary.sourcesOk}/${summary.sourcesChecked} fonti operative · ${summary.itemsProcessed} elementi processati${summary.sourcesFailed ? ` · ${summary.sourcesFailed} da controllare` : ''}`
+      : 'Aggiornamento completato.')
     setRefreshing(false)
   }
 
@@ -301,6 +337,13 @@ export default function HomePage() {
             setQuery={setQuery}
             refreshData={refreshData}
             logout={logout}
+            refreshing={refreshing}
+            updateStatus={updateStatus}
+            sources={sources}
+            sourceFilter={sourceFilter}
+            setSourceFilter={setSourceFilter}
+            period={period}
+            setPeriod={setPeriod}
           />
 
           {activeSection === 'today' && (
@@ -400,14 +443,21 @@ export default function HomePage() {
           )}
 
           {activeSection === 'feed' && (
-            <FeedList
-              articles={filteredArticles}
-              savedIds={savedIds}
-              toggleSave={toggleSave}
-              openReader={openArticle}
-              title="Feed"
-              subtitle="Tutte le notizie importate dalle tue fonti."
-            />
+            <>
+              <FeedList
+                articles={archiveArticles}
+                savedIds={savedIds}
+                toggleSave={toggleSave}
+                openReader={openArticle}
+                title="Archivio"
+                subtitle={`${archiveTotal.toLocaleString('it-IT')} risultati nell’intero archivio.`}
+              />
+              {archiveArticles.length < archiveTotal && (
+                <button disabled={archiveLoading} onClick={() => searchArchive(archiveArticles.length, true)} className="mt-5 w-full rounded-2xl border border-white/[0.1] bg-white/[0.04] px-5 py-3 text-sm text-neutral-200 hover:bg-white/[0.07] disabled:opacity-50">
+                  {archiveLoading ? 'Caricamento…' : 'Carica altri risultati'}
+                </button>
+              )}
+            </>
           )}
 
           {activeSection === 'sources' && (

@@ -64,12 +64,26 @@ export function Header({
   setQuery,
   refreshData,
   logout,
+  refreshing,
+  updateStatus,
+  sources,
+  sourceFilter,
+  setSourceFilter,
+  period,
+  setPeriod,
 }: {
   activeSection: Section
   query: string
   setQuery: (query: string) => void
   refreshData: () => Promise<void>
   logout: () => Promise<void>
+  refreshing: boolean
+  updateStatus: string
+  sources: { id: string; name: string }[]
+  sourceFilter: string
+  setSourceFilter: (value: string) => void
+  period: string
+  setPeriod: (value: string) => void
 }) {
   return (
     <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
@@ -83,8 +97,9 @@ export function Header({
         </h1>
       </div>
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/35 px-4 py-3">
+      <div className="flex flex-col gap-3 md:items-end">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/35 px-4 py-3">
           <Search size={16} className="text-neutral-500" />
 
           <input
@@ -93,13 +108,14 @@ export function Header({
             placeholder="Cerca segnali, temi, fonti..."
             className="w-full bg-transparent text-sm text-white outline-none placeholder:text-neutral-600 md:w-56"
           />
-        </div>
+          </div>
 
         <button
           onClick={refreshData}
+          disabled={refreshing}
           className="relative overflow-hidden rounded-2xl border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.22),rgba(0,0,0,0.35))] px-5 py-3 text-sm font-medium text-[#E2C188] backdrop-blur-xl transition hover:border-[#C59A52]/50"
         >
-          Aggiorna
+          {refreshing ? 'Aggiornamento…' : 'Aggiorna'}
         </button>
 
         <button
@@ -109,6 +125,24 @@ export function Header({
           <LogOut size={15} />
           Logout
         </button>
+        </div>
+
+        {activeSection === 'feed' && (
+          <div className="grid grid-cols-2 gap-2 md:flex md:justify-end">
+            <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
+              <option value="">Tutte le fonti</option>
+              {sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
+            </select>
+            <select value={period} onChange={(event) => setPeriod(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
+              <option value="all">Tutto l’archivio</option>
+              <option value="day">Ultime 24 ore</option>
+              <option value="week">Ultimi 7 giorni</option>
+              <option value="month">Ultimi 30 giorni</option>
+            </select>
+          </div>
+        )}
+
+        {updateStatus && <p className="text-right text-xs text-neutral-400">{updateStatus}</p>}
       </div>
     </header>
   )

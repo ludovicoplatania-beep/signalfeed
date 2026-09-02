@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     const supabase = getServiceSupabase()
     const [sources, articles, picks, saved, topics, digests] = await Promise.all([
       supabase.from('sources')
-        .select('id, name, website_url, rss_url, is_active, priority')
+        .select('id, name, website_url, rss_url, is_active, priority, last_checked_at, last_success_at, last_error, last_import_count')
         .eq('user_id', owner.id)
         .order('created_at', { ascending: false }),
       supabase.from('articles')

@@ -7,6 +7,10 @@ export type Source = {
   rss_url: string
   is_active: boolean
   priority: number
+  last_checked_at: string | null
+  last_success_at: string | null
+  last_error: string | null
+  last_import_count: number
 }
 
 export type Article = {

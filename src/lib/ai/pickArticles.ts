@@ -19,6 +19,26 @@ type EventRow = {
   created_at: string
 }
 
+const categories = ['Tecnologia', 'Intelligenza artificiale', 'Economia', 'Politica', 'Esteri', 'Salute', 'Ambiente', 'Scienza', 'Cultura', 'Cinema e media', 'Cronaca', 'Sport', 'Generale'] as const
+
+function normalizeCategory(article: ArticleRow, proposed?: string) {
+  const text = `${article.title} ${article.excerpt ?? ''}`.toLowerCase()
+  const rules: Array<[string, RegExp]> = [
+    ['Intelligenza artificiale', /\b(ai|ia|intelligenza artificiale|openai|anthropic|chatgpt|claude|gemini)\b/i],
+    ['Cinema e media', /\b(film|cinema|serie tv|streaming|netflix|disney|regista|attore|attrice)\b/i],
+    ['Tecnologia', /\b(software|smartphone|android|iphone|google|microsoft|cyber|robot|app)\b/i],
+    ['Economia', /\b(economia|mercati|borsa|azienda|imprese|lavoro|inflazione|banche)\b/i],
+    ['Salute', /\b(salute|sanità|medic|ospedale|virus|farmaco|malattia)\b/i],
+    ['Ambiente', /\b(clima|ambiente|energia|incendio|alluvione|emissioni)\b/i],
+    ['Politica', /\b(governo|parlamento|elezioni|ministro|partito|politica)\b/i],
+    ['Sport', /\b(calcio|tennis|gara|campionato|partita|atleta)\b/i],
+    ['Cronaca', /\b(incidente|arrest|inchiesta|morto|ferito|polizia|carabinieri)\b/i],
+  ]
+  const inferred = rules.find(([, pattern]) => pattern.test(text))?.[0]
+  if (inferred) return inferred
+  return categories.find((category) => category.toLowerCase() === proposed?.trim().toLowerCase()) ?? 'Generale'
+}
+
 function getUserId(article: ArticleRow) {
   return Array.isArray(article?.sources)
     ? article.sources[0]?.user_id
@@ -152,7 +172,7 @@ Formato:
       "score": 1-100,
       "summary": "riassunto utile, massimo 220 caratteri",
       "reason": "perché merita attenzione per questo utente, massimo 180 caratteri",
-      "category": "categoria specifica",
+      "category": "una tra: Tecnologia, Intelligenza artificiale, Economia, Politica, Esteri, Salute, Ambiente, Scienza, Cultura, Cinema e media, Cronaca, Sport, Generale",
       "priority": "high|medium|low"
     }
   ]
@@ -209,7 +229,7 @@ Criteri obbligatori:
       if (!article) continue
 
       const sourceName = safeSourceName(article) ?? 'unknown'
-      const category = pick.category ?? 'Generale'
+      const category = normalizeCategory(article, pick.category)
 
       const tooMuchSource = usedSources.has(sourceName) && usedSources.size < 4
       const tooMuchCategory = usedCategories.has(category) && usedCategories.size < 4
