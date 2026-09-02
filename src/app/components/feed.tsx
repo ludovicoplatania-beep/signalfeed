@@ -32,13 +32,13 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.015 }}
-              className="grid gap-4 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_120px] md:p-5"
+              className="grid grid-cols-[1fr_auto] gap-3 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_120px] md:gap-4 md:p-5"
             >
-              <button onClick={() => openReader(article)} className="text-left">
+              <button onClick={() => openReader(article)} className="hidden text-left md:block">
                 <ArticleThumbnail imageUrl={article.image_url} />
               </button>
 
-              <button onClick={() => openReader(article)} className="text-left">
+              <button onClick={() => openReader(article)} className="min-w-0 text-left">
                 <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
                   <span>{article.sources?.name ?? 'Fonte'}</span>
                   <span>•</span>
@@ -50,7 +50,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
                   </span>
                 </div>
 
-                <h3 className="text-lg font-medium leading-snug tracking-[-0.025em] text-neutral-100 md:text-xl">
+                <h3 className="text-base font-medium leading-snug tracking-[-0.02em] text-neutral-100 sm:text-lg md:text-xl">
                   {article.title}
                 </h3>
 
@@ -62,7 +62,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
               </button>
 
               <div className="flex items-start justify-end">
-                <SaveButton saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} />
+                <SaveButton saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} small />
               </div>
             </motion.div>
           ))

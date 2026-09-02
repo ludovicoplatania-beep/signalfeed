@@ -3,11 +3,11 @@ import { Brand } from './ui'
 import type { Section } from './types'
 
 const sections = [
-  { id: 'today', label: 'Today', icon: Sparkles },
+  { id: 'today', label: 'Oggi', icon: Sparkles },
   { id: 'feed', label: 'Feed', icon: Newspaper },
-  { id: 'ai', label: 'AI Picks', icon: Cpu },
-  { id: 'saved', label: 'Saved', icon: Star },
-  { id: 'sources', label: 'Sources', icon: Compass },
+  { id: 'ai', label: 'Scelte AI', icon: Cpu },
+  { id: 'saved', label: 'Salvati', icon: Star },
+  { id: 'sources', label: 'Fonti', icon: Compass },
 ]
 
 type NavigationProps = {
@@ -46,7 +46,7 @@ export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
         <div className="flex items-center gap-2 text-[#C59A52]">
           <Bell size={16} />
           <span className="text-xs font-medium uppercase tracking-[0.18em]">
-            Athena Signal
+            Selezione personale
           </span>
         </div>
 
@@ -75,7 +75,7 @@ export function Header({
     <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
       <div>
         <div className="text-xs uppercase tracking-[0.24em] text-[#C59A52]">
-          Athena
+          SignalFeed
         </div>
 
         <h1 className="mt-2 text-4xl font-semibold tracking-[-0.06em] text-white">
@@ -117,18 +117,18 @@ export function Header({
 function getSectionTitle(section: string) {
   switch (section) {
     case 'today':
-      return 'Strategic Briefing'
+      return 'Il tuo briefing'
     case 'feed':
-      return 'Signal Stream'
+      return 'Tutte le notizie'
     case 'ai':
-      return 'AI Priorities'
+      return 'Scelte per te'
     case 'saved':
-      return 'Saved Intelligence'
+      return 'Articoli salvati'
     case 'sources':
-      return 'Source Network'
+      return 'Le tue fonti'
     case 'topic':
-      return 'Topic Analysis'
+      return 'Analisi del tema'
     default:
-      return 'Athena'
+      return 'SignalFeed'
   }
 }
