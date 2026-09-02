@@ -1,12 +1,14 @@
 {
-  "name": "Athena",
+  "id": "/",
+  "name": "SignalFeed — Athena",
   "short_name": "Athena",
   "description": "AI Strategic Intelligence",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#050505",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icons/icon-192.png",

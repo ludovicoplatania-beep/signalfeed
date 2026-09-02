@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
 import { generateDigest } from '@/lib/ai/generateDigest'
 import { apiError } from '@/lib/server/api'
-import { enforceRateLimit, requireUser } from '@/lib/server/auth'
+import { enforceRateLimit, requireOwner } from '@/lib/server/auth'
 
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request)
+    const user = await requireOwner(request)
     enforceRateLimit(`profile:${user.id}`, 3, 10 * 60 * 1000)
     await updateInterestProfile(user.id)
     await generateDigest(user.id)

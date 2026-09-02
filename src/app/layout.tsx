@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import { PwaRegistration } from './components/pwa-registration'
 
 export const metadata: Metadata = {
   title: 'SignalFeed',
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/icons/icon-192.png',
-    apple: '/icons/icon-192.png',
+    apple: '/icons/apple-touch-icon.png',
   },
 }
 
@@ -30,7 +31,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it">
-      <body>{children}</body>
+      <body>
+        {children}
+        <PwaRegistration />
+      </body>
     </html>
   )
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { apiError } from '@/lib/server/api'
-import { enforceRateLimit, requireUser } from '@/lib/server/auth'
+import { enforceRateLimit, requireOwner } from '@/lib/server/auth'
 import { getServiceSupabase } from '@/lib/server/clients'
 
 const eventSchema = z.object({
@@ -14,7 +14,7 @@ const eventSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const user = await requireUser(request)
+    const user = await requireOwner(request)
     enforceRateLimit(`track:${user.id}`, 60, 60_000)
     const event = eventSchema.parse(await request.json())
 

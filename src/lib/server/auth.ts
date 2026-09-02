@@ -1,8 +1,7 @@
 import 'server-only'
 import crypto from 'node:crypto'
-import type { User } from '@supabase/supabase-js'
+import { ACCESS_COOKIE, verifyAccessToken } from '@/lib/auth/session'
 import { getServerEnv } from './env'
-import { getServiceSupabase } from './clients'
 
 export class UnauthorizedError extends Error {}
 export class RateLimitError extends Error {}
@@ -13,13 +12,20 @@ function bearerToken(request: Request): string | null {
   return authorization.slice(7).trim() || null
 }
 
-export async function requireUser(request: Request): Promise<User> {
-  const token = bearerToken(request)
-  if (!token) throw new UnauthorizedError('Sessione mancante')
+function requestCookie(request: Request, name: string) {
+  const cookieHeader = request.headers.get('cookie') ?? ''
+  for (const part of cookieHeader.split(';')) {
+    const [key, ...value] = part.trim().split('=')
+    if (key === name) return decodeURIComponent(value.join('='))
+  }
+  return undefined
+}
 
-  const { data, error } = await getServiceSupabase().auth.getUser(token)
-  if (error || !data.user) throw new UnauthorizedError('Sessione non valida')
-  return data.user
+export async function requireOwner(request: Request) {
+  const env = getServerEnv()
+  const valid = await verifyAccessToken(requestCookie(request, ACCESS_COOKIE), env.APP_SESSION_SECRET)
+  if (!valid) throw new UnauthorizedError('Accesso richiesto')
+  return { id: env.OWNER_USER_ID }
 }
 
 export function requireCron(request: Request): void {
