@@ -4,7 +4,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { AnimatePresence } from 'framer-motion'
 
-import type { Section, Source } from './components/types'
+import type {
+  AiPick,
+  Article,
+  Digest,
+  SavedArticle,
+  Section,
+  Source,
+  Topic,
+} from './components/types'
 import { BackgroundGlow, EmptyState } from './components/ui'
 import { Header, Sidebar } from './components/app-layout'
 import { MobileNav } from './components/mobile-nav'
@@ -21,8 +29,8 @@ import { DigestPanel } from './components/digest'
 
 export default function HomePage() {
   const [activeSection, setActiveSection] = useState<Section>('today')
-  const [selectedArticle, setSelectedArticle] = useState<any | null>(null)
-  const [selectedTopic, setSelectedTopic] = useState<any | null>(null)
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
 
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
@@ -32,11 +40,11 @@ export default function HomePage() {
   const [refreshing, setRefreshing] = useState(false)
 
   const [sources, setSources] = useState<Source[]>([])
-  const [articles, setArticles] = useState<any[]>([])
-  const [aiPicks, setAiPicks] = useState<any[]>([])
-  const [savedArticles, setSavedArticles] = useState<any[]>([])
-  const [trendingTopics, setTrendingTopics] = useState<any[]>([])
-  const [digests, setDigests] = useState<any[]>([])
+  const [articles, setArticles] = useState<Article[]>([])
+  const [aiPicks, setAiPicks] = useState<AiPick[]>([])
+  const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([])
+  const [trendingTopics, setTrendingTopics] = useState<Topic[]>([])
+  const [digests, setDigests] = useState<Digest[]>([])
   const [query, setQuery] = useState('')
 
   const [name, setName] = useState('')
@@ -57,6 +65,8 @@ export default function HomePage() {
     })
 
     return () => listener.subscription.unsubscribe()
+    // This subscription is intentionally installed once; callbacks read the session supplied by Supabase.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const savedIds = useMemo(
@@ -106,6 +116,20 @@ export default function HomePage() {
     ])
   }
 
+  async function authorizedFetch(input: string, init: RequestInit = {}) {
+    const { data } = await supabase.auth.getSession()
+    const accessToken = data.session?.access_token
+    if (!accessToken) throw new Error('Sessione scaduta')
+
+    return fetch(input, {
+      ...init,
+      headers: {
+        ...init.headers,
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
+  }
+
   async function loadSources(currentUserId: string) {
     const { data } = await supabase
       .from('sources')
@@ -132,7 +156,10 @@ export default function HomePage() {
       .order('published_at', { ascending: false })
       .limit(100)
 
-    setArticles(data ?? [])
+    setArticles((data ?? []).map(({ sources: relatedSources, ...article }) => ({
+      ...article,
+      sources: relatedSources?.[0] ?? null,
+    })) as Article[])
   }
 
   async function loadAiPicks(currentUserId: string) {
@@ -160,7 +187,15 @@ export default function HomePage() {
       .order('score', { ascending: false })
       .limit(20)
 
-    setAiPicks(data ?? [])
+    setAiPicks((data ?? []).map(({ articles: relatedArticles, ...pick }) => {
+      const article = relatedArticles?.[0]
+      return {
+        ...pick,
+        articles: article
+          ? { ...article, sources: article.sources?.[0] ?? null }
+          : null,
+      }
+    }) as AiPick[])
   }
 
   async function loadSavedArticles(currentUserId: string) {
@@ -184,11 +219,20 @@ export default function HomePage() {
       .eq('user_id', currentUserId)
       .order('created_at', { ascending: false })
 
-    setSavedArticles(data ?? [])
+    setSavedArticles((data ?? []).map(({ articles: relatedArticles, ...saved }) => {
+      const article = relatedArticles?.[0]
+      return {
+        ...saved,
+        articles: article
+          ? { ...article, sources: article.sources?.[0] ?? null }
+          : null,
+      }
+    }) as SavedArticle[])
   }
 
   async function loadTrendingTopics() {
-    const response = await fetch('/api/topics')
+    const response = await authorizedFetch('/api/topics')
+    if (!response.ok) return
     const data = await response.json()
     setTrendingTopics(data.topics ?? [])
   }
@@ -213,15 +257,14 @@ export default function HomePage() {
     event_type: string
     article_id?: string
     topic_id?: string
-    metadata?: any
+    metadata?: Record<string, string | number | boolean | null>
   }) {
     if (!userId) return
 
-    await fetch('/api/track', {
+    await authorizedFetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userId,
         event_type,
         article_id,
         topic_id,
@@ -259,7 +302,7 @@ export default function HomePage() {
     await loadSavedArticles(userId)
   }
 
-  async function openArticle(article: any) {
+  async function openArticle(article: Article) {
     setSelectedArticle(article)
 
     await trackEvent({
@@ -272,7 +315,7 @@ export default function HomePage() {
     })
   }
 
-  async function openTopic(topic: any) {
+  async function openTopic(topic: Topic) {
     setSelectedTopic(topic)
     setActiveSection('topic')
 
@@ -291,7 +334,7 @@ export default function HomePage() {
 
     setRefreshing(true)
 
-    const response = await fetch('/api/update-now', {
+    const response = await authorizedFetch('/api/update-now', {
       method: 'POST',
     })
 
@@ -354,14 +397,18 @@ export default function HomePage() {
 
   async function toggleSource(source: Source) {
     if (!userId) return
-    await supabase.from('sources').update({ is_active: !source.is_active }).eq('id', source.id)
+    await supabase
+      .from('sources')
+      .update({ is_active: !source.is_active })
+      .eq('id', source.id)
+      .eq('user_id', userId)
     await loadSources(userId)
   }
 
   async function deleteSource(sourceId: string) {
     if (!userId) return
     if (!confirm('Vuoi davvero eliminare questa fonte?')) return
-    await supabase.from('sources').delete().eq('id', sourceId)
+    await supabase.from('sources').delete().eq('id', sourceId).eq('user_id', userId)
     await loadSources(userId)
   }
 
@@ -410,7 +457,6 @@ export default function HomePage() {
         <section className="px-4 py-5 md:px-10 md:py-9">
           <Header
             activeSection={activeSection}
-            userEmail={userEmail}
             query={query}
             setQuery={setQuery}
             refreshData={refreshData}
@@ -444,7 +490,7 @@ export default function HomePage() {
                 <section className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
                   <HeroPick
                     pick={heroPick}
-                    saved={savedIds.has(heroPick.articles?.id)}
+                    saved={heroPick.articles ? savedIds.has(heroPick.articles.id) : false}
                     toggleSave={toggleSave}
                     openReader={openArticle}
                   />
@@ -454,7 +500,7 @@ export default function HomePage() {
                       <SidePick
                         key={pick.id}
                         pick={pick}
-                        saved={savedIds.has(pick.articles?.id)}
+                        saved={pick.articles ? savedIds.has(pick.articles.id) : false}
                         toggleSave={toggleSave}
                         openReader={openArticle}
                       />

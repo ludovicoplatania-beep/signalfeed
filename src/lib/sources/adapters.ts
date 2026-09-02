@@ -1,9 +1,19 @@
-export type SourceAdapter = {
-  match: (source: any) => boolean
-  feedUrls: (source: any) => string[]
+export type SourceRecord = {
+  id: string
+  user_id: string
+  name: string
+  website_url: string | null
+  rss_url: string
+  is_active: boolean
+  priority: number
 }
 
-function text(source: any) {
+export type SourceAdapter = {
+  match: (source: SourceRecord) => boolean
+  feedUrls: (source: SourceRecord) => string[]
+}
+
+function text(source: SourceRecord) {
   return `${source.name ?? ''} ${source.website_url ?? ''} ${source.rss_url ?? ''}`.toLowerCase()
 }
 

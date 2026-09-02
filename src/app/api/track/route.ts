@@ -1,44 +1,36 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { z } from 'zod'
+import { apiError } from '@/lib/server/api'
+import { enforceRateLimit, requireUser } from '@/lib/server/auth'
+import { getServiceSupabase } from '@/lib/server/clients'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!
-)
+const eventSchema = z.object({
+  event_type: z.enum(['article_saved', 'article_unsaved', 'article_opened', 'topic_opened']),
+  article_id: z.string().uuid().optional(),
+  topic_id: z.string().uuid().optional(),
+  metadata: z.record(z.string(), z.union([z.string().max(500), z.number(), z.boolean(), z.null()]))
+    .optional(),
+}).strict()
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const user = await requireUser(request)
+    enforceRateLimit(`track:${user.id}`, 60, 60_000)
+    const event = eventSchema.parse(await request.json())
 
-    const { user_id, event_type, article_id, topic_id, metadata } = body
-
-    if (!user_id || !event_type) {
-      return NextResponse.json(
-        { success: false, message: 'Dati mancanti' },
-        { status: 400 }
-      )
-    }
-
-    const { error } = await supabase.from('user_events').insert({
-      user_id,
-      event_type,
-      article_id: article_id || null,
-      topic_id: topic_id || null,
-      metadata: metadata || null,
+    const { error } = await getServiceSupabase().from('user_events').insert({
+      user_id: user.id,
+      event_type: event.event_type,
+      article_id: event.article_id ?? null,
+      topic_id: event.topic_id ?? null,
+      metadata: event.metadata ?? null,
     })
-
-    if (error) {
-      return NextResponse.json(
-        { success: false, message: error.message },
-        { status: 500 }
-      )
-    }
-
+    if (error) throw error
     return NextResponse.json({ success: true })
-  } catch {
-    return NextResponse.json(
-      { success: false, message: 'Errore tracking' },
-      { status: 500 }
-    )
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, message: 'Evento non valido' }, { status: 400 })
+    }
+    return apiError(error, 'Errore tracking')
   }
 }

@@ -3,8 +3,19 @@ import { ArrowLeft, Clock3, ExternalLink, Sparkles } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ArticleImage, SaveButton } from './ui'
+import type { Article, ToggleSave } from './types'
 
-export function ReaderMode({ article, saved, toggleSave, close }: any) {
+export function ReaderMode({
+  article,
+  saved,
+  toggleSave,
+  close,
+}: {
+  article: Article
+  saved: boolean
+  toggleSave: ToggleSave
+  close: () => void
+}) {
   return (
     <motion.div
       initial={{ opacity: 0 }}

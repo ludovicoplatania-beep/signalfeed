@@ -1,4 +1,4 @@
-import type { Source } from './types'
+import type { AiPick, Article, SavedArticle, Source } from './types'
 
 function AthenaMetric({
   label,
@@ -33,7 +33,17 @@ function AthenaMetric({
   )
 }
 
-export function Metrics({ sources, articles, aiPicks, savedArticles }: any) {
+export function Metrics({
+  sources,
+  articles,
+  aiPicks,
+  savedArticles,
+}: {
+  sources: Source[]
+  articles: Article[]
+  aiPicks: AiPick[]
+  savedArticles: SavedArticle[]
+}) {
   const activeSources = sources.filter((source: Source) => source.is_active).length
 
   return (

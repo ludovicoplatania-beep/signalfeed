@@ -1,25 +1,17 @@
 import { NextResponse } from 'next/server'
 import { pickArticles } from '@/lib/ai/pickArticles'
 import { generateTopics } from '@/lib/ai/generateTopics'
+import { apiError } from '@/lib/server/api'
+import { enforceRateLimit, requireUser } from '@/lib/server/auth'
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    await pickArticles()
-    await generateTopics()
-
-    return NextResponse.json({
-      success: true,
-      message: 'AI ranking e topic completati',
-    })
+    const user = await requireUser(request)
+    enforceRateLimit(`ai:${user.id}`, 3, 10 * 60 * 1000)
+    await pickArticles(user.id)
+    await generateTopics(user.id)
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('update-ai error:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Errore aggiornamento AI',
-      },
-      { status: 500 }
-    )
+    return apiError(error, 'Errore aggiornamento AI')
   }
 }

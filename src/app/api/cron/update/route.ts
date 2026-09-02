@@ -1,25 +1,15 @@
 import { NextResponse } from 'next/server'
-import { importSources } from '@/lib/rss/importSources'
-import { pickArticles } from '@/lib/ai/pickArticles'
-import { generateTopics } from '@/lib/ai/generateTopics'
+import { requireCron, enforceRateLimit } from '@/lib/server/auth'
+import { apiError } from '@/lib/server/api'
+import { updateAllUsers } from '@/lib/server/pipeline'
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const secret = searchParams.get('secret')
-
-  if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({
-      success: false,
-      message: 'Non autorizzato',
-    })
+  try {
+    requireCron(request)
+    enforceRateLimit('cron:update', 2, 60 * 60 * 1000)
+    const results = await updateAllUsers()
+    return NextResponse.json({ success: true, results })
+  } catch (error) {
+    return apiError(error, 'Errore aggiornamento programmato')
   }
-
-  await importSources()
-  await pickArticles()
-  await generateTopics()
-
-  return NextResponse.json({
-    success: true,
-    message: 'Aggiornamento completato: RSS + Scelte AI + Trending Topics',
-  })
 }

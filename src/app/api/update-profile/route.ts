@@ -1,41 +1,17 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
 import { generateDigest } from '@/lib/ai/generateDigest'
+import { apiError } from '@/lib/server/api'
+import { enforceRateLimit, requireUser } from '@/lib/server/auth'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!
-)
-
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const { data: users } = await supabase
-      .from('sources')
-      .select('user_id')
-
-    const userIds = Array.from(
-      new Set((users ?? []).map((row: any) => row.user_id).filter(Boolean))
-    )
-
-    for (const userId of userIds) {
-  await updateInterestProfile(userId)
-  await generateDigest(userId)
-}
-
-    return NextResponse.json({
-      success: true,
-      message: 'Profilo interessi aggiornato',
-    })
+    const user = await requireUser(request)
+    enforceRateLimit(`profile:${user.id}`, 3, 10 * 60 * 1000)
+    await updateInterestProfile(user.id)
+    await generateDigest(user.id)
+    return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('update-profile error:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Errore profilo interessi',
-      },
-      { status: 500 }
-    )
+    return apiError(error, 'Errore profilo interessi')
   }
 }

@@ -1,7 +1,17 @@
 import { motion } from 'framer-motion'
 import { BackgroundGlow, Brand } from './ui'
 
-export function LoginView({ email, setEmail, message, login }: any) {
+export function LoginView({
+  email,
+  setEmail,
+  message,
+  login,
+}: {
+  email: string
+  setEmail: (email: string) => void
+  message: string
+  login: () => Promise<void>
+}) {
   return (
     <main className="min-h-screen overflow-hidden bg-[#050505] text-white">
       <BackgroundGlow />

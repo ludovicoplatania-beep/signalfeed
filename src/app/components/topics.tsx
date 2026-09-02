@@ -1,8 +1,9 @@
 import { Flame } from 'lucide-react'
 import { FeedList } from './feed'
 import { Panel } from './ui'
+import type { Article, OpenReader, ToggleSave, Topic } from './types'
 
-export function TrendingTopics({ topics, onSelect }: { topics: any[]; onSelect: (topic: any) => void }) {
+export function TrendingTopics({ topics, onSelect }: { topics: Topic[]; onSelect: (topic: Topic) => void }) {
   if (!topics.length) return null
 
   return (
@@ -37,10 +38,22 @@ export function TrendingTopics({ topics, onSelect }: { topics: any[]; onSelect: 
   )
 }
 
-export function TopicView({ topic, articles, savedIds, toggleSave, openReader }: any) {
+export function TopicView({
+  topic,
+  articles,
+  savedIds,
+  toggleSave,
+  openReader,
+}: {
+  topic: Topic
+  articles: Article[]
+  savedIds: Set<string>
+  toggleSave: ToggleSave
+  openReader: OpenReader
+}) {
   const topicArticleIds = Array.isArray(topic.articles) ? topic.articles : []
 
-  const relatedArticles = articles.filter((article: any) =>
+  const relatedArticles = articles.filter((article) =>
     topicArticleIds.includes(article.id)
   )
 

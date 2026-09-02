@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 
@@ -11,9 +12,11 @@ export function BackgroundGlow() {
 export function Brand() {
   return (
     <div className="flex items-center gap-3">
-      <img
+      <Image
         src="/icons/icon-192.png"
         alt="Athena"
+        width={44}
+        height={44}
         className="h-11 w-11 rounded-2xl border border-[#B88A44]/25 shadow-[0_0_24px_rgba(139,92,246,0.22)]"
       />
 
@@ -67,9 +70,12 @@ export function Pill({ children }: { children: ReactNode }) {
 export function ArticleImage({ imageUrl }: { imageUrl?: string | null }) {
   if (imageUrl) {
     return (
-      <img
+      <Image
         src={imageUrl}
         alt=""
+        fill
+        unoptimized
+        sizes="(max-width: 768px) 100vw, 60vw"
         className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
       />
     )
@@ -84,7 +90,16 @@ export function ArticleThumbnail({ imageUrl, compact = false }: { imageUrl?: str
   const size = compact ? 'h-16' : 'h-24'
 
   if (imageUrl) {
-    return <img src={imageUrl} alt="" className={`hidden ${size} w-full rounded-2xl object-cover md:block`} />
+    return (
+      <Image
+        src={imageUrl}
+        alt=""
+        width={400}
+        height={compact ? 64 : 96}
+        unoptimized
+        className={`hidden ${size} w-full rounded-2xl object-cover md:block`}
+      />
+    )
   }
 
   return <div className={`hidden ${size} rounded-2xl bg-gradient-to-br from-[#B88A44]/35 to-[#8b5cf6]/25 md:block`} />
@@ -120,7 +135,15 @@ export function EmptyState({ text }: { text: string }) {
   )
 }
 
-export function SaveButton({ saved, onClick, small = false }: any) {
+export function SaveButton({
+  saved,
+  onClick,
+  small = false,
+}: {
+  saved: boolean
+  onClick: () => void
+  small?: boolean
+}) {
   return (
     <button
       onClick={(event) => {

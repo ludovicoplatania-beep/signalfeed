@@ -1,6 +1,15 @@
 import { BookOpen, Sparkles } from 'lucide-react'
+import type { Article, Digest, OpenReader, RecommendedArticle } from './types'
 
-export function DigestPanel({ digest, articles, openReader }: any) {
+export function DigestPanel({
+  digest,
+  articles,
+  openReader,
+}: {
+  digest?: Digest
+  articles: Article[]
+  openReader: OpenReader
+}) {
   if (!digest) return null
 
   const recommended = Array.isArray(digest.recommended_articles)
@@ -12,7 +21,7 @@ export function DigestPanel({ digest, articles, openReader }: any) {
     : []
 
   function findArticle(articleId: string) {
-    return articles.find((article: any) => article.id === articleId)
+    return articles.find((article) => article.id === articleId)
   }
 
   return (
@@ -59,7 +68,7 @@ export function DigestPanel({ digest, articles, openReader }: any) {
               Letture consigliate
             </div>
 
-            {recommended.map((item: any, index: number) => {
+            {recommended.map((item: RecommendedArticle, index: number) => {
               const article = findArticle(item.id)
 
               return (
