@@ -1,5 +1,6 @@
 import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star } from 'lucide-react'
 import { Brand } from './ui'
+import type { Section } from './types'
 
 const sections = [
   { id: 'today', label: 'Today', icon: Sparkles },
@@ -9,7 +10,12 @@ const sections = [
   { id: 'sources', label: 'Sources', icon: Compass },
 ]
 
-export function Sidebar({ activeSection, setActiveSection }: any) {
+type NavigationProps = {
+  activeSection: Section
+  setActiveSection: (section: Section) => void
+}
+
+export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
   return (
     <aside className="sticky top-0 hidden h-screen border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl lg:flex lg:flex-col">
       <Brand />
@@ -22,7 +28,7 @@ export function Sidebar({ activeSection, setActiveSection }: any) {
           return (
             <button
               key={section.id}
-              onClick={() => setActiveSection(section.id)}
+              onClick={() => setActiveSection(section.id as Section)}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
                 active
                   ? 'border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.18),rgba(0,0,0,0.35))] text-[#E2C188] shadow-[0_0_30px_rgba(197,154,82,0.08)] backdrop-blur-xl'
@@ -54,12 +60,17 @@ export function Sidebar({ activeSection, setActiveSection }: any) {
 
 export function Header({
   activeSection,
-  userEmail,
   query,
   setQuery,
   refreshData,
   logout,
-}: any) {
+}: {
+  activeSection: Section
+  query: string
+  setQuery: (query: string) => void
+  refreshData: () => Promise<void>
+  logout: () => Promise<void>
+}) {
   return (
     <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
       <div>

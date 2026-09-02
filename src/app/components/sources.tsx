@@ -2,7 +2,24 @@ import { ExternalLink, Plus, Power, Trash2 } from 'lucide-react'
 import type { Source } from './types'
 import { Input, Panel } from './ui'
 
-export function SourcesPanel(props: any) {
+type SourcesPanelProps = {
+  full?: boolean
+  sources: Source[]
+  name: string
+  setName: (value: string) => void
+  websiteUrl: string
+  setWebsiteUrl: (value: string) => void
+  rssUrl: string
+  setRssUrl: (value: string) => void
+  priority: number
+  setPriority: (value: number) => void
+  addSource: () => Promise<void>
+  toggleSource: (source: Source) => Promise<void>
+  deleteSource: (sourceId: string) => Promise<void>
+  message: string
+}
+
+export function SourcesPanel(props: SourcesPanelProps) {
   return (
     <div className={props.full ? 'grid gap-6 xl:grid-cols-[430px_1fr]' : 'space-y-5'}>
       <Panel title="Aggiungi fonte">

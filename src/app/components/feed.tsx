@@ -3,8 +3,18 @@ import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Clock3 } from 'lucide-react'
 import { ArticleThumbnail, EmptyState, SaveButton } from './ui'
+import type { Article, OpenReader, SavedArticle, ToggleSave } from './types'
 
-export function FeedList({ articles, savedIds, toggleSave, openReader, title, subtitle }: any) {
+type FeedListProps = {
+  articles: Article[]
+  savedIds: Set<string>
+  toggleSave: ToggleSave
+  openReader: OpenReader
+  title: string
+  subtitle: string
+}
+
+export function FeedList({ articles, savedIds, toggleSave, openReader, title, subtitle }: FeedListProps) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="mb-5">
@@ -16,7 +26,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
         {articles.length === 0 ? (
           <EmptyState text="Nessun articolo trovato." />
         ) : (
-          articles.map((article: any, index: number) => (
+          articles.map((article, index) => (
             <motion.div
               key={article.id}
               initial={{ opacity: 0, y: 18 }}
@@ -62,13 +72,23 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
   )
 }
 
-export function SavedView({ savedArticles, toggleSave, openReader }: any) {
-  const articles = savedArticles.map((item: any) => item.articles).filter(Boolean)
+export function SavedView({
+  savedArticles,
+  toggleSave,
+  openReader,
+}: {
+  savedArticles: SavedArticle[]
+  toggleSave: ToggleSave
+  openReader: OpenReader
+}) {
+  const articles = savedArticles
+    .map((item) => item.articles)
+    .filter((article): article is Article => Boolean(article))
 
   return (
     <FeedList
       articles={articles}
-      savedIds={new Set(articles.map((a: any) => a.id))}
+      savedIds={new Set(articles.map((article) => article.id))}
       toggleSave={toggleSave}
       openReader={openReader}
       title="Saved"

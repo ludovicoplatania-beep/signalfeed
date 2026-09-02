@@ -1,10 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
-import type { Section, Source } from './components/types'
+import type {
+  AiPick,
+  Article,
+  Digest,
+  SavedArticle,
+  Section,
+  Source,
+  Topic,
+} from './components/types'
 import { BackgroundGlow, EmptyState } from './components/ui'
 import { Header, Sidebar } from './components/app-layout'
 import { MobileNav } from './components/mobile-nav'
@@ -14,29 +22,26 @@ import { HeroPick, SidePick, AiSideList, AiCurationView } from './components/pic
 import { FeedList, SavedView } from './components/feed'
 import { TrendingTopics, TopicView } from './components/topics'
 import { SourcesPanel } from './components/sources'
-import { LoginView } from './components/login-view'
 import { Onboarding } from './components/onboarding'
 import { FeedSkeleton, HeroSkeleton, MetricsSkeleton } from './components/skeletons'
 import { DigestPanel } from './components/digest'
 
 export default function HomePage() {
+  const router = useRouter()
   const [activeSection, setActiveSection] = useState<Section>('today')
-  const [selectedArticle, setSelectedArticle] = useState<any | null>(null)
-  const [selectedTopic, setSelectedTopic] = useState<any | null>(null)
+  const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
 
-  const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
   const [sources, setSources] = useState<Source[]>([])
-  const [articles, setArticles] = useState<any[]>([])
-  const [aiPicks, setAiPicks] = useState<any[]>([])
-  const [savedArticles, setSavedArticles] = useState<any[]>([])
-  const [trendingTopics, setTrendingTopics] = useState<any[]>([])
-  const [digests, setDigests] = useState<any[]>([])
+  const [articles, setArticles] = useState<Article[]>([])
+  const [aiPicks, setAiPicks] = useState<AiPick[]>([])
+  const [savedArticles, setSavedArticles] = useState<SavedArticle[]>([])
+  const [trendingTopics, setTrendingTopics] = useState<Topic[]>([])
+  const [digests, setDigests] = useState<Digest[]>([])
   const [query, setQuery] = useState('')
 
   const [name, setName] = useState('')
@@ -45,18 +50,8 @@ export default function HomePage() {
   const [priority, setPriority] = useState(3)
 
   useEffect(() => {
-    checkUser()
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email ?? null)
-      setUserId(session?.user?.id ?? null)
-
-      if (session?.user?.id) {
-        loadEverything(session.user.id)
-      }
-    })
-
-    return () => listener.subscription.unsubscribe()
+    loadEverything().finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const savedIds = useMemo(
@@ -84,124 +79,32 @@ export default function HomePage() {
           ? 'ai'
           : null
 
-  async function checkUser() {
-    const { data } = await supabase.auth.getUser()
-
-    setUserEmail(data.user?.email ?? null)
-    setUserId(data.user?.id ?? null)
-
-    if (data.user?.id) await loadEverything(data.user.id)
-
-    setLoading(false)
+  async function apiFetch(input: string, init: RequestInit = {}) {
+    const response = await fetch(input, init)
+    if (response.status === 401) {
+      router.replace('/access')
+      throw new Error('Accesso scaduto')
+    }
+    return response
   }
 
-  async function loadEverything(currentUserId: string) {
-    await Promise.all([
-      loadSources(currentUserId),
-      loadArticles(),
-      loadAiPicks(currentUserId),
-      loadSavedArticles(currentUserId),
-      loadTrendingTopics(),
-      loadDigests(currentUserId),
-    ])
-  }
-
-  async function loadSources(currentUserId: string) {
-    const { data } = await supabase
-      .from('sources')
-      .select('id, name, website_url, rss_url, is_active, priority')
-      .eq('user_id', currentUserId)
-      .order('created_at', { ascending: false })
-
-    setSources(data ?? [])
-  }
-
-  async function loadArticles() {
-    const { data } = await supabase
-      .from('articles')
-      .select(`
-        id,
-        title,
-        url,
-        excerpt,
-        image_url,
-        article_content,
-        published_at,
-        sources ( name )
-      `)
-      .order('published_at', { ascending: false })
-      .limit(100)
-
-    setArticles(data ?? [])
-  }
-
-  async function loadAiPicks(currentUserId: string) {
-    const { data } = await supabase
-      .from('ai_picks')
-      .select(`
-        id,
-        score,
-        summary,
-        reason,
-        category,
-        created_at,
-        articles (
-          id,
-          title,
-          url,
-          excerpt,
-          image_url,
-          article_content,
-          published_at,
-          sources ( name )
-        )
-      `)
-      .eq('user_id', currentUserId)
-      .order('score', { ascending: false })
-      .limit(20)
-
-    setAiPicks(data ?? [])
-  }
-
-  async function loadSavedArticles(currentUserId: string) {
-    const { data } = await supabase
-      .from('saved_articles')
-      .select(`
-        id,
-        article_id,
-        created_at,
-        articles (
-          id,
-          title,
-          url,
-          excerpt,
-          image_url,
-          article_content,
-          published_at,
-          sources ( name )
-        )
-      `)
-      .eq('user_id', currentUserId)
-      .order('created_at', { ascending: false })
-
-    setSavedArticles(data ?? [])
-  }
-
-  async function loadTrendingTopics() {
-    const response = await fetch('/api/topics')
-    const data = await response.json()
-    setTrendingTopics(data.topics ?? [])
-  }
-
-  async function loadDigests(currentUserId: string) {
-    const { data } = await supabase
-      .from('daily_digests')
-      .select('*')
-      .eq('user_id', currentUserId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-
-    setDigests(data ?? [])
+  async function loadEverything() {
+    const response = await apiFetch('/api/data')
+    if (!response.ok) throw new Error('Impossibile caricare i dati')
+    const data = await response.json() as {
+      sources: Source[]
+      articles: Article[]
+      aiPicks: AiPick[]
+      savedArticles: SavedArticle[]
+      trendingTopics: Topic[]
+      digests: Digest[]
+    }
+    setSources(data.sources)
+    setArticles(data.articles)
+    setAiPicks(data.aiPicks)
+    setSavedArticles(data.savedArticles)
+    setTrendingTopics(data.trendingTopics)
+    setDigests(data.digests)
   }
 
   async function trackEvent({
@@ -213,15 +116,12 @@ export default function HomePage() {
     event_type: string
     article_id?: string
     topic_id?: string
-    metadata?: any
+    metadata?: Record<string, string | number | boolean | null>
   }) {
-    if (!userId) return
-
-    await fetch('/api/track', {
+    await apiFetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        user_id: userId,
         event_type,
         article_id,
         topic_id,
@@ -231,23 +131,24 @@ export default function HomePage() {
   }
 
   async function toggleSave(articleId?: string) {
-    if (!userId || !articleId) return
+    if (!articleId) return
 
     if (savedIds.has(articleId)) {
-      await supabase
-        .from('saved_articles')
-        .delete()
-        .eq('user_id', userId)
-        .eq('article_id', articleId)
+      await apiFetch('/api/saved', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ article_id: articleId }),
+      })
 
       await trackEvent({
         event_type: 'article_unsaved',
         article_id: articleId,
       })
     } else {
-      await supabase.from('saved_articles').insert({
-        user_id: userId,
-        article_id: articleId,
+      await apiFetch('/api/saved', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ article_id: articleId }),
       })
 
       await trackEvent({
@@ -256,10 +157,10 @@ export default function HomePage() {
       })
     }
 
-    await loadSavedArticles(userId)
+    await loadEverything()
   }
 
-  async function openArticle(article: any) {
+  async function openArticle(article: Article) {
     setSelectedArticle(article)
 
     await trackEvent({
@@ -272,7 +173,7 @@ export default function HomePage() {
     })
   }
 
-  async function openTopic(topic: any) {
+  async function openTopic(topic: Topic) {
     setSelectedTopic(topic)
     setActiveSection('topic')
 
@@ -287,11 +188,9 @@ export default function HomePage() {
   }
 
   async function refreshData() {
-    if (!userId) return
-
     setRefreshing(true)
 
-    const response = await fetch('/api/update-now', {
+    const response = await apiFetch('/api/update-now', {
       method: 'POST',
     })
 
@@ -301,46 +200,35 @@ export default function HomePage() {
       return
     }
 
-    await loadEverything(userId)
+    await loadEverything()
     setRefreshing(false)
   }
 
-  async function login() {
-    setMessage('Invio magic link...')
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin },
-    })
-
-    setMessage(error ? 'Errore: ' + error.message : 'Controlla la tua email e clicca il magic link.')
-  }
-
   async function logout() {
-    await supabase.auth.signOut()
-    setUserEmail(null)
-    setUserId(null)
+    await fetch('/api/access/logout', { method: 'POST' })
+    router.replace('/access')
   }
 
   async function addSource() {
-    if (!userId) return
-
     if (!name || !rssUrl) {
       setMessage('Inserisci almeno nome fonte e URL RSS.')
       return
     }
 
-    const { error } = await supabase.from('sources').insert({
-      user_id: userId,
-      name,
-      website_url: websiteUrl || null,
-      rss_url: rssUrl,
-      priority,
-      is_active: true,
+    const response = await apiFetch('/api/sources', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        website_url: websiteUrl || null,
+        rss_url: rssUrl,
+        priority,
+      }),
     })
 
-    if (error) {
-      setMessage(error.message)
+    if (!response.ok) {
+      const data = await response.json()
+      setMessage(data.message ?? 'Impossibile aggiungere la fonte.')
       return
     }
 
@@ -349,20 +237,26 @@ export default function HomePage() {
     setRssUrl('')
     setPriority(3)
     setMessage('Fonte aggiunta.')
-    await loadSources(userId)
+    await loadEverything()
   }
 
   async function toggleSource(source: Source) {
-    if (!userId) return
-    await supabase.from('sources').update({ is_active: !source.is_active }).eq('id', source.id)
-    await loadSources(userId)
+    await apiFetch('/api/sources', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: source.id, is_active: !source.is_active }),
+    })
+    await loadEverything()
   }
 
   async function deleteSource(sourceId: string) {
-    if (!userId) return
     if (!confirm('Vuoi davvero eliminare questa fonte?')) return
-    await supabase.from('sources').delete().eq('id', sourceId)
-    await loadSources(userId)
+    await apiFetch('/api/sources', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: sourceId }),
+    })
+    await loadEverything()
   }
 
   if (loading) {
@@ -373,17 +267,6 @@ export default function HomePage() {
           <div className="h-5 w-40 animate-pulse rounded-full bg-white/10" />
         </div>
       </main>
-    )
-  }
-
-  if (!userEmail) {
-    return (
-      <LoginView
-        email={email}
-        setEmail={setEmail}
-        message={message}
-        login={login}
-      />
     )
   }
 
@@ -410,7 +293,6 @@ export default function HomePage() {
         <section className="px-4 py-5 md:px-10 md:py-9">
           <Header
             activeSection={activeSection}
-            userEmail={userEmail}
             query={query}
             setQuery={setQuery}
             refreshData={refreshData}
@@ -444,7 +326,7 @@ export default function HomePage() {
                 <section className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
                   <HeroPick
                     pick={heroPick}
-                    saved={savedIds.has(heroPick.articles?.id)}
+                    saved={heroPick.articles ? savedIds.has(heroPick.articles.id) : false}
                     toggleSave={toggleSave}
                     openReader={openArticle}
                   />
@@ -454,7 +336,7 @@ export default function HomePage() {
                       <SidePick
                         key={pick.id}
                         pick={pick}
-                        saved={savedIds.has(pick.articles?.id)}
+                        saved={pick.articles ? savedIds.has(pick.articles.id) : false}
                         toggleSave={toggleSave}
                         openReader={openArticle}
                       />

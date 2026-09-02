@@ -1,23 +1,15 @@
 import { NextResponse } from 'next/server'
 import { importSources } from '@/lib/rss/importSources'
+import { apiError } from '@/lib/server/api'
+import { enforceRateLimit, requireOwner } from '@/lib/server/auth'
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    await importSources()
-
-    return NextResponse.json({
-      success: true,
-      message: 'RSS import completato',
-    })
+    const user = await requireOwner(request)
+    enforceRateLimit(`rss:${user.id}`, 3, 10 * 60 * 1000)
+    const results = await importSources(user.id)
+    return NextResponse.json({ success: true, results })
   } catch (error) {
-    console.error('update-rss error:', error)
-
-    return NextResponse.json(
-      {
-        success: false,
-        message: 'Errore import RSS',
-      },
-      { status: 500 }
-    )
+    return apiError(error, 'Errore import RSS')
   }
 }

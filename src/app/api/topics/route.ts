@@ -1,27 +1,23 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { apiError } from '@/lib/server/api'
+import { requireOwner } from '@/lib/server/auth'
+import { getServiceSupabase } from '@/lib/server/clients'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SECRET_KEY!
-)
-
-export async function GET() {
-  const { data, error } = await supabase
-    .from('trending_topics')
-    .select('*')
-    .order('score', { ascending: false })
-    .limit(12)
-
-  if (error) {
-    return NextResponse.json({
-      success: false,
-      error: error.message,
-    })
+export async function GET(request: Request) {
+  try {
+    const user = await requireOwner(request)
+    const { data, error } = await getServiceSupabase()
+      .from('trending_topics')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('score', { ascending: false })
+      .limit(12)
+    if (error) throw error
+    return NextResponse.json(
+      { success: true, topics: data },
+      { headers: { 'Cache-Control': 'private, no-store' } },
+    )
+  } catch (error) {
+    return apiError(error, 'Errore caricamento topic')
   }
-
-  return NextResponse.json({
-    success: true,
-    topics: data,
-  })
 }
