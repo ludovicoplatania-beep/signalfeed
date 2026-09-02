@@ -3,6 +3,10 @@ import { apiError } from '@/lib/server/api'
 import { requireOwner } from '@/lib/server/auth'
 import { getServiceSupabase } from '@/lib/server/clients'
 
+function unwrapRelation<T>(value: T | T[] | null): T | null {
+  return Array.isArray(value) ? (value[0] ?? null) : value
+}
+
 export async function GET(request: Request) {
   try {
     const owner = await requireOwner(request)
@@ -44,23 +48,23 @@ export async function GET(request: Request) {
     const normalizedArticles = (articles.data ?? []).map(
       ({ sources: relatedSources, ...article }) => ({
         ...article,
-        sources: relatedSources?.[0] ?? null,
+        sources: unwrapRelation(relatedSources),
       }),
     )
     const normalizedPicks = (picks.data ?? []).map(({ articles: relatedArticles, ...pick }) => {
-      const article = relatedArticles?.[0]
+      const article = unwrapRelation(relatedArticles)
       return {
         ...pick,
-        articles: article ? { ...article, sources: article.sources?.[0] ?? null } : null,
+        articles: article ? { ...article, sources: unwrapRelation(article.sources) } : null,
       }
-    })
+    }).filter((pick) => Boolean(pick.articles?.id && pick.articles.title))
     const normalizedSaved = (saved.data ?? []).map(({ articles: relatedArticles, ...entry }) => {
-      const article = relatedArticles?.[0]
+      const article = unwrapRelation(relatedArticles)
       return {
         ...entry,
-        articles: article ? { ...article, sources: article.sources?.[0] ?? null } : null,
+        articles: article ? { ...article, sources: unwrapRelation(article.sources) } : null,
       }
-    })
+    }).filter((entry) => Boolean(entry.articles?.id && entry.articles.title))
 
     return NextResponse.json(
       {

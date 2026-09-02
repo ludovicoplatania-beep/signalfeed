@@ -66,16 +66,20 @@ export default function HomePage() {
     })
   }, [articles, query])
 
-  const heroPick = aiPicks[0]
-  const sidePicks = aiPicks.slice(1, 4)
-  const lowerPicks = aiPicks.slice(4, 10)
+  const validPicks = useMemo(
+    () => aiPicks.filter((pick) => Boolean(pick.articles?.id && pick.articles.title)),
+    [aiPicks],
+  )
+  const heroPick = validPicks[0]
+  const sidePicks = validPicks.slice(1, 4)
+  const lowerPicks = validPicks.slice(4, 10)
 
   const onboardingStep =
     sources.length === 0
       ? 'sources'
       : articles.length === 0
         ? 'refresh'
-        : aiPicks.length === 0
+        : validPicks.length === 0
           ? 'ai'
           : null
 
@@ -101,7 +105,7 @@ export default function HomePage() {
     }
     setSources(data.sources)
     setArticles(data.articles)
-    setAiPicks(data.aiPicks)
+    setAiPicks(data.aiPicks.filter((pick) => Boolean(pick.articles?.id && pick.articles.title)))
     setSavedArticles(data.savedArticles)
     setTrendingTopics(data.trendingTopics)
     setDigests(data.digests)
@@ -271,7 +275,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] pb-28 text-neutral-100 lg:pb-0">
+    <main className="min-h-screen bg-[#050505] pb-32 text-neutral-100 lg:pb-0">
       <BackgroundGlow />
 
       <MobileNav activeSection={activeSection} setActiveSection={setActiveSection} />
@@ -315,7 +319,7 @@ export default function HomePage() {
                 <Metrics
                   sources={sources}
                   articles={articles}
-                  aiPicks={aiPicks}
+                  aiPicks={validPicks}
                   savedArticles={savedArticles}
                 />
               )}
@@ -430,7 +434,7 @@ export default function HomePage() {
           )}
 
           {activeSection === 'ai' && (
-            <AiCurationView picks={aiPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
+            <AiCurationView picks={validPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
           )}
 
           {activeSection === 'topic' && selectedTopic && (

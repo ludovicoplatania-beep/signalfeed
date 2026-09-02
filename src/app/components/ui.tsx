@@ -5,7 +5,7 @@ import { Bookmark, BookmarkCheck } from 'lucide-react'
 
 export function BackgroundGlow() {
   return (
-    <div className="fixed inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(212,176,106,0.14),transparent_28%),radial-gradient(circle_at_86%_12%,rgba(139,92,246,0.20),transparent_30%),radial-gradient(circle_at_50%_100%,rgba(56,189,248,0.06),transparent_32%)]" />
+    <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(212,176,106,0.09),transparent_25%),radial-gradient(circle_at_90%_8%,rgba(139,92,246,0.10),transparent_28%)]" />
   )
 }
 
@@ -14,7 +14,7 @@ export function Brand() {
     <div className="flex items-center gap-3">
       <Image
         src="/icons/icon-192.png"
-        alt="Athena"
+        alt="SignalFeed"
         width={44}
         height={44}
         className="h-11 w-11 rounded-2xl border border-[#B88A44]/25 shadow-[0_0_24px_rgba(139,92,246,0.22)]"
@@ -22,10 +22,10 @@ export function Brand() {
 
       <div>
         <div className="text-sm font-semibold tracking-[0.32em] text-white">
-          ATHENA
+          SIGNALFEED
         </div>
         <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[#B88A44]">
-          AI Strategic Intelligence
+          Il tuo briefing personale
         </div>
       </div>
     </div>

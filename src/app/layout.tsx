@@ -3,12 +3,12 @@ import './globals.css'
 import { PwaRegistration } from './components/pwa-registration'
 
 export const metadata: Metadata = {
-  title: 'SignalFeed',
+  title: 'SignalFeed — briefing personale',
   description: 'AI curated news intelligence',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    title: 'Athena',
+    title: 'SignalFeed',
     statusBarStyle: 'black-translucent',
   },
   icons: {

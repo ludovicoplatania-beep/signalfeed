@@ -20,10 +20,12 @@ type PickProps = {
 }
 
 export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
+  if (!pick.articles) return null
+
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative min-h-[560px] overflow-hidden rounded-[2.4rem] border border-[#B88A44]/15 bg-neutral-950 shadow-2xl shadow-black/50"
+      className="group relative min-h-[430px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-950 shadow-2xl shadow-black/40 md:min-h-[520px] md:rounded-[2.4rem]"
     >
       <button onClick={() => pick.articles && openReader(pick.articles)} className="absolute inset-0 z-10 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
@@ -63,13 +65,15 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
 }
 
 export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
+  if (!pick.articles) return null
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.35 }}
-      className="group relative min-h-[170px] overflow-hidden rounded-[2rem] border border-[#B88A44]/12 bg-neutral-950 p-5 shadow-xl shadow-black/25"
+      className="group relative min-h-[150px] overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-neutral-950 p-5 shadow-xl shadow-black/20 md:min-h-[170px] md:rounded-[2rem]"
     >
       <button onClick={() => pick.articles && openReader(pick.articles)} className="absolute inset-0 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
@@ -88,7 +92,7 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
         </div>
 
         <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
-          <h3 className="text-xl font-medium leading-tight tracking-[-0.03em] text-white group-hover:underline">
+          <h3 className="line-clamp-3 text-lg font-medium leading-snug tracking-[-0.025em] text-white group-hover:underline md:text-xl">
             {pick.articles?.title}
           </h3>
         </button>
