@@ -40,7 +40,7 @@ export default function AccessPage() {
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
             <Brand />
             <div className="mt-12 inline-flex rounded-full border border-[#B88A44]/20 bg-[#B88A44]/10 px-4 py-2 text-sm text-[#B88A44]">
-              Private Intelligence PWA
+              Accesso personale
             </div>
             <h1 className="mt-8 max-w-4xl text-6xl font-semibold leading-[0.9] tracking-[-0.08em] md:text-8xl">
               Il tuo briefing,
@@ -59,7 +59,7 @@ export default function AccessPage() {
             className="rounded-[2rem] border border-[#B88A44]/15 bg-white/[0.055] p-7 shadow-2xl shadow-black/40 backdrop-blur-xl"
           >
             <p className="text-sm uppercase tracking-[0.22em] text-[#B88A44]">Accesso privato</p>
-            <h2 className="mt-3 text-3xl font-medium tracking-tight">Apri Athena</h2>
+            <h2 className="mt-3 text-3xl font-medium tracking-tight">Apri SignalFeed</h2>
             <input
               type="password"
               value={password}

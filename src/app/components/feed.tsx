@@ -91,7 +91,7 @@ export function SavedView({
       savedIds={new Set(articles.map((article) => article.id))}
       toggleSave={toggleSave}
       openReader={openReader}
-      title="Saved"
+      title="Salvati"
       subtitle="Articoli salvati per leggerli dopo."
     />
   )

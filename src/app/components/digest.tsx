@@ -33,7 +33,7 @@ export function DigestPanel({
         <div>
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#B88A44]/20 bg-black/40 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-[#E2C188]">
             <Sparkles size={13} />
-            Today Briefing
+            Briefing di oggi
           </div>
 
           <h3 className="text-2xl font-semibold leading-tight tracking-[-0.045em] text-white">

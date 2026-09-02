@@ -49,25 +49,25 @@ export function Metrics({
   return (
     <section className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
       <AthenaMetric
-        label="Source Network"
+        label="Fonti"
         value={activeSources}
         detail="Fonti attive nel sistema"
       />
 
       <AthenaMetric
-        label="Signals"
+        label="Notizie"
         value={articles.length}
         detail="Articoli raccolti e analizzati"
       />
 
       <AthenaMetric
-        label="AI Priority"
+        label="Scelte AI"
         value={aiPicks.length}
         detail="Selezioni editoriali prioritarie"
       />
 
       <AthenaMetric
-        label="Archive"
+        label="Salvati"
         value={savedArticles.length}
         detail="Elementi salvati per dopo"
       />
