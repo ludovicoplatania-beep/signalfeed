@@ -99,6 +99,7 @@ async function discoverFeed(source: SourceRecord) {
 }
 
 async function importSingleSource(source: SourceRecord) {
+  const checkedAt = new Date().toISOString()
   try {
     const discovered = await discoverFeed(source)
     if (!discovered) throw new Error('Nessun feed RSS/Atom valido trovato')
@@ -129,12 +130,27 @@ async function importSingleSource(source: SourceRecord) {
       imported += 1
     }
 
-    return { source: source.name, success: true, count: imported, feedUrl: discovered.url }
+    await getServiceSupabase().from('sources').update({
+      last_checked_at: checkedAt,
+      last_success_at: checkedAt,
+      last_error: null,
+      last_import_count: imported,
+    }).eq('id', source.id)
+
+    return { sourceId: source.id, source: source.name, success: true, count: imported, feedUrl: discovered.url }
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Errore sconosciuto'
+    await getServiceSupabase().from('sources').update({
+      last_checked_at: checkedAt,
+      last_error: message.slice(0, 500),
+      last_import_count: 0,
+    }).eq('id', source.id)
+
     return {
+      sourceId: source.id,
       source: source.name,
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: message,
     }
   }
 }

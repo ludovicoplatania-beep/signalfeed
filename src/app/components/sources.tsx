@@ -20,6 +20,13 @@ type SourcesPanelProps = {
 }
 
 export function SourcesPanel(props: SourcesPanelProps) {
+  function sourceHealth(source: Source) {
+    if (!source.is_active) return { label: 'In pausa', className: 'text-neutral-300 bg-white/[0.06]' }
+    if (source.last_error) return { label: 'Da controllare', className: 'text-rose-300 bg-rose-500/10' }
+    if (source.last_success_at) return { label: 'Operativa', className: 'text-emerald-300 bg-emerald-500/10' }
+    return { label: 'Non verificata', className: 'text-amber-200 bg-amber-500/10' }
+  }
+
   return (
     <div className={props.full ? 'grid gap-6 xl:grid-cols-[430px_1fr]' : 'space-y-5'}>
       <Panel title="Aggiungi fonte">
@@ -56,12 +63,21 @@ export function SourcesPanel(props: SourcesPanelProps) {
         <div className="space-y-3">
           {props.sources.map((source: Source) => (
             <div key={source.id} className="rounded-2xl border border-white/[0.07] bg-black/25 p-4">
+              <div className={`mb-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${sourceHealth(source).className}`}>
+                {sourceHealth(source).label}
+              </div>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="text-sm font-medium">{source.name}</div>
-                  <div className="mt-1 text-xs text-neutral-600">
+                  <div className="mt-1 text-xs text-neutral-400">
                     Priorità {source.priority} · {source.is_active ? 'Attiva' : 'Disattivata'}
                   </div>
+                  {source.last_checked_at && (
+                    <div className="mt-1 text-xs text-neutral-400">
+                      Ultimo controllo {new Date(source.last_checked_at).toLocaleString('it-IT')} · {source.last_import_count} elementi processati
+                    </div>
+                  )}
+                  {source.last_error && <p className="mt-2 line-clamp-2 text-xs leading-5 text-rose-300">{source.last_error}</p>}
                 </div>
 
                 <div className="flex gap-2">
@@ -76,7 +92,7 @@ export function SourcesPanel(props: SourcesPanelProps) {
               </div>
 
               {source.website_url && (
-                <a href={source.website_url} target="_blank" className="mt-3 flex items-center gap-2 text-xs text-neutral-600 hover:text-neutral-300">
+                <a href={source.website_url} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-2 text-xs text-neutral-400 hover:text-neutral-200">
                   <ExternalLink size={12} />
                   Apri sito
                 </a>
