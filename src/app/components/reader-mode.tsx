@@ -83,7 +83,7 @@ export function ReaderMode({
               <section className="rounded-[2rem] border border-[#8b5cf6]/14 bg-white/[0.03] p-5 backdrop-blur-xl">
                 <div className="mb-3 flex items-center gap-2 text-sm text-[#E2C188]">
                   <Sparkles size={15} />
-                  Sintesi Athena
+                  Sintesi AI
                 </div>
 
                 <p className="text-lg leading-8 text-neutral-300">

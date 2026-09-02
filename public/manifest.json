@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "SignalFeed — Athena",
-  "short_name": "Athena",
-  "description": "AI Strategic Intelligence",
+  "name": "SignalFeed — il tuo briefing personale",
+  "short_name": "SignalFeed",
+  "description": "Notizie, priorità e fonti in un unico briefing personale.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
