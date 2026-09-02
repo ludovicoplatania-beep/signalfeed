@@ -31,7 +31,7 @@ export function MobileNav({
             className={`flex h-12 w-12 items-center justify-center rounded-xl transition ${
               active
                 ? 'border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.18),rgba(0,0,0,0.35))] text-[#E2C188] backdrop-blur-xl'
-                : 'border border-transparent text-neutral-500 hover:border-white/[0.06] hover:bg-white/[0.05] hover:text-white'
+                : 'border border-transparent text-neutral-400 hover:border-white/[0.08] hover:bg-white/[0.05] hover:text-white'
             }`}
           >
             <Icon size={20} />

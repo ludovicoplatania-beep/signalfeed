@@ -75,7 +75,7 @@ export function Header({
     <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
       <div>
         <div className="text-xs uppercase tracking-[0.24em] text-[#C59A52]">
-          SignalFeed
+          Athena
         </div>
 
         <h1 className="mt-2 text-4xl font-semibold tracking-[-0.06em] text-white">
@@ -129,6 +129,6 @@ function getSectionTitle(section: string) {
     case 'topic':
       return 'Analisi del tema'
     default:
-      return 'SignalFeed'
+      return 'Athena'
   }
 }

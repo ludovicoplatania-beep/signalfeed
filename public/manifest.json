@@ -1,13 +1,13 @@
 {
   "id": "/",
-  "name": "SignalFeed — il tuo briefing personale",
-  "short_name": "SignalFeed",
+  "name": "Athena — il tuo briefing personale",
+  "short_name": "Athena",
   "description": "Notizie, priorità e fonti in un unico briefing personale.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#070708",
+  "theme_color": "#070708",
   "orientation": "any",
   "icons": [
     {
