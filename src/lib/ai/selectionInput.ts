@@ -15,7 +15,7 @@ export function selectionFormat(count: number) {
       type: 'array', minItems: Math.min(10, count), maxItems: Math.min(10, count), items: {
         type: 'object', additionalProperties: false, required: ['ref', 'score', 'reason', 'category'], properties: {
           ref: { type: 'integer', enum: Array.from({ length: count }, (_, index) => index + 1) },
-          score: { type: 'number', minimum: 1, maximum: 100 }, reason: { type: 'string' },
+          score: { type: 'number', minimum: 1, maximum: 100, description: 'Rilevanza personale della notizia su scala 1–100 (80=alta, 95=eccezionale). Distinta da priority della fonte, che usa 1–5.' }, reason: { type: 'string' },
           category: { type: 'string', enum: [...categories] },
         },
       },
