@@ -2,6 +2,15 @@
 
 SignalFeed (Athena) è una PWA privata monoutente che raccoglie feed RSS, seleziona gli articoli con OpenAI e genera topic e digest personali. È costruita con Next.js, Supabase e TypeScript.
 
+## Priorità dell’interfaccia
+
+Athena è un feed consultato principalmente su cellulare e tablet; il desktop è secondario.
+Le modifiche grafiche devono partire da schermi da 320–390 px e tablet da 768–1024 px,
+mantenere le notizie vicine all’inizio della pagina, evitare scorrimento orizzontale e
+usare controlli tattili di almeno 44 px. Categorie, filtri e schede condividono le superfici
+scure, i bordi discreti e gli accenti dorati/viola dell’app. Titoli e testi devono restare
+leggibili senza essere compressi dalle azioni.
+
 ## Requisiti
 
 - Node.js 22

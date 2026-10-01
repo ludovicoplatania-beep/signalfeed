@@ -39,7 +39,7 @@ export function ArticleFeedbackProvider({ children, initial, onSaved }: { childr
   }
   return <Context.Provider value={{ preferences, change, pending }}>
     {children}
-    {message && <div role="status" className="fixed bottom-24 left-4 right-4 z-[100] mx-auto max-w-lg rounded-2xl border border-[#B88A44]/30 bg-[#18151f] p-4 text-sm text-neutral-200 shadow-xl lg:bottom-6">
+    {message && <div role="status" className="fixed bottom-24 left-4 right-4 z-[100] mx-auto max-w-lg rounded-2xl border border-[#B88A44]/30 bg-[#18151f] p-4 text-sm text-neutral-200 shadow-xl xl:bottom-6">
       <div className="flex items-center justify-between gap-3"><span>{message}</span><button aria-label="Chiudi avviso" onClick={() => setMessage('')}>×</button></div>
     </div>}
   </Context.Provider>
@@ -51,7 +51,7 @@ export function FeedbackButtons({ articleId, small = false }: { articleId: strin
   if (!context) return null
   const preference = context.preferences[articleId]
   const disabled = context.pending.has(articleId)
-  const buttonClass = `flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 text-sm backdrop-blur-xl transition hover:border-[#B88A44]/50 disabled:opacity-50 ${small ? 'p-2.5' : 'px-3 py-3'}`
+  const buttonClass = `flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-black/60 text-sm backdrop-blur-xl transition hover:border-[#B88A44]/50 disabled:opacity-50 ${small ? 'p-2.5' : 'px-3 py-3'}`
   return <>
     <button aria-label={preference === 'like' ? 'Annulla Mi piace' : 'Mi piace'} title="Mi piace: orienta le scelte IA" aria-pressed={preference === 'like'} disabled={disabled} className={`${buttonClass} ${preference === 'like' ? 'text-[#C59A52]' : 'text-neutral-200'}`} onClick={event => { event.stopPropagation(); void context.change(articleId, preference === 'like' ? null : 'like') }}>
       <ThumbsUp size={16} />{!small && <span>Mi piace</span>}

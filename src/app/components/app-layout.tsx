@@ -1,4 +1,4 @@
-import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star } from 'lucide-react'
+import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star, RefreshCw, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
 import { sectors } from '@/lib/sectors/catalog'
 import { Brand } from './ui'
@@ -8,7 +8,7 @@ const sections = [
   { id: 'today', label: 'Oggi', icon: Sparkles },
   { id: 'feed', label: 'Feed', icon: Newspaper },
   { id: 'ai', label: 'Scelte AI', icon: Cpu },
-  { id: 'sectors', label: 'Settori', icon: Newspaper },
+  { id: 'sectors', label: 'Settori', icon: LayoutGrid },
   { id: 'saved', label: 'Salvati', icon: Star },
   { id: 'sources', label: 'Fonti', icon: Compass },
 ]
@@ -20,7 +20,7 @@ type NavigationProps = {
 
 export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
   return (
-    <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl xl:flex xl:flex-col">
       <Brand />
 
       <nav className="mt-10 space-y-2">
@@ -94,61 +94,66 @@ export function Header({
   setPeriod: (value: string) => void
 }) {
   return (
-    <header className="mb-10 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-      <div>
+    <header className="mb-5 flex min-w-0 flex-col gap-4 sm:mb-7 xl:flex-row xl:items-start xl:justify-between">
+      <div className="min-w-0">
         <div className="text-xs uppercase tracking-[0.24em] text-[#C59A52]">
           Athena
         </div>
 
-        <h1 className="mt-2 text-4xl font-semibold tracking-[-0.06em] text-white">
+        <h1 className="mt-1 text-2xl font-semibold [overflow-wrap:anywhere] leading-tight sm:text-3xl xl:text-4xl tracking-[-0.06em] text-white">
           {activeSection === 'sectors' ? sectorTitle : getSectionTitle(activeSection)}
         </h1>
       </div>
 
-      <div className="flex flex-col gap-3 md:items-end">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-black/35 px-4 py-3">
-          <Search size={16} className="text-neutral-500" />
+      <div className="flex min-w-0 flex-col gap-2 xl:items-end">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
+          <div className="flex min-h-11 min-w-0 items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2.5">
+          <Search size={16} className="shrink-0 text-neutral-500" />
 
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cerca segnali, temi, fonti..."
-            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-neutral-600 md:w-56"
+            aria-label="Cerca notizie"
+            placeholder="Cerca notizie..."
+            className="min-w-0 w-full bg-transparent text-base sm:text-sm text-white outline-none placeholder:text-neutral-600 xl:w-48"
           />
           </div>
 
         {activeSection === 'ai' && <button
           onClick={refreshAI}
           disabled={refreshing}
-          className="rounded-2xl border border-[#B88A44]/30 px-4 py-3 text-sm text-[#E2C188] disabled:opacity-50"
+          className="order-last col-span-full min-h-11 rounded-2xl border border-[#B88A44]/30 px-4 py-3 text-sm text-[#E2C188] disabled:opacity-50"
         >Ricalcola IA</button>}
 
         <button
           onClick={refreshData}
           disabled={refreshing}
-          className="relative overflow-hidden rounded-2xl border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.22),rgba(0,0,0,0.35))] px-5 py-3 text-sm font-medium text-[#E2C188] backdrop-blur-xl transition hover:border-[#C59A52]/50"
+          aria-label={refreshing ? 'Aggiornamento in corso' : 'Aggiorna'}
+          title="Aggiorna notizie"
+          className="relative flex h-11 min-w-11 items-center justify-center gap-2 overflow-hidden rounded-2xl border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.22),rgba(0,0,0,0.35))] px-3 text-sm font-medium text-[#E2C188] backdrop-blur-xl transition hover:border-[#C59A52]/50"
         >
-          {refreshing ? 'Aggiornamento…' : 'Aggiorna'}
+          <RefreshCw size={17} aria-hidden="true" className={refreshing ? 'animate-spin' : ''} />
+          <span className="hidden sm:inline">{refreshing ? 'Aggiornamento…' : 'Aggiorna'}</span>
         </button>
 
         <button
           onClick={logout}
-          className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-300 transition hover:bg-white/[0.05]"
+          aria-label="Logout" title="Logout"
+          className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-black/30 px-3 text-sm text-neutral-300 transition hover:bg-white/[0.05]"
         >
           <LogOut size={15} />
-          Logout
+          <span className="hidden sm:inline">Logout</span>
         </button>
         </div>
 
         {(activeSection === 'feed' || activeSection === 'sectors') && (
-          <div className="grid grid-cols-2 gap-2 md:flex md:justify-end">
-            <select aria-label="Filtra per fonte" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
-              <option value="">Tutte le fonti</option>
+          <div className="grid min-w-0 grid-cols-2 gap-2 xl:flex xl:justify-end">
+            <select aria-label="Filtra per fonte" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="min-h-11 min-w-0 w-full rounded-2xl border border-white/[0.08] bg-black/40 px-3 py-2 text-base text-neutral-300 sm:text-sm xl:max-w-60">
+              <option value="">Fonti: tutte</option>
               {sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
             </select>
-            <select aria-label="Filtra per periodo" value={period} onChange={(event) => setPeriod(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
-              <option value="all">Tutto l’archivio</option>
+            <select aria-label="Filtra per periodo" value={period} onChange={(event) => setPeriod(event.target.value)} className="min-h-11 min-w-0 w-full rounded-2xl border border-white/[0.08] bg-black/40 px-3 py-2 text-base text-neutral-300 sm:text-sm xl:max-w-60">
+              <option value="all">Tutte le date</option>
               <option value="day">Ultime 24 ore</option>
               <option value="week">Ultimi 7 giorni</option>
               <option value="month">Ultimi 30 giorni</option>
