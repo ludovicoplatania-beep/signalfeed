@@ -1,8 +1,9 @@
 import 'server-only'
-import { getOpenAI, getServiceSupabase } from '@/lib/server/clients'
+import { createAICompletion } from './completion'
+import { getServiceSupabase } from '@/lib/server/clients'
 import { interestsResponseSchema } from './schemas'
 
-export async function updateInterestProfile(userId: string) {
+export async function updateInterestProfile(userId: string, options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
   const [{ data: events, error }, { data: feedback, error: feedbackError }] = await Promise.all([supabase
     .from('user_events')
@@ -58,7 +59,7 @@ Eventi:
 ${JSON.stringify(events)}
 `
 
-    const response = await getOpenAI().chat.completions.create({
+    const { response } = await createAICompletion({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
       max_completion_tokens: 700,
@@ -74,7 +75,7 @@ ${JSON.stringify(events)}
         },
       ],
       temperature: 0.2,
-    })
+    }, { stage: 'profile', budgetMs: options.budgetMs })
 
     const raw = response.choices[0].message.content || '{}'
 

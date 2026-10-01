@@ -1,16 +1,17 @@
 import 'server-only'
-import { getOpenAI, getServiceSupabase } from '@/lib/server/clients'
+import { createAICompletion } from './completion'
+import { getServiceSupabase } from '@/lib/server/clients'
 import { topicsResponseSchema } from './schemas'
 import { loadCandidates } from './pickArticles'
 import type { Candidate } from './ranking'
 
-export async function generateTopics(userId: string, candidates?: Candidate[]) {
+export async function generateTopics(userId: string, candidates?: Candidate[], options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
   const topicArticles = candidates ?? await loadCandidates(userId)
   if (topicArticles.length < 2) return { count: 0, skipped: true }
   const compactArticles = topicArticles.map((article) => ({
     id: article.id, title: article.title, source: article.source_name,
-    excerpt: article.excerpt?.slice(0, 500), content: article.article_content?.slice(0, 600) ?? '',
+    excerpt: (article.excerpt?.trim() || article.article_content?.trim() || '').slice(0, 320),
     published_at: article.published_at,
   }))
 
@@ -46,7 +47,7 @@ Articoli:
 ${JSON.stringify(compactArticles)}
 `
 
-  const response = await getOpenAI().chat.completions.create({
+  const { response } = await createAICompletion({
     model: 'gpt-4o-mini',
     response_format: { type: 'json_object' },
     max_completion_tokens: 1_800,
@@ -58,7 +59,7 @@ ${JSON.stringify(compactArticles)}
       { role: 'user', content: prompt },
     ],
     temperature: 0.15,
-  })
+  }, { stage: 'topics', budgetMs: options.budgetMs })
 
   const raw = JSON.parse(response.choices[0]?.message.content || '{}')
   const values = Array.isArray(raw) ? raw : raw.topics

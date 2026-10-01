@@ -302,20 +302,21 @@ export default function HomePage() {
       await loadEverything()
       setArchiveVersion((version) => version + 1)
       const summary = job.result?.summary
+      const selectionStatus = `${Math.max(0, (summary?.picksCount ?? 0) - (summary?.automaticPicks ?? 0))} scelte IA · ${summary?.automaticPicks ?? 0} automatiche`
       setUpdateStatus(job.status === 'failed' ? job.message || 'Aggiornamento non riuscito. Puoi riprovare.'
-        : `${summary?.newArticles ?? 0} nuovi articoli · ${summary?.updatedArticles ?? 0} aggiornati · ${summary?.sourcesOk ?? 0}/${summary?.sourcesChecked ?? 0} fonti operative${job.message ? ` · ${job.message}` : ''}`)
+        : `${job.mode === 'ai' ? selectionStatus : `${summary?.newArticles ?? 0} nuovi articoli · ${summary?.updatedArticles ?? 0} aggiornati · ${summary?.sourcesOk ?? 0}/${summary?.sourcesChecked ?? 0} fonti operative · ${selectionStatus}`}${job.message ? ` · ${job.message}` : ''}`)
     } catch (error) {
       if (!controller.signal.aborted) setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
     } finally { refreshLock.current = false; setRefreshing(false) }
   }
 
-  async function refreshData() {
+  async function runRefresh(mode: 'all' | 'ai') {
     if (refreshLock.current) return
     refreshLock.current = true
     setRefreshing(true)
     setUpdateStatus('Avvio aggiornamento…')
     try {
-      const response = await apiFetch('/api/update-now', { method: 'POST' })
+      const response = await apiFetch(mode === 'ai' ? '/api/update-ai' : '/api/update-now', { method: 'POST' })
       if (!response.ok) throw new Error('Aggiornamento non riuscito. Puoi riprovare.')
       const data = await response.json() as { job: UpdateJob }
       refreshLock.current = false
@@ -324,6 +325,9 @@ export default function HomePage() {
       setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
     } finally { refreshLock.current = false; setRefreshing(false) }
   }
+
+  async function refreshData() { await runRefresh('all') }
+  async function refreshAI() { await runRefresh('ai') }
 
   async function logout() {
     await fetch('/api/access/logout', { method: 'POST' })
@@ -426,6 +430,7 @@ export default function HomePage() {
             query={query}
             setQuery={setQuery}
             refreshData={refreshData}
+            refreshAI={refreshAI}
             logout={logout}
             refreshing={refreshing}
             updateStatus={updateStatus}

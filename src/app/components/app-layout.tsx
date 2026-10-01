@@ -63,6 +63,7 @@ export function Header({
   query,
   setQuery,
   refreshData,
+  refreshAI,
   logout,
   refreshing,
   updateStatus,
@@ -76,6 +77,7 @@ export function Header({
   query: string
   setQuery: (query: string) => void
   refreshData: () => Promise<void>
+  refreshAI: () => Promise<void>
   logout: () => Promise<void>
   refreshing: boolean
   updateStatus: string
@@ -109,6 +111,12 @@ export function Header({
             className="w-full bg-transparent text-sm text-white outline-none placeholder:text-neutral-600 md:w-56"
           />
           </div>
+
+        {activeSection === 'ai' && <button
+          onClick={refreshAI}
+          disabled={refreshing}
+          className="rounded-2xl border border-[#B88A44]/30 px-4 py-3 text-sm text-[#E2C188] disabled:opacity-50"
+        >Ricalcola IA</button>}
 
         <button
           onClick={refreshData}

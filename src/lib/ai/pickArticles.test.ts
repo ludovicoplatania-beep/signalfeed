@@ -22,6 +22,13 @@ describe('resilient IA picks', () => {
     expect(result.count).toBe(10)
     expect(mocks.rpc.mock.calls[0][1].p_picks.find((p: { article_id: string }) => p.article_id === articles[0].id).summary).toBe(articles[0].excerpt)
   })
+  it('accepts schema-constrained references without asking the model to repeat titles', async () => {
+    mocks.create.mockResolvedValue(response(articles.map((_, i) => ({ ref: i + 1, score: 80, reason: 'Motivo', category: 'Generale' }))))
+    const result = await pickArticles(owner, articles)
+    expect(result.automaticCount).toBe(0)
+    expect(result.diagnostics).toMatchObject({ attempts: 1, accepted: 10, rejected: 0 })
+    expect(mocks.create.mock.calls[0][0].response_format.type).toBe('json_schema')
+  })
   it('keeps valid picks when another entry is invalid', async () => {
     mocks.create.mockResolvedValue(response([valid(), { ...valid(1), score: 'wrong' }]))
     await pickArticles(owner, articles)

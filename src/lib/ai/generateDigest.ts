@@ -1,8 +1,9 @@
 import 'server-only'
-import { getOpenAI, getServiceSupabase } from '@/lib/server/clients'
+import { createAICompletion } from './completion'
+import { getServiceSupabase } from '@/lib/server/clients'
 import { digestResponseSchema } from './schemas'
 
-export async function generateDigest(userId: string) {
+export async function generateDigest(userId: string, options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
   const [{ data: picks, error: picksError }, { data: interests, error: interestsError }] = await Promise.all([
     supabase
@@ -73,7 +74,7 @@ Regole:
 - evidenzia cosa conta davvero
 `
 
-  const response = await getOpenAI().chat.completions.create({
+  const { response } = await createAICompletion({
     model: 'gpt-4o-mini',
     response_format: { type: 'json_object' },
     max_completion_tokens: 1_400,
@@ -88,7 +89,7 @@ Regole:
       },
     ],
     temperature: 0.2,
-  })
+  }, { stage: 'digest', budgetMs: options.budgetMs })
 
   const parsed = digestResponseSchema.parse(
     JSON.parse(response.choices[0].message.content || '{}'),
