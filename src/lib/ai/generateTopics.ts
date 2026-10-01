@@ -66,6 +66,7 @@ ${JSON.stringify(compactArticles)}
   const allowedIds = new Set(topicArticles.map((article) => article.id))
   const seenTitles = new Set<string>()
   const topics = values.slice(0, 8).flatMap((value) => {
+    if (!value || typeof value !== "object") return []
     const parsed = topicsResponseSchema.element.safeParse({ ...value,
       description: typeof value.description === 'string' ? value.description.slice(0, 220) : value.description,
       angle: typeof value.angle === 'string' ? value.angle.slice(0, 160) : value.angle,

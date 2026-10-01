@@ -127,13 +127,13 @@ export async function discoverFeed(source: SourceRecord, signal: AbortSignal) {
       }
     }
   }
-  for (const path of ['/feed', '/rss.xml', '/atom.xml']) {
-    const result = await read(new URL(path, root).toString())
-    if (result) return result
-  }
   for (const [url, html] of htmlPages) {
     const items = publicPageItems(html, url, adapter?.articlePattern)
     if (items.length) return { url, items, mode: 'html' as const }
+  }
+  for (const path of ['/feed', '/rss.xml', '/atom.xml']) {
+    const result = await read(new URL(path, root).toString())
+    if (result) return result
   }
   if (blocked.size) throw new Error('La fonte rifiuta le richieste (403/429). Serve un feed pubblico consentito.')
   throw new Error(`Nessun feed o elenco pubblico utilizzabile. ${[...new Set(errors)].slice(0, 3).join(' · ')}`)

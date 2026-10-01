@@ -77,7 +77,7 @@ export function diversifyPicks(picks: RankedPick[], articles: Candidate[], limit
   const selected: RankedPick[] = []
   const sources = new Map<string, number>(); const categoriesUsed = new Map<string, number>()
   for (const constrained of [true, false]) {
-    for (const pick of [...picks].sort((a, b) => b.score - a.score)) {
+    for (const pick of [...picks].sort((a, b) => Number(b.selection_method === 'ai') - Number(a.selection_method === 'ai') || b.score - a.score)) {
       const article = byId.get(pick.id)
       if (!article || selected.some((entry) => entry.id === pick.id || sameStory(article, byId.get(entry.id)!))) continue
       if (constrained && ((sources.get(article.source_id) ?? 0) >= 2 || (categoriesUsed.get(pick.category) ?? 0) >= 3)) continue

@@ -22,6 +22,24 @@ function text(source: SourceRecord) {
 
 export const sourceAdapters: SourceAdapter[] = [
   {
+    match: (source) => text(source).includes('everyeye') && (text(source).includes('serie') || text(source).includes('serial')),
+    feedUrls: () => ['https://serial.everyeye.it/feed/feed_news_rss.asp'],
+    pageUrls: ['https://serial.everyeye.it/'],
+    articlePattern: /^\/(notizie|articoli)\/[^/]+-\d+\.html$/,
+  },
+  {
+    match: (source) => text(source).includes('mymovies'),
+    feedUrls: () => [],
+    pageUrls: ['https://www.mymovies.it/cinemanews/'],
+    articlePattern: /^\/cinemanews\/\d{4}\/\d+\/?$/,
+  },
+  {
+    match: (source) => text(source).includes('cycleworld'),
+    feedUrls: () => ['https://www.cycleworld.com/feed/'],
+    pageUrls: ['https://www.cycleworld.com/latest/'],
+    articlePattern: /^\/(?:story\/)?(bikes|motorcycle-news|motorcycle-reviews|racing|blogs|news|reviews)\/.+/,
+  },
+  {
     match: (source) => text(source).includes('internazionale'),
     feedUrls: () => ['https://www.internazionale.it/sitemaps/rss.xml'],
   },
@@ -40,7 +58,8 @@ export const sourceAdapters: SourceAdapter[] = [
   {
     match: (source) => text(source).includes('slow-news'),
     feedUrls: () => [],
-    articlePattern: /^\/(articoli|articles|news)\/.+/,
+    pageUrls: ['https://slow-news.com/stream'],
+    articlePattern: /^\/(stream|articoli|articles|news)\/.+/,
   },
   {
     match: (source) => text(source).includes('pagella politica') || text(source).includes('pagellapolitica'),
@@ -73,8 +92,8 @@ export const sourceAdapters: SourceAdapter[] = [
     feedUrls: () => [
       'https://www.quattroruote.it/rss',
     ],
-    pageUrls: ['https://www.quattroruote.it/news.html'],
-    articlePattern: /^\/news\/\d{4}\/\d{2}\/\d{2}\/.+/,
+    pageUrls: ['https://www.quattroruote.it/news/'],
+    articlePattern: /^\/news\/(?:[^/]+\/)?\d{4}\/\d{2}\/\d{2}\/.+/,
   },
   {
     match: (source) => text(source).includes('badtaste'),

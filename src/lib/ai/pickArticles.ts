@@ -55,6 +55,7 @@ export async function pickArticles(userId: string, candidates?: Candidate[]) {
     if (!Array.isArray(raw.picks) || !raw.picks.length) throw new Error('La risposta IA non contiene selezioni')
     const byId = new Map(articles.map((article) => [article.id, article]))
     for (const rawPick of raw.picks.slice(0, 20)) {
+      if (!rawPick || typeof rawPick !== "object") continue
       const result = pickResponseSchema.shape.picks.element.safeParse({ ...rawPick,
         summary: typeof rawPick.summary === 'string' ? rawPick.summary.slice(0, 220) : rawPick.summary,
         reason: typeof rawPick.reason === 'string' ? rawPick.reason.slice(0, 180) : rawPick.reason,
