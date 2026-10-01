@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+
+import type { UpdateJob } from '@/lib/server/pipeline'
+import { uniqueArticles } from '@/lib/articles/identity'
 
 import type {
   AiPick,
@@ -54,23 +57,36 @@ export default function HomePage() {
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [rssUrl, setRssUrl] = useState('')
   const [priority, setPriority] = useState(3)
+  const [editingSource, setEditingSource] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState('')
+  const [archiveVersion, setArchiveVersion] = useState(0)
+  const [archiveNextOffset, setArchiveNextOffset] = useState(0)
+  const refreshLock = useRef(false)
+  const pollAbort = useRef<AbortController | null>(null)
+  const archiveAbort = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    loadEverything().finally(() => setLoading(false))
+    loadEverything().then((job) => {
+      if (job?.status === 'running') return watchUpdate(job)
+    }).catch((error) => setLoadError(error instanceof Error ? error.message : 'Caricamento non disponibile')).finally(() => setLoading(false))
+    const onFocus = () => { loadEverything().catch(() => setUpdateStatus('Dati non disponibili. Riprova.')) }
+    window.addEventListener('focus', onFocus)
+    return () => { window.removeEventListener('focus', onFocus); pollAbort.current?.abort(); archiveAbort.current?.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
     if (activeSection !== 'feed') return
     const timer = window.setTimeout(() => {
-      searchArchive().catch(() => {
+      searchArchive().catch((error) => {
+        if (error instanceof Error && error.name === 'AbortError') return
         setArchiveLoading(false)
         setUpdateStatus('Ricerca archivio non disponibile.')
       })
     }, 300)
-    return () => window.clearTimeout(timer)
+    return () => { window.clearTimeout(timer); archiveAbort.current?.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSection, query, sourceFilter, period])
+  }, [activeSection, query, sourceFilter, period, archiveVersion])
 
   const savedIds = useMemo(
     () => new Set(savedArticles.map((item) => item.article_id)),
@@ -102,7 +118,7 @@ export default function HomePage() {
           : null
 
   async function apiFetch(input: string, init: RequestInit = {}) {
-    const response = await fetch(input, init)
+    const response = await fetch(input, { ...init, cache: 'no-store' })
     if (response.status === 401) {
       router.replace('/access')
       throw new Error('Accesso scaduto')
@@ -120,6 +136,7 @@ export default function HomePage() {
       savedArticles: SavedArticle[]
       trendingTopics: Topic[]
       digests: Digest[]
+      update: UpdateJob | null
     }
     setSources(data.sources)
     setArticles(data.articles)
@@ -127,18 +144,28 @@ export default function HomePage() {
     setSavedArticles(data.savedArticles)
     setTrendingTopics(data.trendingTopics)
     setDigests(data.digests)
+    setLoadError('')
+    return data.update
   }
 
   async function searchArchive(offset = 0, append = false) {
+    archiveAbort.current?.abort()
+    const controller = new AbortController()
+    archiveAbort.current = controller
     setArchiveLoading(true)
-    const params = new URLSearchParams({ q: query, period, offset: String(offset) })
-    if (sourceFilter) params.set('source', sourceFilter)
-    const response = await apiFetch(`/api/articles?${params}`)
-    if (!response.ok) throw new Error('Ricerca non disponibile')
-    const data = await response.json() as { articles: Article[]; total: number }
-    setArchiveArticles((current) => append ? [...current, ...data.articles] : data.articles)
-    setArchiveTotal(data.total)
-    setArchiveLoading(false)
+    try {
+      const params = new URLSearchParams({ q: query, period, offset: String(offset) })
+      if (sourceFilter) params.set('source', sourceFilter)
+      const response = await apiFetch(`/api/articles?${params}`, { signal: controller.signal })
+      if (!response.ok) throw new Error('Ricerca non disponibile')
+      const data = await response.json() as { articles: Article[]; total: number; nextOffset: number }
+      if (controller.signal.aborted) return
+      setArchiveArticles((current) => uniqueArticles(append ? [...current, ...data.articles] : data.articles))
+      setArchiveTotal(data.total)
+      setArchiveNextOffset(data.nextOffset)
+    } finally {
+      if (archiveAbort.current === controller) setArchiveLoading(false)
+    }
   }
 
   async function trackEvent({
@@ -221,27 +248,56 @@ export default function HomePage() {
     })
   }
 
-  async function refreshData() {
+  async function watchUpdate(initial: UpdateJob) {
+    if (refreshLock.current) return
+    refreshLock.current = true
+    pollAbort.current?.abort()
+    const controller = new AbortController()
+    pollAbort.current = controller
     setRefreshing(true)
-    setUpdateStatus('Controllo delle fonti e aggiornamento delle selezioni in corso…')
+    let job = initial
+    const deadline = Date.now() + 390_000
+    const phases: Record<string, string> = { queued: 'Avvio', identity: 'Riconciliazione articoli', sources: 'Controllo fonti', profile: 'Aggiornamento interessi', picks: 'Selezione articoli', topics: 'Aggiornamento temi', digest: 'Preparazione riepilogo' }
+    try {
+      while (job.status === 'running') {
+        if (Date.now() > deadline) throw new Error('Aggiornamento ancora in corso. Riapri la pagina per verificarne lo stato.')
+        setUpdateStatus(`${phases[job.phase] ?? 'Aggiornamento'} in corso…`)
+        await new Promise<void>((resolve, reject) => {
+          const abort = () => { window.clearTimeout(timer); reject(new DOMException('Annullato', 'AbortError')) }
+          const timer = window.setTimeout(() => { controller.signal.removeEventListener('abort', abort); resolve() }, 2_000)
+          controller.signal.addEventListener('abort', abort, { once: true })
+          if (controller.signal.aborted) abort()
+        })
+        const response = await apiFetch('/api/update-status', { signal: controller.signal })
+        if (!response.ok) throw new Error('Stato aggiornamento non disponibile')
+        const data = await response.json() as { job: UpdateJob | null }
+        if (!data.job || data.job.id !== job.id) throw new Error('Aggiornamento sostituito: ricarica la pagina per verificarne lo stato.')
+        job = data.job
+      }
+      await loadEverything()
+      setArchiveVersion((version) => version + 1)
+      const summary = job.result?.summary
+      setUpdateStatus(job.status === 'failed' ? job.message || 'Aggiornamento non riuscito. Puoi riprovare.'
+        : `${summary?.newArticles ?? 0} nuovi articoli · ${summary?.updatedArticles ?? 0} aggiornati · ${summary?.sourcesOk ?? 0}/${summary?.sourcesChecked ?? 0} fonti operative${job.message ? ` · ${job.message}` : ''}`)
+    } catch (error) {
+      if (!controller.signal.aborted) setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
+    } finally { refreshLock.current = false; setRefreshing(false) }
+  }
 
-    const response = await apiFetch('/api/update-now', {
-      method: 'POST',
-    })
-
-    if (!response.ok) {
-      setUpdateStatus('Aggiornamento non riuscito. Riprova tra qualche minuto.')
-      setRefreshing(false)
-      return
-    }
-
-    const result = await response.json() as { summary?: { sourcesChecked: number; sourcesOk: number; sourcesFailed: number; itemsProcessed: number } }
-    await loadEverything()
-    const summary = result.summary
-    setUpdateStatus(summary
-      ? `${summary.sourcesOk}/${summary.sourcesChecked} fonti operative · ${summary.itemsProcessed} elementi processati${summary.sourcesFailed ? ` · ${summary.sourcesFailed} da controllare` : ''}`
-      : 'Aggiornamento completato.')
-    setRefreshing(false)
+  async function refreshData() {
+    if (refreshLock.current) return
+    refreshLock.current = true
+    setRefreshing(true)
+    setUpdateStatus('Avvio aggiornamento…')
+    try {
+      const response = await apiFetch('/api/update-now', { method: 'POST' })
+      if (!response.ok) throw new Error('Aggiornamento non riuscito. Puoi riprovare.')
+      const data = await response.json() as { job: UpdateJob }
+      refreshLock.current = false
+      await watchUpdate(data.job)
+    } catch (error) {
+      setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
+    } finally { refreshLock.current = false; setRefreshing(false) }
   }
 
   async function logout() {
@@ -256,9 +312,10 @@ export default function HomePage() {
     }
 
     const response = await apiFetch('/api/sources', {
-      method: 'POST',
+      method: editingSource ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        ...(editingSource ? { id: editingSource } : {}),
         name,
         website_url: websiteUrl || null,
         rss_url: rssUrl,
@@ -276,9 +333,15 @@ export default function HomePage() {
     setWebsiteUrl('')
     setRssUrl('')
     setPriority(3)
-    setMessage('Fonte aggiunta.')
+    setMessage(editingSource ? 'Fonte aggiornata.' : 'Fonte aggiunta.')
+    setEditingSource(null)
     await loadEverything()
   }
+
+  function editSource(source: Source) {
+    setEditingSource(source.id); setName(source.name); setWebsiteUrl(source.website_url ?? ''); setRssUrl(source.rss_url); setPriority(source.priority); setMessage('')
+  }
+  function cancelEdit() { setEditingSource(null); setName(''); setWebsiteUrl(''); setRssUrl(''); setPriority(3) }
 
   async function toggleSource(source: Source) {
     await apiFetch('/api/sources', {
@@ -298,6 +361,8 @@ export default function HomePage() {
     })
     await loadEverything()
   }
+
+  if (loadError && !loading) return <main className="min-h-screen bg-[#070708] p-8 text-white"><p>{loadError}</p><button onClick={() => { setLoading(true); loadEverything().catch((error) => setLoadError(String(error))).finally(() => setLoading(false)) }}>Riprova</button></main>
 
   if (loading) {
     return (
@@ -432,7 +497,10 @@ export default function HomePage() {
                     setRssUrl={setRssUrl}
                     priority={priority}
                     setPriority={setPriority}
-                    addSource={addSource}
+                    editing={Boolean(editingSource)}
+              editSource={editSource}
+              cancelEdit={cancelEdit}
+              addSource={addSource}
                     toggleSource={toggleSource}
                     deleteSource={deleteSource}
                     message={message}
@@ -453,7 +521,7 @@ export default function HomePage() {
                 subtitle={`${archiveTotal.toLocaleString('it-IT')} risultati nell’intero archivio.`}
               />
               {archiveArticles.length < archiveTotal && (
-                <button disabled={archiveLoading} onClick={() => searchArchive(archiveArticles.length, true)} className="mt-5 w-full rounded-2xl border border-white/[0.1] bg-white/[0.04] px-5 py-3 text-sm text-neutral-200 hover:bg-white/[0.07] disabled:opacity-50">
+                <button disabled={archiveLoading} onClick={() => searchArchive(archiveNextOffset, true)} className="mt-5 w-full rounded-2xl border border-white/[0.1] bg-white/[0.04] px-5 py-3 text-sm text-neutral-200 hover:bg-white/[0.07] disabled:opacity-50">
                   {archiveLoading ? 'Caricamento…' : 'Carica altri risultati'}
                 </button>
               )}
@@ -472,6 +540,9 @@ export default function HomePage() {
               setRssUrl={setRssUrl}
               priority={priority}
               setPriority={setPriority}
+              editing={Boolean(editingSource)}
+              editSource={editSource}
+              cancelEdit={cancelEdit}
               addSource={addSource}
               toggleSource={toggleSource}
               deleteSource={deleteSource}

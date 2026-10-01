@@ -1,17 +1,14 @@
-import { NextResponse } from 'next/server'
-import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
-import { generateDigest } from '@/lib/ai/generateDigest'
 import { apiError } from '@/lib/server/api'
-import { enforceRateLimit, requireOwner } from '@/lib/server/auth'
+import { requireOwner } from '@/lib/server/auth'
+import { enqueueUpdate } from '@/lib/server/updateResponse'
+
+export const maxDuration = 300
 
 export async function POST(request: Request) {
   try {
-    const user = await requireOwner(request)
-    enforceRateLimit(`profile:${user.id}`, 3, 10 * 60 * 1000)
-    await updateInterestProfile(user.id)
-    await generateDigest(user.id)
-    return NextResponse.json({ success: true })
+    const owner = await requireOwner(request)
+    return await enqueueUpdate(owner.id, 'profile')
   } catch (error) {
-    return apiError(error, 'Errore profilo interessi')
+    return apiError(error, 'Impossibile avviare aggiornamento')
   }
 }

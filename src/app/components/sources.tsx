@@ -1,4 +1,4 @@
-import { ExternalLink, Plus, Power, Trash2 } from 'lucide-react'
+import { ExternalLink, Plus, Power, Trash2, Pencil } from 'lucide-react'
 import type { Source } from './types'
 import { Input, Panel } from './ui'
 
@@ -16,6 +16,9 @@ type SourcesPanelProps = {
   addSource: () => Promise<void>
   toggleSource: (source: Source) => Promise<void>
   deleteSource: (sourceId: string) => Promise<void>
+  editing?: boolean
+  editSource: (source: Source) => void
+  cancelEdit: () => void
   message: string
 }
 
@@ -23,13 +26,14 @@ export function SourcesPanel(props: SourcesPanelProps) {
   function sourceHealth(source: Source) {
     if (!source.is_active) return { label: 'In pausa', className: 'text-neutral-300 bg-white/[0.06]' }
     if (source.last_error) return { label: 'Da controllare', className: 'text-rose-300 bg-rose-500/10' }
+    if (source.is_stale) return { label: 'Da aggiornare', className: 'text-amber-200 bg-amber-500/10' }
     if (source.last_success_at) return { label: 'Operativa', className: 'text-emerald-300 bg-emerald-500/10' }
     return { label: 'Non verificata', className: 'text-amber-200 bg-amber-500/10' }
   }
 
   return (
     <div className={props.full ? 'grid gap-6 xl:grid-cols-[430px_1fr]' : 'space-y-5'}>
-      <Panel title="Aggiungi fonte">
+      <Panel title={props.editing ? "Modifica fonte" : "Aggiungi fonte"}>
         <div className="space-y-3">
           <Input value={props.name} setValue={props.setName} placeholder="Nome fonte" />
           <Input value={props.websiteUrl} setValue={props.setWebsiteUrl} placeholder="Sito web" />
@@ -40,11 +44,11 @@ export function SourcesPanel(props: SourcesPanelProps) {
             onChange={(e) => props.setPriority(Number(e.target.value))}
             className="w-full rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-200 outline-none"
           >
-            <option value={1}>Priorità 1</option>
+            <option value={1}>Priorità 1 · bassa</option>
             <option value={2}>Priorità 2</option>
             <option value={3}>Priorità 3</option>
             <option value={4}>Priorità 4</option>
-            <option value={5}>Priorità 5</option>
+            <option value={5}>Priorità 5 · massima</option>
           </select>
 
           <button
@@ -55,6 +59,7 @@ export function SourcesPanel(props: SourcesPanelProps) {
             Salva fonte
           </button>
 
+          {props.editing && <button onClick={props.cancelEdit} className="text-sm text-neutral-400">Annulla modifica</button>}
           {props.message && <p className="text-sm leading-6 text-neutral-500">{props.message}</p>}
         </div>
       </Panel>
@@ -74,18 +79,20 @@ export function SourcesPanel(props: SourcesPanelProps) {
                   </div>
                   {source.last_checked_at && (
                     <div className="mt-1 text-xs text-neutral-400">
-                      Ultimo controllo {new Date(source.last_checked_at).toLocaleString('it-IT')} · {source.last_import_count} elementi processati
+                      Ultimo controllo {new Date(source.last_checked_at).toLocaleString('it-IT')} · {source.last_new_count} nuovi · {source.last_updated_count} aggiornati · {source.last_import_count} controllati
                     </div>
                   )}
+                  {source.resolved_feed_url && <p className="mt-1 break-all text-xs text-neutral-400">Feed verificato: {source.resolved_feed_url}</p>}
                   {source.last_error && <p className="mt-2 line-clamp-2 text-xs leading-5 text-rose-300">{source.last_error}</p>}
                 </div>
 
                 <div className="flex gap-2">
-                  <button onClick={() => props.toggleSource(source)} className="rounded-xl bg-white/[0.05] p-2">
+                  <button aria-label={`Modifica ${source.name}`} onClick={() => props.editSource(source)} className="rounded-xl bg-white/[0.05] p-2"><Pencil size={14} /></button>
+                  <button aria-label={`${source.is_active ? "Sospendi" : "Attiva"} ${source.name}`} onClick={() => props.toggleSource(source)} className="rounded-xl bg-white/[0.05] p-2">
                     <Power size={14} className={source.is_active ? 'text-emerald-400' : 'text-neutral-600'} />
                   </button>
 
-                  <button onClick={() => props.deleteSource(source.id)} className="rounded-xl bg-white/[0.05] p-2">
+                  <button aria-label={`Elimina ${source.name}`} onClick={() => props.deleteSource(source.id)} className="rounded-xl bg-white/[0.05] p-2">
                     <Trash2 size={14} className="text-neutral-500" />
                   </button>
                 </div>

@@ -68,7 +68,7 @@ export function ReaderMode({
                         addSuffix: true,
                         locale: it,
                       })
-                    : 'Adesso'}
+                    : 'Data non disponibile'}
                 </div>
               </div>
 

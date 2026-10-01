@@ -71,3 +71,14 @@ Prima del deploy:
 3. configura tutte le variabili d'ambiente, inclusi `OWNER_USER_ID`, `APP_PASSWORD` e `APP_SESSION_SECRET`;
 4. esegui l'intera suite di verifica;
 5. controlla che Vercel Cron invii automaticamente il bearer token configurato in `CRON_SECRET`.
+
+
+## Content reliability release
+
+Apply `supabase/migrations/202610010001_content_reliability.sql` before deploying this release. It adds canonical article identity, recoverable duplicate links, atomic import/selection RPCs, source health details and a shared update lease. Historical articles and saves are retained. Privileged RPCs are restricted to service_role.
+
+Update APIs return HTTP 202 with a persisted job. Next.js `after` runs the pipeline within a 300-second function duration; the UI polls `/api/update-status` and reloads the open archive when it finishes. Stalled jobs become retryable after six minutes. RSS workers use per-source and total time budgets. Failures remain visible in Fonti. No external queue is required.
+
+Sources are balanced before AI selection; publisher priority 5 is highest. AI items are validated individually. If AI is unavailable, automatic picks are clearly labeled and ranked by freshness, source priority and interests. Empty or failed replacements preserve the previous selection. Publication dates are never fabricated.
+
+Release sequence: run typecheck, lint, tests and build; apply the migration to the existing Supabase project; deploy the GitHub branch; run a full update and verify sources, fresh articles, selection status and saved articles in production.

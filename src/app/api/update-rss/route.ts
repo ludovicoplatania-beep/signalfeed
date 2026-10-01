@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server'
-import { importSources } from '@/lib/rss/importSources'
 import { apiError } from '@/lib/server/api'
-import { enforceRateLimit, requireOwner } from '@/lib/server/auth'
+import { requireOwner } from '@/lib/server/auth'
+import { enqueueUpdate } from '@/lib/server/updateResponse'
+
+export const maxDuration = 300
 
 export async function POST(request: Request) {
   try {
-    const user = await requireOwner(request)
-    enforceRateLimit(`rss:${user.id}`, 3, 10 * 60 * 1000)
-    const results = await importSources(user.id)
-    return NextResponse.json({ success: true, results })
+    const owner = await requireOwner(request)
+    return await enqueueUpdate(owner.id, 'rss')
   } catch (error) {
-    return apiError(error, 'Errore import RSS')
+    return apiError(error, 'Impossibile avviare aggiornamento')
   }
 }

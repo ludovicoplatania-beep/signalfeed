@@ -4,7 +4,7 @@ import { digestResponseSchema } from './schemas'
 
 export async function generateDigest(userId: string) {
   const supabase = getServiceSupabase()
-  const [{ data: picks }, { data: interests }] = await Promise.all([
+  const [{ data: picks, error: picksError }, { data: interests, error: interestsError }] = await Promise.all([
     supabase
       .from('ai_picks')
       .select(`
@@ -21,6 +21,7 @@ export async function generateDigest(userId: string) {
         )
       `)
       .eq('user_id', userId)
+      .eq('is_current', true)
       .order('score', { ascending: false })
       .limit(10),
 
@@ -28,10 +29,12 @@ export async function generateDigest(userId: string) {
       .from('user_interests')
       .select('interests')
       .eq('user_id', userId)
-      .single(),
+      .maybeSingle(),
   ])
 
-  if (!picks?.length) return
+  if (picksError) throw picksError
+  if (interestsError) throw interestsError
+  if (!picks?.length) return { skipped: true }
 
   const prompt = `
 Restituisci SOLO JSON valido.
@@ -73,6 +76,7 @@ Regole:
   const response = await getOpenAI().chat.completions.create({
     model: 'gpt-4o-mini',
     response_format: { type: 'json_object' },
+    max_completion_tokens: 1_400,
     messages: [
       {
         role: 'system',
@@ -95,11 +99,13 @@ Regole:
   }).filter((id): id is string => Boolean(id)))
   parsed.recommended_articles = parsed.recommended_articles.filter((article) => allowedIds.has(article.id))
 
-  await supabase.from('daily_digests').insert({
+  const { error: saveError } = await supabase.from('daily_digests').insert({
     user_id: userId,
     title: parsed.title,
     summary: parsed.summary,
     key_points: parsed.key_points,
     recommended_articles: parsed.recommended_articles,
   })
+  if (saveError) throw saveError
+  return { skipped: false }
 }

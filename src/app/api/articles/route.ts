@@ -24,8 +24,8 @@ export async function GET(request: Request) {
     const input = searchSchema.parse(Object.fromEntries(url.searchParams))
     let query = getServiceSupabase().from('articles')
       .select('id, title, url, excerpt, image_url, article_content, published_at, source_id, sources!inner(name, user_id)', { count: 'exact' })
-      .eq('sources.user_id', owner.id)
-      .order('published_at', { ascending: false })
+      .eq('sources.user_id', owner.id).is('duplicate_of', null)
+      .order('published_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id')
       .range(input.offset, input.offset + 49)
 
     if (input.q) {
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       ...article,
       sources: Array.isArray(sources) ? (sources[0] ?? null) : sources,
     }))
-    return NextResponse.json({ success: true, articles, total: count ?? 0, nextOffset: input.offset + articles.length })
+    return NextResponse.json({ success: true, articles, total: count ?? 0, nextOffset: input.offset + articles.length }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ success: false, message: 'Filtri non validi' }, { status: 400 })
