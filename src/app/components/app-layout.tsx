@@ -1,4 +1,6 @@
 import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star } from 'lucide-react'
+import Link from 'next/link'
+import { sectors } from '@/lib/sectors/catalog'
 import { Brand } from './ui'
 import type { Section } from './types'
 
@@ -6,6 +8,7 @@ const sections = [
   { id: 'today', label: 'Oggi', icon: Sparkles },
   { id: 'feed', label: 'Feed', icon: Newspaper },
   { id: 'ai', label: 'Scelte AI', icon: Cpu },
+  { id: 'sectors', label: 'Settori', icon: Newspaper },
   { id: 'saved', label: 'Salvati', icon: Star },
   { id: 'sources', label: 'Fonti', icon: Compass },
 ]
@@ -17,7 +20,7 @@ type NavigationProps = {
 
 export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
   return (
-    <aside className="sticky top-0 hidden h-screen border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl lg:flex lg:flex-col">
       <Brand />
 
       <nav className="mt-10 space-y-2">
@@ -42,6 +45,7 @@ export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
         })}
       </nav>
 
+      <nav aria-label="Pagine tematiche" className="mb-6 mt-5 space-y-1"><p className="px-4 py-2 text-xs uppercase tracking-widest text-neutral-500">Settori</p>{sectors.map(sector => <Link key={sector.slug} href={`/settori/${sector.slug}`} className="block rounded-xl px-4 py-2 text-sm text-neutral-400 hover:bg-white/5 hover:text-white">{sector.name}</Link>)}</nav>
       <div className="mt-auto rounded-[1.8rem] border border-[#8b5cf6]/20 bg-gradient-to-br from-[#8b5cf6]/15 to-[#B88A44]/10 p-5">
         <div className="flex items-center gap-2 text-[#C59A52]">
           <Bell size={16} />
@@ -60,6 +64,7 @@ export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
 
 export function Header({
   activeSection,
+  sectorTitle,
   query,
   setQuery,
   refreshData,
@@ -74,6 +79,7 @@ export function Header({
   setPeriod,
 }: {
   activeSection: Section
+  sectorTitle?: string
   query: string
   setQuery: (query: string) => void
   refreshData: () => Promise<void>
@@ -95,7 +101,7 @@ export function Header({
         </div>
 
         <h1 className="mt-2 text-4xl font-semibold tracking-[-0.06em] text-white">
-          {getSectionTitle(activeSection)}
+          {activeSection === 'sectors' ? sectorTitle : getSectionTitle(activeSection)}
         </h1>
       </div>
 
@@ -135,13 +141,13 @@ export function Header({
         </button>
         </div>
 
-        {activeSection === 'feed' && (
+        {(activeSection === 'feed' || activeSection === 'sectors') && (
           <div className="grid grid-cols-2 gap-2 md:flex md:justify-end">
-            <select value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
+            <select aria-label="Filtra per fonte" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
               <option value="">Tutte le fonti</option>
               {sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
             </select>
-            <select value={period} onChange={(event) => setPeriod(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
+            <select aria-label="Filtra per periodo" value={period} onChange={(event) => setPeriod(event.target.value)} className="rounded-xl border border-white/[0.1] bg-black/40 px-3 py-2 text-xs text-neutral-200">
               <option value="all">Tutto l’archivio</option>
               <option value="day">Ultime 24 ore</option>
               <option value="week">Ultimi 7 giorni</option>
