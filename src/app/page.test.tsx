@@ -8,7 +8,7 @@ vi.mock('./components/app-layout', () => ({
   Header: ({ refreshData, refreshing, updateStatus }: { refreshData: () => void; refreshing: boolean; updateStatus: string }) => <div><button disabled={refreshing} onClick={refreshData}>Aggiorna test</button><p>{updateStatus}</p></div>,
 }))
 vi.mock('./components/feed', () => ({ FeedList: ({ articles }: { articles: { id: string; title: string }[] }) => <div>{articles.map(a => <p key={a.id}>{a.title}</p>)}</div>, SavedView: () => null }))
-import HomePage from './page'
+import HomePage from './components/dashboard'
 const initial = { sources: [], articles: [], aiPicks: [], savedArticles: [], trendingTopics: [], digests: [], update: null }
 const job = { id: 'update', status: 'running', phase: 'sources' }
 const json = (data: unknown) => Promise.resolve(new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } }))

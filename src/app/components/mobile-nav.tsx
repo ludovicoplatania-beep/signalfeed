@@ -5,6 +5,7 @@ const items = [
   { id: 'today', label: 'Oggi', icon: Sparkles },
   { id: 'feed', label: 'Feed', icon: Newspaper },
   { id: 'ai', label: 'Scelte AI', icon: Cpu },
+  { id: 'sectors', label: 'Settori', icon: Newspaper },
   { id: 'saved', label: 'Salvati', icon: Star },
   { id: 'sources', label: 'Fonti', icon: Compass },
 ]
