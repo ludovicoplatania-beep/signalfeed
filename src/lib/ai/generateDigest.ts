@@ -22,7 +22,7 @@ export async function generateDigest(userId: string) {
       `)
       .eq('user_id', userId)
       .eq('is_current', true)
-      .order('score', { ascending: false })
+      .order('selection_method').order('score', { ascending: false })
       .limit(10),
 
     supabase

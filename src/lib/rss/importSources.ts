@@ -1,6 +1,6 @@
 import 'server-only'
 import crypto from 'node:crypto'
-import { articleDate, canonicalArticleUrl } from '@/lib/articles/identity'
+import { articleDate, canonicalArticleUrl, isEditorialArticle } from '@/lib/articles/identity'
 import type { SourceRecord } from '@/lib/sources/adapters'
 import { getServiceSupabase } from '@/lib/server/clients'
 import { discoverFeed, cleanHtml } from './discovery'
@@ -23,6 +23,7 @@ async function importSingleSource(source: SourceRecord, signal: AbortSignal): Pr
       if (!item.link || !item.title?.trim()) continue
       try {
         const url = new URL(item.link.trim(), discovered.url).toString()
+        if (!isEditorialArticle(url)) continue
         const key = canonicalArticleUrl(url)
         if (candidates.has(key)) continue
         const content = cleanHtml(item.contentEncoded || item.content || item.contentSnippet || '')

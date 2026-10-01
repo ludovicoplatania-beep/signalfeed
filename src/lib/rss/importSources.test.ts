@@ -30,6 +30,15 @@ describe('source ingestion', () => {
     expect(mocks.rpc.mock.calls[0][1].p_articles[0].published_at).toBeNull()
     expect(mocks.rpc.mock.calls[0][1].p_articles).toHaveLength(1)
   })
+  it('excludes event schedules while retaining editorial articles', async () => {
+    mocks.discover.mockResolvedValue({ url: 'https://www.internazionale.it/rss', mode: 'rss', items: [
+      { title: 'Evento futuro', link: 'https://www.internazionale.it/festival_fuoriclasse/2026/10/04/evento' },
+      { title: 'Notizia', link: 'https://www.internazionale.it/notizie/2026/10/01/editoriale' },
+    ] })
+    await importSources('owner')
+    expect(mocks.rpc.mock.calls[0][1].p_articles).toHaveLength(1)
+    expect(mocks.rpc.mock.calls[0][1].p_articles[0].title).toBe('Notizia')
+  })
   it('persists publisher failures instead of reporting success', async () => {
     mocks.discover.mockRejectedValue(new Error('HTTP 403'))
     const result = await importSources('owner')

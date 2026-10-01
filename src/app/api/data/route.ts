@@ -21,13 +21,15 @@ export async function GET(request: Request) {
       supabase.from('articles')
         .select('id, title, url, excerpt, image_url, article_content, published_at, sources!inner(name, user_id, is_active)')
         .eq('sources.user_id', owner.id).eq('sources.is_active', true).is('duplicate_of', null)
+        .not('url', 'ilike', '%internazionale.it/festival%')
+        .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
         .order('published_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id')
         .limit(100),
       supabase.from('ai_picks')
         .select('id, score, summary, reason, category, selection_method, created_at, articles!inner(id, title, url, excerpt, image_url, article_content, published_at, duplicate_of, sources!inner(name, is_active))')
         .eq('user_id', owner.id).eq('is_current', true)
         .eq('articles.sources.is_active', true).is('articles.duplicate_of', null)
-        .order('score', { ascending: false })
+        .order('selection_method').order('score', { ascending: false })
         .limit(20),
       supabase.from('saved_articles')
         .select('id, article_id, created_at, articles(duplicate_of, id, title, url, excerpt, image_url, article_content, published_at, sources(name))')
