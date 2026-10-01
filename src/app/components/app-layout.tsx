@@ -51,7 +51,7 @@ export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
         </div>
 
         <p className="mt-4 text-sm leading-6 text-neutral-300">
-          Il tuo flusso informativo viene continuamente raffinato in base ai segnali comportamentali.
+          Mi piace, letture e preferenze aiutano Athena a scegliere le prossime notizie.
         </p>
       </div>
     </aside>

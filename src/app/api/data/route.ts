@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getUpdate } from '@/lib/server/pipeline'
 import { uniqueArticles } from '@/lib/articles/identity'
+import { sourceSummary } from '@/lib/articles/summary'
 import { apiError } from '@/lib/server/api'
 import { requireOwner } from '@/lib/server/auth'
 import { getServiceSupabase } from '@/lib/server/clients'
@@ -55,6 +56,7 @@ export async function GET(request: Request) {
       const article = unwrapRelation(relatedArticles)
       return {
         ...pick,
+        summary: article ? sourceSummary(article) : '',
         articles: article ? { ...article, sources: unwrapRelation(article.sources) } : null,
       }
     }).filter((pick) => Boolean(pick.articles?.id && pick.articles.title))
