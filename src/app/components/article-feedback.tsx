@@ -39,7 +39,7 @@ export function ArticleFeedbackProvider({ children, initial, onSaved }: { childr
   }
   return <Context.Provider value={{ preferences, change, pending }}>
     {children}
-    {message && <div role="status" className="fixed bottom-24 left-4 right-4 z-[100] mx-auto max-w-lg rounded-2xl border border-[#B88A44]/30 bg-[#18151f] p-4 text-sm text-neutral-200 shadow-xl lg:bottom-6">
+    {message && <div role="status" className="fixed bottom-24 left-4 right-4 z-[100] mx-auto max-w-lg rounded-2xl border border-[#B88A44]/30 bg-[#18151f] p-4 text-sm text-neutral-200 shadow-xl xl:bottom-6">
       <div className="flex items-center justify-between gap-3"><span>{message}</span><button aria-label="Chiudi avviso" onClick={() => setMessage('')}>×</button></div>
     </div>}
   </Context.Provider>

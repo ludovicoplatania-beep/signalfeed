@@ -18,7 +18,7 @@ export function MobileNav({
   setActiveSection: (section: Section) => void
 }) {
   return (
-    <nav aria-label="Navigazione principale" className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100%-1.25rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-[1.6rem] border border-white/[0.1] bg-[#080808]/92 px-2 py-2 shadow-2xl shadow-black/60 backdrop-blur-2xl lg:hidden">
+    <nav aria-label="Navigazione principale" className="fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-1/2 z-50 flex w-[calc(100%-1.25rem)] max-w-md -translate-x-1/2 items-center justify-between rounded-[1.6rem] border border-white/[0.1] bg-[#080808]/92 px-2 py-2 shadow-2xl shadow-black/60 backdrop-blur-2xl xl:hidden">
       {items.map((item) => {
         const Icon = item.icon
         const active = activeSection === item.id

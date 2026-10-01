@@ -51,7 +51,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
                   </span>
                 </div>
 
-                <h3 className="text-base font-medium leading-snug tracking-[-0.02em] text-neutral-100 sm:text-lg md:text-xl">
+                <h3 className="text-base font-medium [overflow-wrap:anywhere] leading-snug tracking-[-0.02em] text-neutral-100 sm:text-lg md:text-xl">
                   {article.title}
                 </h3>
 

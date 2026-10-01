@@ -20,7 +20,7 @@ type NavigationProps = {
 
 export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
   return (
-    <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl lg:flex lg:flex-col">
+    <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-white/[0.06] bg-black/20 px-5 py-7 backdrop-blur-xl xl:flex xl:flex-col">
       <Brand />
 
       <nav className="mt-10 space-y-2">
@@ -100,7 +100,7 @@ export function Header({
           Athena
         </div>
 
-        <h1 className="mt-1 text-2xl font-semibold leading-tight sm:text-3xl xl:text-4xl tracking-[-0.06em] text-white">
+        <h1 className="mt-1 text-2xl font-semibold [overflow-wrap:anywhere] leading-tight sm:text-3xl xl:text-4xl tracking-[-0.06em] text-white">
           {activeSection === 'sectors' ? sectorTitle : getSectionTitle(activeSection)}
         </h1>
       </div>
@@ -149,11 +149,11 @@ export function Header({
         {(activeSection === 'feed' || activeSection === 'sectors') && (
           <div className="grid min-w-0 grid-cols-2 gap-2 xl:flex xl:justify-end">
             <select aria-label="Filtra per fonte" value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)} className="min-h-11 min-w-0 w-full rounded-2xl border border-white/[0.08] bg-black/40 px-3 py-2 text-base text-neutral-300 sm:text-sm xl:max-w-60">
-              <option value="">Tutte le fonti</option>
+              <option value="">Fonti: tutte</option>
               {sources.map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
             </select>
             <select aria-label="Filtra per periodo" value={period} onChange={(event) => setPeriod(event.target.value)} className="min-h-11 min-w-0 w-full rounded-2xl border border-white/[0.08] bg-black/40 px-3 py-2 text-base text-neutral-300 sm:text-sm xl:max-w-60">
-              <option value="all">Tutto l’archivio</option>
+              <option value="all">Tutte le date</option>
               <option value="day">Ultime 24 ore</option>
               <option value="week">Ultimi 7 giorni</option>
               <option value="month">Ultimi 30 giorni</option>

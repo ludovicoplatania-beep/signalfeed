@@ -50,7 +50,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
           </p>
 
           <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
-            <h2 className="max-w-4xl text-3xl font-semibold leading-[1.04] tracking-[-0.055em] text-white md:text-6xl">
+            <h2 className="max-w-4xl text-3xl font-semibold [overflow-wrap:anywhere] leading-[1.04] tracking-[-0.055em] text-white md:text-6xl">
               {pick.articles?.title}
             </h2>
           </button>
@@ -85,7 +85,7 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
         <p className="mb-3 text-xs leading-5 text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}</p>
 
         <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
-          <h3 className="line-clamp-3 text-lg font-medium leading-snug tracking-[-0.025em] text-white group-hover:underline md:text-xl">
+          <h3 className="line-clamp-3 text-lg font-medium [overflow-wrap:anywhere] leading-snug tracking-[-0.025em] text-white group-hover:underline md:text-xl">
             {pick.articles?.title}
           </h3>
         </button>

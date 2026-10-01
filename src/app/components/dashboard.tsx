@@ -412,7 +412,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   }
 
   return (
-    <ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen bg-[#070708] pb-32 text-neutral-100 lg:pb-0">
+    <ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen bg-[#070708] pb-32 text-neutral-100 xl:pb-0">
       <BackgroundGlow />
 
       <MobileNav activeSection={activeSection} setActiveSection={navigateSection} />
@@ -428,7 +428,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
         )}
       </AnimatePresence>
 
-      <div className="relative mx-auto grid max-w-[1650px] grid-cols-1 lg:grid-cols-[260px_1fr]">
+      <div className="relative mx-auto grid max-w-[1650px] grid-cols-1 xl:grid-cols-[260px_1fr]">
         <Sidebar activeSection={activeSection} setActiveSection={navigateSection} />
 
         <section className="min-w-0 px-3 py-4 sm:px-5 sm:py-6 xl:px-10 xl:py-9">

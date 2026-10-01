@@ -67,7 +67,7 @@ export function ReaderMode({
                 </div>
               </div>
 
-              <h1 className="max-w-5xl text-2xl font-semibold leading-[1.12] sm:text-3xl tracking-[-0.06em] text-white md:text-5xl lg:text-6xl">
+              <h1 className="max-w-5xl text-2xl font-semibold [overflow-wrap:anywhere] leading-[1.12] sm:text-3xl tracking-[-0.06em] text-white md:text-5xl lg:text-6xl">
                 {article.title}
               </h1>
             </div>
