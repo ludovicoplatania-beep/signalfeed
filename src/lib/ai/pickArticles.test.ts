@@ -10,7 +10,7 @@ const valid = (i = 0) => ({ id: articles[i].id, score: 90, summary: 'Sintesi', r
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.from.mockImplementation((table: string) => {
-    const builder = { select: () => builder, eq: () => builder, order: () => builder, limit: () => Promise.resolve({ data: [], error: null }), maybeSingle: () => Promise.resolve({ data: table === 'user_interests' ? { interests: [] } : null, error: null }) }
+    const builder = { select: () => builder, eq: () => builder, not: () => builder, order: () => builder, limit: () => Promise.resolve({ data: [], error: null }), maybeSingle: () => Promise.resolve({ data: table === 'user_interests' ? { interests: [] } : null, error: null }) }
     return builder
   })
   mocks.rpc.mockImplementation((_name, args) => Promise.resolve({ data: args.p_picks.length, error: null }))

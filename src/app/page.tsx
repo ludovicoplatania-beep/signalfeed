@@ -16,6 +16,8 @@ import type {
   Source,
   Topic,
 } from './components/types'
+import { ArticleFeedbackProvider, PreferencesPanel } from './components/article-feedback'
+import type { Preference } from '@/lib/ai/preferences'
 import { BackgroundGlow, EmptyState } from './components/ui'
 import { Header, Sidebar } from './components/app-layout'
 import { MobileNav } from './components/mobile-nav'
@@ -39,6 +41,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
+  const [feedbackEntries, setFeedbackEntries] = useState<{ article_id: string; preference: Preference | null; title: string; source_name: string }[]>([])
+  const preferences = useMemo(() => Object.fromEntries(feedbackEntries.map(entry => [entry.article_id, entry.preference])), [feedbackEntries])
   const [sources, setSources] = useState<Source[]>([])
   const [articles, setArticles] = useState<Article[]>([])
   const [aiPicks, setAiPicks] = useState<AiPick[]>([])
@@ -53,6 +57,7 @@ export default function HomePage() {
   const [period, setPeriod] = useState('all')
   const [updateStatus, setUpdateStatus] = useState('')
 
+  const [expandingSources, setExpandingSources] = useState(false)
   const [name, setName] = useState('')
   const [websiteUrl, setWebsiteUrl] = useState('')
   const [rssUrl, setRssUrl] = useState('')
@@ -117,6 +122,24 @@ export default function HomePage() {
           ? 'ai'
           : null
 
+  async function expandSources() {
+    if (expandingSources) return
+    setExpandingSources(true)
+    setMessage('Controllo i feed prima di aggiungerli…')
+    try {
+      const response = await apiFetch('/api/sources/expand', { method: 'POST' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.message || 'Verifica non disponibile')
+      const skipped = data.reports.filter((report: { status: string }) => report.status === 'unavailable').length
+      setMessage(`${data.added} nuove fonti verificate. ${skipped} candidate non importabili escluse. Aggiorna per importare le notizie.`)
+      await loadEverything()
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Verifica non disponibile')
+    } finally {
+      setExpandingSources(false)
+    }
+  }
+
   async function apiFetch(input: string, init: RequestInit = {}) {
     const response = await fetch(input, { ...init, cache: 'no-store' })
     if (response.status === 401) {
@@ -130,6 +153,7 @@ export default function HomePage() {
     const response = await apiFetch('/api/data')
     if (!response.ok) throw new Error('Impossibile caricare i dati')
     const data = await response.json() as {
+      feedback?: { article_id: string; preference: Preference | null; title: string; source_name: string }[]
       sources: Source[]
       articles: Article[]
       aiPicks: AiPick[]
@@ -138,6 +162,7 @@ export default function HomePage() {
       digests: Digest[]
       update: UpdateJob | null
     }
+    setFeedbackEntries(data.feedback ?? [])
     setSources(data.sources)
     setArticles(data.articles)
     setAiPicks(data.aiPicks.filter((pick) => Boolean(pick.articles?.id && pick.articles.title)))
@@ -376,7 +401,7 @@ export default function HomePage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#070708] pb-32 text-neutral-100 lg:pb-0">
+    <ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen bg-[#070708] pb-32 text-neutral-100 lg:pb-0">
       <BackgroundGlow />
 
       <MobileNav activeSection={activeSection} setActiveSection={setActiveSection} />
@@ -469,11 +494,12 @@ export default function HomePage() {
                     toggleSave={toggleSave}
                     openReader={openArticle}
                     title="Feed completo"
-                    subtitle="Tutte le ultime notizie raccolte."
+                    subtitle="Ultime notizie da editori diversi. Tutti gli articoli sono disponibili nell’archivio."
                   />
                 )}
 
                 <aside className="space-y-5">
+                  <PreferencesPanel entries={feedbackEntries} />
                   <DigestPanel
                     digest={digests[0]}
                     articles={[...articles, ...validPicks.flatMap((pick) => pick.articles ? [pick.articles] : [])]}
@@ -489,6 +515,8 @@ export default function HomePage() {
 
                   <SourcesPanel
                     sources={sources}
+                    expandSources={expandSources}
+                    expanding={expandingSources}
                     name={name}
                     setName={setName}
                     websiteUrl={websiteUrl}
@@ -531,6 +559,8 @@ export default function HomePage() {
           {activeSection === 'sources' && (
             <SourcesPanel
               full
+              expandSources={expandSources}
+              expanding={expandingSources}
               sources={sources}
               name={name}
               setName={setName}
@@ -569,6 +599,6 @@ export default function HomePage() {
           )}
         </section>
       </div>
-    </main>
+    </main></ArticleFeedbackProvider>
   )
 }

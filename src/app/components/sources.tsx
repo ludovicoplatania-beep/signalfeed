@@ -20,6 +20,8 @@ type SourcesPanelProps = {
   editSource: (source: Source) => void
   cancelEdit: () => void
   message: string
+  expandSources?: () => Promise<void>
+  expanding?: boolean
 }
 
 export function SourcesPanel(props: SourcesPanelProps) {
@@ -60,6 +62,10 @@ export function SourcesPanel(props: SourcesPanelProps) {
           </button>
 
           {props.editing && <button onClick={props.cancelEdit} className="text-sm text-neutral-400">Annulla modifica</button>}
+          {!props.editing && props.expandSources && <div className="mt-4 border-t border-white/10 pt-4">
+            <p className="mb-3 text-sm leading-6 text-neutral-400">Amplia attualità, Sicilia, economia e scienza. Vengono aggiunti solo feed raggiungibili con notizie recenti; le fonti già presenti restano gestibili singolarmente.</p>
+            <button disabled={props.expanding} onClick={props.expandSources} className="w-full rounded-2xl border border-[#B88A44]/30 px-4 py-3 text-sm text-[#E2C188] disabled:opacity-50">{props.expanding ? 'Verifica delle nuove fonti…' : 'Amplia con fonti verificate'}</button>
+          </div>}
           {props.message && <p className="text-sm leading-6 text-neutral-500">{props.message}</p>}
         </div>
       </Panel>
