@@ -36,3 +36,11 @@ export function uniqueArticles<T extends { id: string; url: string }>(articles: 
     return true
   })
 }
+
+/** Publisher event listings are not editorial articles. */
+export function isEditorialArticle(raw: string) {
+  try {
+    const url = new URL(raw)
+    return !(url.hostname.replace(/^www\./, '') === 'internazionale.it' && /^\/festival(?:_|\/)/i.test(url.pathname))
+  } catch { return false }
+}

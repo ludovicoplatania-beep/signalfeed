@@ -59,15 +59,26 @@ export async function assertSafePublicUrl(rawUrl: string): Promise<URL> {
   return url
 }
 
+export function decodePublisherText(bytes: Uint8Array, contentType: string | null) {
+  const prefix = new TextDecoder('latin1').decode(bytes.subarray(0, 2048))
+  const charset = contentType?.match(/charset=["']?([\w-]+)/i)?.[1]
+    || prefix.match(/<\?xml[^>]*encoding=["']([^"']+)/i)?.[1]
+    || prefix.match(/<meta[^>]*charset=["']?([\w-]+)/i)?.[1]
+  if (charset) {
+    try { return new TextDecoder(charset).decode(bytes) } catch { /* Unknown charset: use valid UTF-8 or legacy Western encoding. */ }
+  }
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes) }
+  catch { return new TextDecoder('windows-1252').decode(bytes) }
+}
+
 async function readLimitedBody(response: Response): Promise<string> {
   const declared = Number(response.headers.get('content-length') ?? 0)
   if (declared > MAX_RESPONSE_BYTES) throw new Error('Risposta troppo grande')
   if (!response.body) return ''
 
   const reader = response.body.getReader()
-  const decoder = new TextDecoder()
+  const chunks: Uint8Array[] = []
   let total = 0
-  let output = ''
 
   while (true) {
     const { value, done } = await reader.read()
@@ -77,9 +88,12 @@ async function readLimitedBody(response: Response): Promise<string> {
       await reader.cancel()
       throw new Error('Risposta troppo grande')
     }
-    output += decoder.decode(value, { stream: true })
+    chunks.push(value)
   }
-  return output + decoder.decode()
+  const bytes = new Uint8Array(total)
+  let offset = 0
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length }
+  return decodePublisherText(bytes, response.headers.get('content-type'))
 }
 
 export async function safeFetchText(rawUrl: string, accept: string, signal?: AbortSignal): Promise<{ text: string; url: string }> {

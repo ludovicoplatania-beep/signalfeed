@@ -25,6 +25,8 @@ export async function GET(request: Request) {
     let query = getServiceSupabase().from('articles')
       .select('id, title, url, excerpt, image_url, article_content, published_at, source_id, sources!inner(name, user_id)', { count: 'exact' })
       .eq('sources.user_id', owner.id).is('duplicate_of', null)
+        .not('url', 'ilike', '%internazionale.it/festival%')
+        .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
       .order('published_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id')
       .range(input.offset, input.offset + 49)
 

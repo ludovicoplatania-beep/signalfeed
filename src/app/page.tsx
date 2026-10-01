@@ -476,7 +476,7 @@ export default function HomePage() {
                 <aside className="space-y-5">
                   <DigestPanel
                     digest={digests[0]}
-                    articles={articles}
+                    articles={[...articles, ...validPicks.flatMap((pick) => pick.articles ? [pick.articles] : [])]}
                     openReader={openArticle}
                   />
 

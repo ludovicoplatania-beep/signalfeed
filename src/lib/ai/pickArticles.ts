@@ -15,6 +15,8 @@ export async function loadCandidates(userId: string): Promise<Candidate[]> {
       const { data, error: articleError } = await supabase.from('articles')
         .select('id, title, url, excerpt, article_content, published_at, created_at, source_id')
         .eq('source_id', source.id).is('duplicate_of', null)
+        .not('url', 'ilike', '%internazionale.it/festival%')
+        .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
         .order('published_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id')
         .limit(20)
       if (articleError) throw articleError
