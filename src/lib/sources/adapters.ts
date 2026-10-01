@@ -6,11 +6,14 @@ export type SourceRecord = {
   rss_url: string
   is_active: boolean
   priority: number
+  resolved_feed_url?: string | null
 }
 
 export type SourceAdapter = {
   match: (source: SourceRecord) => boolean
   feedUrls: (source: SourceRecord) => string[]
+  pageUrls?: string[]
+  articlePattern?: RegExp
 }
 
 function text(source: SourceRecord) {
@@ -18,6 +21,33 @@ function text(source: SourceRecord) {
 }
 
 export const sourceAdapters: SourceAdapter[] = [
+  {
+    match: (source) => text(source).includes('internazionale'),
+    feedUrls: () => ['https://www.internazionale.it/sitemaps/rss.xml'],
+  },
+  {
+    match: (source) => text(source).includes('animeclick'),
+    feedUrls: () => [],
+    pageUrls: ['https://www.animeclick.it/news'],
+    articlePattern: /^\/news\/\d+-/,
+  },
+  {
+    match: (source) => text(source).includes('automoto.it'),
+    feedUrls: () => ['https://www.automoto.it/rss/news.xml'],
+    pageUrls: ['https://www.automoto.it/servizio/rss.html', 'https://www.automoto.it/news'],
+    articlePattern: /^\/(news|prove|formula1)\/.+\.html$/,
+  },
+  {
+    match: (source) => text(source).includes('slow-news'),
+    feedUrls: () => [],
+    articlePattern: /^\/(articoli|articles|news)\/.+/,
+  },
+  {
+    match: (source) => text(source).includes('pagella politica') || text(source).includes('pagellapolitica'),
+    feedUrls: () => [],
+    pageUrls: ['https://pagellapolitica.it/articoli'],
+    articlePattern: /^\/articoli\/.+/,
+  },
   {
     match: (source) => text(source).includes('wired'),
     feedUrls: () => [
@@ -33,25 +63,18 @@ export const sourceAdapters: SourceAdapter[] = [
     ],
   },
   {
-    match: (source) => text(source).includes('pagella politica'),
-    feedUrls: () => [
-      'https://pagellapolitica.it/feed',
-      'https://pagellapolitica.it/rss',
-    ],
-  },
-  {
     match: (source) => text(source).includes('moto.it'),
-    feedUrls: () => [
-      'https://www.moto.it/rss',
-      'https://www.moto.it/news/rss.xml',
-    ],
+    feedUrls: () => ['https://www.moto.it/rss/news.xml'],
+    pageUrls: ['https://www.moto.it/rss', 'https://www.moto.it/news'],
+    articlePattern: /^\/(news|prove|MotoGP|sport)\/.+\.html$/i,
   },
   {
     match: (source) => text(source).includes('quattroruote'),
     feedUrls: () => [
-      'https://www.quattroruote.it/rss/news.xml',
       'https://www.quattroruote.it/rss',
     ],
+    pageUrls: ['https://www.quattroruote.it/news.html'],
+    articlePattern: /^\/news\/\d{4}\/\d{2}\/\d{2}\/.+/,
   },
   {
     match: (source) => text(source).includes('badtaste'),
@@ -66,6 +89,8 @@ export const sourceAdapters: SourceAdapter[] = [
       'https://www.vulture.com/rss/index.xml',
       'https://www.vulture.com/rss/tv/index.xml',
     ],
+    pageUrls: ['https://www.vulture.com/'],
+    articlePattern: /^\/article\/.+\.html$/,
   },
   {
     match: (source) => text(source).includes('ringer'),
@@ -73,6 +98,8 @@ export const sourceAdapters: SourceAdapter[] = [
       'https://www.theringer.com/rss/index.xml',
       'https://www.theringer.com/tv/rss/index.xml',
     ],
+    pageUrls: ['https://www.theringer.com/'],
+    articlePattern: /^\/(\d{4}|movies|tv|pop-culture)\/.+/,
   },
   {
     match: (source) => text(source).includes('home assistant'),
@@ -87,5 +114,7 @@ export const sourceAdapters: SourceAdapter[] = [
       'https://screenanarchy.com/globalvoices/atom.xml',
       'https://screenanarchy.com/atom.xml',
     ],
+    pageUrls: ['https://screenanarchy.com/'],
+    articlePattern: /^\/\d{4}\/\d{2}\/.+\.html$/,
   },
 ]

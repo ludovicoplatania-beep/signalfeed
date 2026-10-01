@@ -9,7 +9,7 @@ export async function GET(request: Request) {
     const { data, error } = await getServiceSupabase()
       .from('trending_topics')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', user.id).eq('is_current', true)
       .order('score', { ascending: false })
       .limit(12)
     if (error) throw error

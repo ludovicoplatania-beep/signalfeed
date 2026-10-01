@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server'
 import { apiError } from '@/lib/server/api'
-import { enforceRateLimit, requireOwner } from '@/lib/server/auth'
-import { updateUser } from '@/lib/server/pipeline'
+import { requireOwner } from '@/lib/server/auth'
+import { enqueueUpdate } from '@/lib/server/updateResponse'
+
+export const maxDuration = 300
 
 export async function POST(request: Request) {
   try {
-    const user = await requireOwner(request)
-    enforceRateLimit(`update:${user.id}`, 2, 10 * 60 * 1000)
-    const result = await updateUser(user.id)
-    return NextResponse.json({ success: true, ...result })
+    const owner = await requireOwner(request)
+    return await enqueueUpdate(owner.id, 'all')
   } catch (error) {
-    return apiError(error, 'Errore durante aggiornamento pipeline')
+    return apiError(error, 'Impossibile avviare aggiornamento')
   }
 }

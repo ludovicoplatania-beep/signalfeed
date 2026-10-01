@@ -11,17 +11,18 @@ export async function POST(request: Request) {
     const owner = await requireOwner(request)
     const { article_id } = articleSchema.parse(await request.json())
     const supabase = getServiceSupabase()
-    const { data: article } = await supabase.from('articles')
-      .select('id, sources!inner(user_id)')
+    const { data: article, error: readError } = await supabase.from('articles')
+      .select('id, duplicate_of, sources!inner(user_id)')
       .eq('id', article_id)
       .eq('sources.user_id', owner.id)
       .maybeSingle()
+    if (readError) throw readError
     if (!article) {
       return NextResponse.json({ success: false, message: 'Articolo non trovato' }, { status: 404 })
     }
 
     const { error } = await supabase.from('saved_articles').upsert(
-      { user_id: owner.id, article_id },
+      { user_id: owner.id, article_id: article.duplicate_of ?? article_id },
       { onConflict: 'user_id,article_id' },
     )
     if (error) throw error
@@ -38,10 +39,13 @@ export async function DELETE(request: Request) {
   try {
     const owner = await requireOwner(request)
     const { article_id } = articleSchema.parse(await request.json())
-    const { error } = await getServiceSupabase().from('saved_articles')
+    const supabase = getServiceSupabase()
+    const { data: aliases, error: aliasError } = await supabase.from('articles').select('id, sources!inner(user_id)').eq('duplicate_of', article_id).eq('sources.user_id', owner.id)
+    if (aliasError) throw aliasError
+    const { error } = await supabase.from('saved_articles')
       .delete()
       .eq('user_id', owner.id)
-      .eq('article_id', article_id)
+      .in('article_id', [article_id, ...(aliases ?? []).map((article) => article.id)])
     if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {

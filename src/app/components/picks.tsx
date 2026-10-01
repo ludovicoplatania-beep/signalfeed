@@ -46,7 +46,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
         <div>
           <p className="mb-4 flex items-center gap-2 text-sm text-[#E2C188]">
             <Sparkles size={15} />
-            Scelta principale
+            {pick.selection_method === 'automatic' ? 'Selezione automatica' : 'Scelta IA principale'}
           </p>
 
           <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
@@ -83,7 +83,7 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
 
       <div className="relative pointer-events-none">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</p>
+          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}</p>
 
           <div className="pointer-events-auto flex items-center gap-3">
             <SaveButton saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
@@ -112,7 +112,7 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
   if (!picks.length) return null
 
   return (
-    <Panel title="Altre priorità AI">
+    <Panel title="Altre priorità">
       <div className="space-y-3">
         {picks.map((pick) => (
           <div
@@ -124,7 +124,7 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
             </button>
 
             <button onClick={() => pick.articles && openReader(pick.articles)} className="text-left">
-              <div className="mb-1 text-xs text-neutral-400">{pick.category} · {pick.score}</div>
+              <div className="mb-1 text-xs text-neutral-400">{pick.category} · {pick.score} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}</div>
               <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
                 {pick.articles?.title}
               </p>

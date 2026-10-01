@@ -46,7 +46,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
                   <span>
                     {article.published_at
                       ? formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: it })
-                      : 'Adesso'}
+                      : 'Data non disponibile'}
                   </span>
                 </div>
 

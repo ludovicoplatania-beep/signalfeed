@@ -4,18 +4,23 @@ import { interestsResponseSchema } from './schemas'
 
 export async function updateInterestProfile(userId: string) {
   const supabase = getServiceSupabase()
-  const { data: events } = await supabase
+  const { data: events, error } = await supabase
     .from('user_events')
     .select(`
       event_type,
       metadata,
-      article_id
+      article_id,
+      created_at
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(120)
 
-  if (!events?.length) return
+  if (error) throw error
+  if (!events?.length) return { skipped: true }
+  const { data: existing, error: existingError } = await supabase.from('user_interests').select('updated_at').eq('user_id', userId).maybeSingle()
+  if (existingError) throw existingError
+  if (existing?.updated_at && new Date(existing.updated_at) >= new Date(events[0].created_at)) return { skipped: true }
 
   const prompt = `
 Restituisci ESCLUSIVAMENTE JSON valido.
@@ -44,10 +49,10 @@ Eventi:
 ${JSON.stringify(events)}
 `
 
-  try {
     const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
+      max_completion_tokens: 700,
       messages: [
         {
           role: 'system',
@@ -67,14 +72,13 @@ ${JSON.stringify(events)}
     const parsed = interestsResponseSchema.parse(JSON.parse(raw))
     const interests = parsed.interests
 
-    await supabase
+    const { error: saveError } = await supabase
       .from('user_interests')
       .upsert({
         user_id: userId,
         interests,
         updated_at: new Date().toISOString(),
       })
-  } catch (error) {
-    console.error('Interest profiling error:', error)
-  }
+    if (saveError) throw saveError
+    return { skipped: false }
 }

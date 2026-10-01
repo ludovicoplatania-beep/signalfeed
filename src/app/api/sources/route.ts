@@ -12,9 +12,8 @@ const createSchema = z.object({
   priority: z.number().int().min(1).max(5),
 }).strict()
 
-const updateSchema = z.object({
-  id: z.string().uuid(),
-  is_active: z.boolean(),
+const updateSchema = createSchema.partial().extend({
+  id: z.string().uuid(), is_active: z.boolean().optional(),
 }).strict()
 
 const deleteSchema = z.object({ id: z.string().uuid() }).strict()
@@ -45,10 +44,12 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const owner = await requireOwner(request)
-    const update = updateSchema.parse(await request.json())
+    const { id, ...update } = updateSchema.parse(await request.json())
+    if (update.rss_url) await assertSafePublicUrl(update.rss_url)
+    if (update.website_url) await assertSafePublicUrl(update.website_url)
     const { error } = await getServiceSupabase().from('sources')
-      .update({ is_active: update.is_active })
-      .eq('id', update.id)
+      .update({ ...update, ...(update.rss_url ? { resolved_feed_url: null, last_error: null } : {}) })
+      .eq('id', id)
       .eq('user_id', owner.id)
     if (error) throw error
     return NextResponse.json({ success: true })

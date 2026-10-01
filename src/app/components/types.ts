@@ -11,6 +11,10 @@ export type Source = {
   last_success_at: string | null
   last_error: string | null
   last_import_count: number
+  last_new_count: number
+  last_updated_count: number
+  resolved_feed_url: string | null
+  is_stale: boolean
 }
 
 export type Article = {
@@ -25,6 +29,7 @@ export type Article = {
 }
 
 export type AiPick = {
+  selection_method: 'ai' | 'automatic'
   id: string
   score: number
   summary: string

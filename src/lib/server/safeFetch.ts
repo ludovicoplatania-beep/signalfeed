@@ -72,7 +72,8 @@ async function readLimitedBody(response: Response): Promise<string> {
   return output + decoder.decode()
 }
 
-export async function safeFetchText(rawUrl: string, accept: string): Promise<{ text: string; url: string }> {
+export async function safeFetchText(rawUrl: string, accept: string, signal?: AbortSignal): Promise<{ text: string; url: string }> {
+  signal?.throwIfAborted()
   let current = await assertSafePublicUrl(rawUrl)
 
   for (let redirect = 0; redirect <= MAX_REDIRECTS; redirect += 1) {
@@ -82,7 +83,8 @@ export async function safeFetchText(rawUrl: string, accept: string): Promise<{ t
         'User-Agent': 'SignalFeed/1.0 (+https://github.com/ludovicoplatania-beep/signalfeed)',
         Accept: accept,
       },
-      signal: AbortSignal.timeout(8_000),
+      cache: 'no-store',
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(5_000)]) : AbortSignal.timeout(5_000),
     })
 
     if (response.status >= 300 && response.status < 400) {

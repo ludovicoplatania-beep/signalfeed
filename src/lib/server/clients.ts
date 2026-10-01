@@ -19,7 +19,7 @@ export function getServiceSupabase(): SupabaseClient {
 
 export function getOpenAI(): OpenAI {
   if (!openAIClient) {
-    openAIClient = new OpenAI({ apiKey: getServerEnv().OPENAI_API_KEY })
+    openAIClient = new OpenAI({ apiKey: getServerEnv().OPENAI_API_KEY, timeout: 20_000, maxRetries: 0 })
   }
 
   return openAIClient
