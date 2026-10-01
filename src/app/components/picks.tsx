@@ -33,7 +33,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(184,138,68,0.16),transparent_32%),radial-gradient(circle_at_82%_12%,rgba(139,92,246,0.18),transparent_30%)]" />
       </button>
 
-      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-5 md:p-10">
+      <div className="pointer-events-none relative z-20 flex flex-col justify-between p-5 md:absolute md:inset-0 md:p-10">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <Pill>{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</Pill>
 
@@ -43,7 +43,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
           </div>
         </div>
 
-        <div>
+        <div className="mt-12 md:mt-0">
           <p className="mb-4 flex items-center gap-2 text-sm text-[#E2C188]">
             <Sparkles size={15} />
             {pick.reason?.startsWith('Scoperta') ? 'Scoperta per te' : pick.selection_method === 'automatic' ? 'Selezione automatica' : 'Scelta IA principale'}
@@ -55,7 +55,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
             </h2>
           </button>
 
-          <p className="mt-5 max-w-2xl text-base leading-7 text-neutral-300 md:text-lg md:leading-8">
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-300 md:text-lg md:leading-8">
             {pick.summary}
           </p>
         </div>

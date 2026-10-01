@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { BrainCircuit, ChevronDown, Cpu, Gamepad2, Scale, MapPin, Landmark, TrendingUp, FlaskConical, Clapperboard, type LucideIcon } from 'lucide-react'
+import { BrainCircuit, ChevronDown, LayoutGrid, Cpu, Gamepad2, Scale, MapPin, Landmark, TrendingUp, FlaskConical, Clapperboard, type LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { sectors, getSector } from '@/lib/sectors/catalog'
 import { uniqueArticles } from '@/lib/articles/identity'
@@ -15,10 +15,6 @@ const sectorIcons: Record<string, LucideIcon> = {
   'sicilia-catania': MapPin, politica: Landmark, economia: TrendingUp,
   scienza: FlaskConical, cultura: Clapperboard,
 }
-const shortNames: Record<string, string> = {
-  ia: 'Intelligenza artificiale', diritto: 'Diritto e giustizia',
-  'sicilia-catania': 'Sicilia e Catania', scienza: 'Scienza e salute',
-}
 
 export function SectorLinks({ active }: { active?: string }) {
   const links = <nav aria-label="Settori di interesse" className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-3">
@@ -30,12 +26,12 @@ export function SectorLinks({ active }: { active?: string }) {
           ? 'border-[#B88A44]/35 bg-[linear-gradient(145deg,rgba(197,154,82,0.18),rgba(139,92,246,0.08))] text-[#E2C188] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
           : 'border-[#B88A44]/10 bg-white/[0.025] text-neutral-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] hover:border-[#B88A44]/30 hover:bg-white/[0.05]'}`}>
         <Icon size={18} aria-hidden="true" className="shrink-0 text-[#C59A52]" />
-        <span className="min-w-0 text-xs leading-5 sm:text-sm">{shortNames[sector.slug] ?? sector.name}</span>
+        <span className="min-w-0 text-xs leading-5 sm:text-sm">{sector.name}</span>
       </Link>
     })}
   </nav>
   const current = active ? getSector(active) : undefined
-  const Icon = active ? sectorIcons[active] : Landmark
+  const Icon = active ? sectorIcons[active] : LayoutGrid
   return <details key={active ?? 'all'} className="group rounded-2xl border border-[#B88A44]/20 bg-[linear-gradient(145deg,rgba(197,154,82,0.08),rgba(139,92,246,0.05))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
     <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
       <Icon size={20} aria-hidden="true" className="shrink-0 text-[#C59A52]" />
