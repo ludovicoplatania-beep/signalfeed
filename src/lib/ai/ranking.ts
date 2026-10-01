@@ -1,6 +1,7 @@
 import { sameEvent } from '@/lib/articles/stories'
 import { canonicalArticleUrl } from '@/lib/articles/identity'
 import { preferenceAdjustment, type Feedback } from './preferences'
+import { sourceSummary } from '@/lib/articles/summary'
 
 export const categories = ['Tecnologia', 'Intelligenza artificiale', 'Economia', 'Politica', 'Esteri', 'Salute', 'Ambiente', 'Scienza', 'Cultura', 'Cinema e media', 'Cronaca', 'Sport', 'Generale'] as const
 export type Candidate = {
@@ -71,7 +72,7 @@ export function automaticPicks(articles: Candidate[], interests: Array<{ topic: 
     }, 0)
     const preference = preferenceAdjustment(article, feedback)
     return { id: article.id, score: Math.max(1, Math.min(99, Math.round(freshness + affinity + article.source_priority * 2 + preference - (readIds.has(article.id) ? 15 : 0)))),
-      summary: (article.excerpt || article.title).slice(0, 220), category: categoryFor(article), selection_method: 'automatic',
+      summary: sourceSummary(article), category: categoryFor(article), selection_method: 'automatic',
       reason: `${preference > 0 ? 'Vicino ai tuoi Mi piace' : preference < 0 ? 'Ridotto per la tua preferenza' : readIds.has(article.id) ? 'Approfondimento già consultato' : 'Articolo non ancora consultato'} · ${article.source_name}. Ordinato per attualità, interessi e priorità della fonte.`.slice(0, 180) }
   }).sort((a, b) => b.score - a.score)
 }

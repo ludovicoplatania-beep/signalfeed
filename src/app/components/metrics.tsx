@@ -57,7 +57,7 @@ export function Metrics({
       <AthenaMetric
         label="Notizie"
         value={articles.length}
-        detail="Articoli raccolti e analizzati"
+        detail="Articoli recenti nel briefing"
       />
 
       <AthenaMetric
