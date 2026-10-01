@@ -1,7 +1,7 @@
 import 'server-only'
 import { importSources, repairArticleIdentities, type SourceResult } from '@/lib/rss/importSources'
 import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
-import { pickArticles, loadCandidates } from '@/lib/ai/pickArticles'
+import { pickArticles, loadCandidates, type SelectionDiagnostics } from '@/lib/ai/pickArticles'
 import { generateTopics } from '@/lib/ai/generateTopics'
 import { generateDigest } from '@/lib/ai/generateDigest'
 import { getServiceSupabase } from './clients'
@@ -13,6 +13,7 @@ export type UpdateJob = {
 }
 export type UpdateResult = {
   rss: SourceResult[]; warnings: string[]
+  aiSelection?: SelectionDiagnostics
   stages: Record<string, { success: boolean; message?: string }>
   summary: { sourcesChecked: number; sourcesOk: number; sourcesFailed: number; itemsProcessed: number; newArticles: number; updatedArticles: number; picksCount: number; automaticPicks: number }
 }
@@ -47,14 +48,15 @@ export async function runUpdate(job: UpdateJob) {
     const { error } = await supabase.from('athena_updates').update({ ...values, updated_at: new Date().toISOString() }).eq('user_id', job.user_id).eq('id', job.id)
     if (error) throw error
   }
-  async function stage(name: string, action: () => Promise<unknown>) {
+  async function stage(name: string, action: (budgetMs: number) => Promise<unknown>, requestedBudgetMs = 22_000) {
     await save({ phase: name, result })
-    if (Date.now() > deadline - 22_000) {
+    const remaining = deadline - Date.now() - 5_000
+    if (remaining < 8_000) {
       result.stages[name] = { success: false, message: 'Fase rinviata: tempo disponibile esaurito' }
       result.warnings.push(result.stages[name].message!)
       return
     }
-    try { await action(); result.stages[name] = { success: true } }
+    try { await action(Math.min(requestedBudgetMs, remaining)); result.stages[name] = { success: true } }
     catch (error) {
       const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error)
       console.warn('Update stage failed:', name, message)
@@ -72,17 +74,18 @@ export async function runUpdate(job: UpdateJob) {
         newArticles: ok.reduce((sum, source) => sum + source.newCount, 0), updatedArticles: ok.reduce((sum, source) => sum + source.updatedCount, 0) }
       if (result.summary.sourcesFailed) result.warnings.push(`${result.summary.sourcesFailed} fonti non aggiornate: dettagli nella sezione Fonti.`)
     })
-    if (job.mode === 'all' || job.mode === 'profile') await stage('profile', () => updateInterestProfile(job.user_id))
+    if (job.mode === 'all' || job.mode === 'profile') await stage('profile', budgetMs => updateInterestProfile(job.user_id, { budgetMs }), 45_000)
     if (job.mode === 'all' || job.mode === 'ai') {
       const candidates = await loadCandidates(job.user_id)
-      await stage('picks', async () => {
-        const picks = await pickArticles(job.user_id, candidates)
+      await stage('picks', async budgetMs => {
+        const picks = await pickArticles(job.user_id, candidates, { budgetMs })
         result.summary.picksCount = picks.count; result.summary.automaticPicks = picks.automaticCount
+        result.aiSelection = picks.diagnostics
         if (picks.warning) result.warnings.push(picks.warning)
-      })
-      await stage('topics', () => generateTopics(job.user_id, candidates))
+      }, 65_000)
+      await stage('topics', budgetMs => generateTopics(job.user_id, candidates, { budgetMs }), 45_000)
     }
-    if (job.mode === 'profile' || result.stages.picks?.success) await stage('digest', () => generateDigest(job.user_id))
+    if (job.mode === 'profile' || result.stages.picks?.success) await stage('digest', budgetMs => generateDigest(job.user_id, { budgetMs }), 45_000)
     const successes = Object.entries(result.stages).filter(([name, stage]) => name !== 'identity' && stage.success).length
     const status = !successes ? 'failed' : result.warnings.length ? 'partial' : 'completed'
     await save({ status, phase: 'finished', result, message: result.warnings.join(' · ').slice(0, 1_000) || null })
