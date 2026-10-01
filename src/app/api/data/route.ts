@@ -13,18 +13,12 @@ export async function GET(request: Request) {
   try {
     const owner = await requireOwner(request)
     const supabase = getServiceSupabase()
-    const [sources, articles, picks, saved, topics, digests] = await Promise.all([
+    const [sources, articles, picks, saved, topics, digests, feedback] = await Promise.all([
       supabase.from('sources')
         .select('id, name, website_url, rss_url, is_active, priority, last_checked_at, last_success_at, last_error, last_import_count, last_new_count, last_updated_count, resolved_feed_url')
         .eq('user_id', owner.id)
         .order('created_at', { ascending: false }),
-      supabase.from('articles')
-        .select('id, title, url, excerpt, image_url, article_content, published_at, sources!inner(name, user_id, is_active)')
-        .eq('sources.user_id', owner.id).eq('sources.is_active', true).is('duplicate_of', null)
-        .not('url', 'ilike', '%internazionale.it/festival%')
-        .or(`published_at.is.null,published_at.lte.${new Date().toISOString()}`)
-        .order('published_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).order('id')
-        .limit(100),
+      supabase.rpc('athena_home_feed', { p_user: owner.id }),
       supabase.from('ai_picks')
         .select('id, score, summary, reason, category, selection_method, created_at, articles!inner(id, title, url, excerpt, image_url, article_content, published_at, duplicate_of, sources!inner(name, is_active))')
         .eq('user_id', owner.id).eq('is_current', true)
@@ -45,12 +39,13 @@ export async function GET(request: Request) {
         .eq('user_id', owner.id)
         .order('created_at', { ascending: false })
         .limit(1),
+      supabase.from('article_feedback').select('article_id, preference, title, source_name, updated_at').eq('user_id', owner.id).order('updated_at', { ascending: false }).limit(1000),
     ])
 
-    const failed = [sources, articles, picks, saved, topics, digests].find((result) => result.error)
+    const failed = [sources, articles, picks, saved, topics, digests, feedback].find((result) => result.error)
     if (failed?.error) throw failed.error
 
-    const normalizedArticles = (articles.data ?? []).map(
+    const normalizedArticles = ((articles.data ?? []) as { id: string; title: string; url: string; sources: { name: string } | null }[]).map(
       ({ sources: relatedSources, ...article }) => ({
         ...article,
         sources: unwrapRelation(relatedSources),
@@ -82,6 +77,7 @@ export async function GET(request: Request) {
     return NextResponse.json(
       {
         success: true,
+        feedback: feedback.data ?? [],
         sources: (sources.data ?? []).map((source) => ({ ...source, is_stale: !source.last_success_at || Date.now() - new Date(source.last_success_at).getTime() > 36 * 3_600_000 })),
         articles: uniqueArticles(normalizedArticles),
         aiPicks: normalizedPicks,

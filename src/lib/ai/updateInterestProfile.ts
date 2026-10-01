@@ -4,7 +4,7 @@ import { interestsResponseSchema } from './schemas'
 
 export async function updateInterestProfile(userId: string) {
   const supabase = getServiceSupabase()
-  const { data: events, error } = await supabase
+  const [{ data: events, error }, { data: feedback, error: feedbackError }] = await Promise.all([supabase
     .from('user_events')
     .select(`
       event_type,
@@ -14,13 +14,15 @@ export async function updateInterestProfile(userId: string) {
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
-    .limit(120)
+    .limit(120), supabase.from('article_feedback').select('preference,title,excerpt,source_name,updated_at').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1000)])
 
   if (error) throw error
-  if (!events?.length) return { skipped: true }
+  if (feedbackError) throw feedbackError
+  if (!events?.length && !feedback?.length) return { skipped: true }
   const { data: existing, error: existingError } = await supabase.from('user_interests').select('updated_at').eq('user_id', userId).maybeSingle()
   if (existingError) throw existingError
-  if (existing?.updated_at && new Date(existing.updated_at) >= new Date(events[0].created_at)) return { skipped: true }
+  const latestSignal = Math.max(new Date(events?.[0]?.created_at ?? 0).getTime(), new Date(feedback?.[0]?.updated_at ?? 0).getTime())
+  if (existing?.updated_at && new Date(existing.updated_at).getTime() >= latestSignal) return { skipped: true }
 
   const prompt = `
 Restituisci ESCLUSIVAMENTE JSON valido.
@@ -44,6 +46,13 @@ Analizza questi eventi utente e deduci:
 - interessi cognitivi
 - argomenti strategici preferiti
 - pattern editoriali
+
+Le preferenze esplicite attuali prevalgono: Mi piace è forte, Salva può significare solo leggere dopo, apertura è debole.
+Non interpretare less_topic o less_source come gradimento. Le preferenze annullate (null) non sono segnali.
+Ricostruisci gli interessi dai dati attuali, senza conservare preferenze annullate.
+
+Preferenze esplicite:
+${JSON.stringify((feedback ?? []).filter(entry => entry.preference).slice(0, 200))}
 
 Eventi:
 ${JSON.stringify(events)}

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Sparkles } from 'lucide-react'
-import { ArticleImage, ArticleThumbnail, Panel, Pill, SaveButton } from './ui'
+import { ArticleImage, ArticleThumbnail, Panel, Pill, ArticleActions } from './ui'
 import type { AiPick, OpenReader, ToggleSave } from './types'
 
 function GlassScore({ value }: { value: number }) {
@@ -34,11 +34,11 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
       </button>
 
       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-between p-5 md:p-10">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <Pill>{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</Pill>
 
-          <div className="pointer-events-auto flex items-center gap-2 md:gap-3">
-            <SaveButton saved={saved} onClick={() => toggleSave(pick.articles?.id)} />
+          <div className="pointer-events-auto flex flex-wrap items-center gap-2 md:gap-3">
+            <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} />
             <GlassScore value={pick.score} />
           </div>
         </div>
@@ -46,7 +46,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
         <div>
           <p className="mb-4 flex items-center gap-2 text-sm text-[#E2C188]">
             <Sparkles size={15} />
-            {pick.selection_method === 'automatic' ? 'Selezione automatica' : 'Scelta IA principale'}
+            {pick.reason?.startsWith('Scoperta') ? 'Scoperta per te' : pick.selection_method === 'automatic' ? 'Selezione automatica' : 'Scelta IA principale'}
           </p>
 
           <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
@@ -83,10 +83,10 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
 
       <div className="relative pointer-events-none">
         <div className="mb-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}</p>
+          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}</p>
 
           <div className="pointer-events-auto flex items-center gap-3">
-            <SaveButton saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
+            <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
             <GlassScore value={pick.score} />
           </div>
         </div>
@@ -117,9 +117,9 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
         {picks.map((pick) => (
           <div
             key={pick.id}
-            className="grid grid-cols-[68px_1fr_auto] gap-3 rounded-2xl border border-white/[0.06] bg-black/25 p-3 hover:border-[#B88A44]/20 hover:bg-white/[0.04]"
+            className="grid grid-cols-[1fr_auto] md:grid-cols-[68px_1fr_auto] gap-3 rounded-2xl border border-white/[0.06] bg-black/25 p-3 hover:border-[#B88A44]/20 hover:bg-white/[0.04]"
           >
-            <button onClick={() => pick.articles && openReader(pick.articles)} className="text-left">
+            <button onClick={() => pick.articles && openReader(pick.articles)} className="hidden text-left md:block">
               <ArticleThumbnail imageUrl={pick.articles?.image_url} compact />
             </button>
 
@@ -130,7 +130,7 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
               </p>
             </button>
 
-            <SaveButton
+            <ArticleActions articleId={pick.articles?.id}
               saved={pick.articles ? savedIds.has(pick.articles.id) : false}
               onClick={() => toggleSave(pick.articles?.id)}
               small

@@ -2,8 +2,9 @@ import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Clock3 } from 'lucide-react'
-import { ArticleThumbnail, EmptyState, SaveButton } from './ui'
+import { ArticleThumbnail, EmptyState, ArticleActions } from './ui'
 import type { Article, OpenReader, SavedArticle, ToggleSave } from './types'
+import { groupStories } from '@/lib/articles/stories'
 
 type FeedListProps = {
   articles: Article[]
@@ -26,13 +27,13 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
         {articles.length === 0 ? (
           <EmptyState text="Nessun articolo trovato." />
         ) : (
-          articles.map((article, index) => (
+          groupStories(articles).map(({ article, alternatives }, index) => (
             <motion.div
               key={article.id}
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.015 }}
-              className="grid grid-cols-[1fr_auto] gap-3 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_120px] md:gap-4 md:p-5"
+              className="grid grid-cols-[1fr_auto] gap-3 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_auto] md:gap-4 md:p-5"
             >
               <button onClick={() => openReader(article)} className="hidden text-left md:block">
                 <ArticleThumbnail imageUrl={article.image_url} />
@@ -62,8 +63,12 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
               </button>
 
               <div className="flex items-start justify-end">
-                <SaveButton saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} small />
+                <ArticleActions articleId={article.id} saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} small />
               </div>
+              {alternatives.length > 0 && <details className="col-span-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-neutral-300 md:col-start-2">
+                <summary className="cursor-pointer">Altre coperture ({alternatives.length})</summary>
+                <div className="mt-3 space-y-2">{alternatives.map(alternative => <button key={alternative.id} className="block w-full rounded-lg p-2 text-left hover:bg-white/5" onClick={() => openReader(alternative)}><span className="text-[#C59A52]">{alternative.sources?.name ?? 'Fonte'}</span> · {alternative.title}</button>)}</div>
+              </details>}
             </motion.div>
           ))
         )}

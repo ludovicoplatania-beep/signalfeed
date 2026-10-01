@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
+import { FeedbackButtons } from './article-feedback'
 
 export function BackgroundGlow() {
   return (
@@ -146,6 +147,9 @@ export function SaveButton({
 }) {
   return (
     <button
+      aria-label={saved ? 'Rimuovi dai salvati' : 'Salva articolo'}
+      title={saved ? 'Rimuovi dai salvati' : 'Salva articolo'}
+      aria-pressed={saved}
       onClick={(event) => {
         event.stopPropagation()
         onClick()
@@ -171,4 +175,11 @@ export function SaveButton({
       </div>
     </button>
   )
+}
+
+export function ArticleActions({ articleId, saved, onClick, small = false }: { articleId?: string; saved: boolean; onClick: () => void; small?: boolean }) {
+  return <div className="flex flex-wrap items-start gap-1.5">
+    <SaveButton saved={saved} onClick={onClick} small={small} />
+    {articleId && <FeedbackButtons articleId={articleId} small={small} />}
+  </div>
 }
