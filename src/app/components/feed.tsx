@@ -19,11 +19,11 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <div className="mb-5">
-        <h2 className="text-3xl font-medium tracking-[-0.04em] text-white">{title}</h2>
+        <h2 className="text-xl font-medium tracking-[-0.04em] text-white sm:text-2xl">{title}</h2>
         <p className="mt-2 text-sm text-neutral-400">{subtitle}</p>
       </div>
 
-      <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.025]">
+      <div className="overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.025]">
         {articles.length === 0 ? (
           <EmptyState text="Nessun articolo trovato." />
         ) : (
@@ -33,7 +33,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.015 }}
-              className="grid grid-cols-[1fr_auto] gap-3 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[112px_1fr_auto] md:gap-4 md:p-5"
+              className="grid grid-cols-1 gap-3 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[96px_minmax(0,1fr)] xl:grid-cols-[112px_minmax(0,1fr)_auto] md:gap-4 md:p-5"
             >
               <button onClick={() => openReader(article)} className="hidden text-left md:block">
                 <ArticleThumbnail imageUrl={article.image_url} />
@@ -62,7 +62,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
                 )}
               </button>
 
-              <div className="flex items-start justify-end">
+              <div className="flex items-center justify-start md:col-start-2 xl:col-start-auto xl:items-start xl:justify-end">
                 <ArticleActions articleId={article.id} saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} small />
               </div>
               {alternatives.length > 0 && <details className="col-span-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-neutral-300 md:col-start-2">

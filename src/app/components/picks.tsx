@@ -73,7 +73,7 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.35 }}
-      className="group relative min-h-[150px] overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-neutral-950 p-5 shadow-xl shadow-black/20 md:min-h-[170px] md:rounded-[2rem]"
+      className="group relative min-w-0 min-h-[150px] overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-neutral-950 p-5 shadow-xl shadow-black/20 md:min-h-[170px] md:rounded-[2rem]"
     >
       <button onClick={() => pick.articles && openReader(pick.articles)} className="absolute inset-0 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
@@ -82,20 +82,17 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
       </button>
 
       <div className="relative pointer-events-none">
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <p className="text-xs text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}</p>
-
-          <div className="pointer-events-auto flex items-center gap-3">
-            <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
-            <GlassScore value={pick.score} />
-          </div>
-        </div>
+        <p className="mb-3 text-xs leading-5 text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}</p>
 
         <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
           <h3 className="line-clamp-3 text-lg font-medium leading-snug tracking-[-0.025em] text-white group-hover:underline md:text-xl">
             {pick.articles?.title}
           </h3>
         </button>
+        <div className="pointer-events-auto mt-4 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
+          <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
+          <div aria-label={`Rilevanza ${pick.score} su 100`} className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B88A44]/30 bg-black/50 px-2 text-sm font-semibold text-[#E2C188]">{pick.score}</div>
+        </div>
       </div>
     </motion.div>
   )
@@ -117,7 +114,7 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
         {picks.map((pick) => (
           <div
             key={pick.id}
-            className="grid grid-cols-[1fr_auto] md:grid-cols-[68px_1fr_auto] gap-3 rounded-2xl border border-white/[0.06] bg-black/25 p-3 hover:border-[#B88A44]/20 hover:bg-white/[0.04]"
+            className="grid grid-cols-1 md:grid-cols-[68px_minmax(0,1fr)] xl:grid-cols-[68px_minmax(0,1fr)_auto] gap-3 rounded-2xl border border-white/[0.06] bg-black/25 p-3 hover:border-[#B88A44]/20 hover:bg-white/[0.04]"
           >
             <button onClick={() => pick.articles && openReader(pick.articles)} className="hidden text-left md:block">
               <ArticleThumbnail imageUrl={pick.articles?.image_url} compact />
@@ -130,11 +127,11 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
               </p>
             </button>
 
-            <ArticleActions articleId={pick.articles?.id}
+            <div className="md:col-start-2 xl:col-start-auto"><ArticleActions articleId={pick.articles?.id}
               saved={pick.articles ? savedIds.has(pick.articles.id) : false}
               onClick={() => toggleSave(pick.articles?.id)}
               small
-            />
+            /></div>
           </div>
         ))}
       </div>

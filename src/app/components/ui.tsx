@@ -155,7 +155,7 @@ export function SaveButton({
         onClick()
       }}
       className={`group relative flex items-center gap-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/45 text-sm font-medium text-white backdrop-blur-xl transition hover:border-[#B88A44]/30 ${
-        small ? 'px-3 py-2' : 'px-4 py-3'
+        small ? 'min-h-11 min-w-11 justify-center px-3 py-2' : 'min-h-11 px-4 py-3'
       }`}
     >
       <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.18),transparent_70%)]" />

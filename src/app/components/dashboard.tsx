@@ -431,7 +431,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       <div className="relative mx-auto grid max-w-[1650px] grid-cols-1 lg:grid-cols-[260px_1fr]">
         <Sidebar activeSection={activeSection} setActiveSection={navigateSection} />
 
-        <section className="px-4 py-5 md:px-10 md:py-9">
+        <section className="min-w-0 px-3 py-4 sm:px-5 sm:py-6 xl:px-10 xl:py-9">
           <Header
             activeSection={activeSection}
             sectorTitle={initialSector ? getSector(initialSector)?.name : undefined}
@@ -453,7 +453,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
 
           {activeSection === 'today' && (
             <>
-              <div className="mb-8 space-y-3"><h2 className="text-sm text-neutral-400">Esplora i tuoi settori</h2><SectorLinks /></div>
+              <div className="mb-6"><SectorLinks /></div>
               {onboardingStep && (
                 <Onboarding
                   step={onboardingStep}
