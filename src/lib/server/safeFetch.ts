@@ -1,6 +1,7 @@
 import 'server-only'
 import dns from 'node:dns/promises'
 import net from 'node:net'
+import { setTimeout as delay } from 'node:timers/promises'
 
 const MAX_REDIRECTS = 3
 const MAX_RESPONSE_BYTES = 2 * 1024 * 1024
@@ -36,13 +37,22 @@ export function isPublicAddress(address: string) {
   return false
 }
 
+async function lookupWithRetry(hostname: string) {
+  try { return await dns.lookup(hostname, { all: true, verbatim: true }) }
+  catch (error) {
+    if (!error || typeof error !== 'object' || !('code' in error) || !['EBUSY', 'EAI_AGAIN', 'EINTR'].includes(String(error.code))) throw error
+    await delay(100)
+    return dns.lookup(hostname, { all: true, verbatim: true })
+  }
+}
+
 export async function assertSafePublicUrl(rawUrl: string): Promise<URL> {
   const url = new URL(rawUrl)
   if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Protocollo URL non consentito')
   if (!ALLOWED_PORTS.has(url.port)) throw new Error('Porta URL non consentita')
   if (url.username || url.password) throw new Error('Credenziali nell’URL non consentite')
 
-  const records = await dns.lookup(url.hostname, { all: true, verbatim: true })
+  const records = await lookupWithRetry(url.hostname)
   if (!records.length || records.some((record) => !isPublicAddress(record.address))) {
     throw new Error('Destinazione di rete non consentita')
   }

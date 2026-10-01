@@ -56,7 +56,7 @@ export async function runUpdate(job: UpdateJob) {
     }
     try { await action(); result.stages[name] = { success: true } }
     catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+      const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error)
       console.warn('Update stage failed:', name, message)
       result.stages[name] = { success: false, message }; result.warnings.push(`${name}: ${message}`)
     }
@@ -87,7 +87,7 @@ export async function runUpdate(job: UpdateJob) {
     const status = !successes ? 'failed' : result.warnings.length ? 'partial' : 'completed'
     await save({ status, phase: 'finished', result, message: result.warnings.join(' · ').slice(0, 1_000) || null })
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error)
     console.error('Update failed:', message)
     await save({ status: 'failed', phase: 'finished', result, message })
   }

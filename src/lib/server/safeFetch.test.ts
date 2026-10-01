@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
-import { isPublicAddress } from './safeFetch'
+import { describe, expect, it, vi } from 'vitest'
+import dns from 'node:dns/promises'
+vi.mock('node:dns/promises', () => ({ default: { lookup: vi.fn() } }))
+import { isPublicAddress, assertSafePublicUrl } from './safeFetch'
 
 describe('SSRF address filtering', () => {
   it.each([
@@ -20,4 +22,16 @@ describe('SSRF address filtering', () => {
     'allows public address %s',
     (address) => expect(isPublicAddress(address)).toBe(true),
   )
+})
+
+
+describe('temporary DNS errors', () => {
+  it('retries a transient lookup once', async () => {
+    vi.mocked(dns.lookup).mockRejectedValueOnce(Object.assign(new Error('busy'), { code: 'EBUSY' })).mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }] as never)
+    expect((await assertSafePublicUrl('https://example.com/feed')).hostname).toBe('example.com')
+  })
+  it('still rejects private destinations after a retry', async () => {
+    vi.mocked(dns.lookup).mockRejectedValueOnce(Object.assign(new Error('busy'), { code: 'EAI_AGAIN' })).mockResolvedValueOnce([{ address: '127.0.0.1', family: 4 }] as never)
+    await expect(assertSafePublicUrl('https://example.com/feed')).rejects.toThrow('Destinazione di rete non consentita')
+  })
 })

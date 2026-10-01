@@ -27,6 +27,13 @@ describe('resilient IA picks', () => {
     await pickArticles(owner, articles)
     expect(mocks.rpc.mock.calls[0][1].p_picks.filter((p: { selection_method: string }) => p.selection_method === 'ai')).toHaveLength(1)
   })
+  it('retains a valid lower-scoring AI selection ahead of fallback items', async () => {
+    mocks.create.mockResolvedValue(response([null, { ...valid(), score: 40 }]))
+    await pickArticles(owner, articles)
+    const picks = mocks.rpc.mock.calls[0][1].p_picks
+    expect(picks[0].selection_method).toBe('ai')
+    expect(picks[0].article_id).toBe(articles[0].id)
+  })
   it('falls back when OpenAI fails', async () => {
     mocks.create.mockRejectedValue(new Error('provider unavailable'))
     const result = await pickArticles(owner, articles)

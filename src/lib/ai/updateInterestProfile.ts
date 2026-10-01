@@ -78,7 +78,7 @@ ${JSON.stringify(events)}
         user_id: userId,
         interests,
         updated_at: new Date().toISOString(),
-      })
+      }, { onConflict: 'user_id' })
     if (saveError) throw saveError
     return { skipped: false }
 }
