@@ -1,6 +1,12 @@
 // Publisher feeds or official pages advertising feeds. Only live, recent RSS/Atom
 // feeds are added; this list is a set of candidates, not a claim of availability.
 export const sourceCatalog = [
+  { name: 'Giurisprudenza Penale', site: 'https://www.giurisprudenzapenale.com', feed: 'https://www.giurisprudenzapenale.com/feed/', topic: 'Diritto penale' },
+  { name: 'Corte di Cassazione · Penale', site: 'https://www.cortedicassazione.it/it/giurisprudenza_penale.page', feed: 'https://www.cortedicassazione.it/it/giurisprudenza_penale.page', topic: 'Fonti primarie del diritto', verifiedPage: true },
+  { name: 'EtnaNews24', site: 'https://etnanews24.it', feed: 'https://etnanews24.it/feed/', topic: 'Catania e provincia' },
+  { name: 'Google · The Keyword', site: 'https://blog.google', feed: 'https://blog.google/rss/', topic: 'IA e tecnologia' },
+  { name: 'Apple · Newsroom', site: 'https://www.apple.com/newsroom', feed: 'https://www.apple.com/newsroom/rss-feed.rss', topic: 'Tecnologia' },
+  { name: 'Home Assistant · Sviluppatori', site: 'https://developers.home-assistant.io', feed: 'https://developers.home-assistant.io/blog/rss.xml', topic: 'Tecnologia e domotica' },
   { name: 'ANSA · Ultime notizie', site: 'https://www.ansa.it', feed: 'https://www.ansa.it/sito/ansait_rss.xml', topic: 'Attualità italiana' },
   { name: 'Adnkronos', site: 'https://www.adnkronos.com', feed: 'https://www.adnkronos.com/rss', topic: 'Attualità italiana' },
   { name: 'Il Fatto Quotidiano', site: 'https://www.ilfattoquotidiano.it', feed: 'https://www.ilfattoquotidiano.it/feed/', topic: 'Politica e cronaca' },

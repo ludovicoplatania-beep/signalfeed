@@ -128,7 +128,7 @@ export async function discoverFeed(source: SourceRecord, signal: AbortSignal) {
     }
   }
   for (const [url, html] of htmlPages) {
-    const items = publicPageItems(html, url, adapter?.articlePattern)
+    const items = adapter?.pageKind === 'cassazione-penale' ? cassazionePageItems(html, url) : publicPageItems(html, url, adapter?.articlePattern)
     if (items.length) return { url, items, mode: 'html' as const }
   }
   for (const path of ['/feed', '/rss.xml', '/atom.xml']) {
@@ -137,4 +137,31 @@ export async function discoverFeed(source: SourceRecord, signal: AbortSignal) {
   }
   if (blocked.size) throw new Error('La fonte rifiuta le richieste (403/429). Serve un feed pubblico consentito.')
   throw new Error(`Nessun feed o elenco pubblico utilizzabile. ${[...new Set(errors)].slice(0, 3).join(' · ')}`)
+}
+
+/** Official court cards: hearing dates are not publication dates. */
+export function cassazionePageItems(html: string, base: string): FeedItem[] {
+  const $ = load(html)
+  const items: FeedItem[] = []
+  const seen = new Set<string>()
+  $('.card-news').each((_, card) => {
+    const heading = $(card).find('h3 a[href]').first()
+    try {
+      const link = new URL(heading.attr('href') ?? '', base)
+      if (link.hostname !== 'www.cortedicassazione.it' || !/^\/it\/(penale_dettaglio|qsp_dettaglio)\.page$/.test(link.pathname) || !/^(SZP|QSP)\d+$/.test(link.searchParams.get('contentId') ?? '')) return
+      const title = heading.text().replace(/\s+/g, ' ').trim()
+      if (title.length < 15 || seen.has(link.toString())) return
+      const rawDate = $(card).find('.visually-hidden').text().match(/del\s+(\d{2})\/(\d{2})\/(\d{2}|\d{4})\s*$/)
+      let date: string | undefined
+      if (rawDate) {
+        const year = rawDate[3].length === 2 ? '20' + rawDate[3] : rawDate[3]
+        const iso = year + '-' + rawDate[2] + '-' + rawDate[1]
+        const parsed = articleDate(iso)
+        if (parsed?.startsWith(iso)) date = parsed
+      }
+      seen.add(link.toString())
+      items.push({ title, link: link.toString(), pubDate: date, contentSnippet: $(card).find('.card-main p').text().replace(/\s+/g, ' ').trim() })
+    } catch { /* Invalid official card. */ }
+  })
+  return items.slice(0, 100)
 }
