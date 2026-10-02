@@ -28,5 +28,10 @@ export function sectorRelevance(article: {title:string;excerpt?:string|null}, se
     const matches = intro.match(new RegExp(techTerms.source,'gi')) ?? []
     return new Set(matches.map(term=>term.toLowerCase())).size >= 2 || hasAI(intro) ? 4 : 0
   }
+  if (sector.slug === 'sicilia-catania') {
+    if (titleMatch) return 12
+    if (/grande fratello|reality|gossip|love island|temptation island/i.test(article.title)) return 0
+    return classifyArticle({ title: intro }).includes(sector.slug) ? 4 : 0
+  }
   return titleMatch ? 12 : 4
 }
