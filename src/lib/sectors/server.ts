@@ -8,6 +8,7 @@ import { pickResponseSchema } from '@/lib/ai/schemas'
 import { sourceSummary } from '@/lib/articles/summary'
 import { type Feedback } from '@/lib/ai/preferences'
 import { classifyArticle, sectorPattern, sectorExactPattern, type Sector } from './catalog'
+import { sectorRelevance } from './relevance'
 import { publisherKey, eligibleSectorArticles, selectSectorPicks, type SectorCandidate, type Diversity } from './diversity'
 import type { Article, AiPick } from '@/app/components/types'
 
@@ -71,9 +72,11 @@ export async function curateSector(user: string, sector: Sector) {
         const feed = await sectorFeed(user, sector, { source: source.id, period: windowDays === 30 ? 'month' : 'week', limit: 20 })
         for (const article of feed.articles) {
           if (!classifyArticle(article).includes(sector.slug)) continue
+          const relevance = sectorRelevance(article,sector)
+          if (!relevance) continue
           const publisher = publisherKey(article.url || source.website_url || '', source.name)
           const list = groups.get(publisher) ?? []
-          list.push({ ...article, source_name: source.name, source_priority: source.priority ?? 3, publisher_key: publisher })
+          list.push({ ...article, source_name: source.name, source_priority: source.priority ?? 3, publisher_key: publisher, sector_relevance: relevance })
           groups.set(publisher, list)
         }
       }

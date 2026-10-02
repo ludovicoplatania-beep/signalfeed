@@ -14,7 +14,16 @@ export function publisherKey(url: string, name = '') {
     return name.toLowerCase().split(/\s*[·|]\s*/)[0].trim()
   }
 }
-export type SectorCandidate = Candidate & { publisher_key: string }
+export function sameSectorEvent(left: Candidate, right: Candidate) {
+  if (sameStory(left,right)) return true
+  // A specific product revision can have very different editorial headlines.
+  if (!/\bDGX\s+Spark\b/i.test(left.title) || !/\bDGX\s+Spark\b/i.test(right.title)) return false
+  const memory = (title: string) => title.match(/\b(\d+)\s*GB\b/i)?.[1]
+  const dates = [left.published_at,right.published_at].map(date=>date ? Date.parse(date) : NaN)
+  return Boolean(memory(left.title)) && memory(left.title) === memory(right.title) && dates.every(Number.isFinite) && Math.abs(dates[0]-dates[1]) <= 48 * 3_600_000
+}
+
+export type SectorCandidate = Candidate & { publisher_key: string; sector_relevance?: number }
 export type Diversity = { selectedPublishers: number; availablePublishers: number; attainablePublishers: number; targetPublishers: number; selectedArticles: number; eligibleArticles: number; windowDays: number }
 export const promotionalHeadline = /\b(codice sconto|coupon|sponsored|sponsorizzat\w*|in offerta|offerte amazon|sconto|sconti|compra ora|buy now)\b|^\s*\(PR\)/i
 
@@ -30,7 +39,7 @@ export function eligibleSectorArticles(articles: SectorCandidate[], read: Set<st
 }
 
 export function selectSectorPicks(proposed: RankedPick[], articles: SectorCandidate[], interests: Array<{topic: string; score: number}>, read: Set<string>, feedback: Feedback[], windowDays: number, limit = 10) {
-  const automatic = automaticPicks(articles, interests, read, feedback)
+  const automatic = automaticPicks(articles, interests, read, feedback).map(pick => ({ ...pick, score: Math.min(99, pick.score + (articles.find(article => article.id === pick.id)?.sector_relevance ?? 0)) }))
   const byId = new Map(articles.map(article => [article.id, article]))
   const model = new Map(proposed.map(pick => [pick.id, pick]))
   const ranked = automatic.map(fallback => {
@@ -39,7 +48,7 @@ export function selectSectorPicks(proposed: RankedPick[], articles: SectorCandid
   }).sort((a,b) => b.score - a.score || a.id.localeCompare(b.id))
   const groups: RankedPick[][] = []
   for (const pick of ranked) {
-    const matches = groups.flatMap((entries, index) => entries.some(entry => sameStory(byId.get(pick.id)!, byId.get(entry.id)!)) ? [index] : [])
+    const matches = groups.flatMap((entries, index) => entries.some(entry => sameSectorEvent(byId.get(pick.id)!, byId.get(entry.id)!)) ? [index] : [])
     if (!matches.length) groups.push([pick])
     else {
       const group = groups[matches[0]]
@@ -80,7 +89,7 @@ export function selectSectorPicks(proposed: RankedPick[], articles: SectorCandid
   for (const cap of [2, Infinity]) for (const pick of ranked) {
     if (selected.length >= limit) break
     const article = byId.get(pick.id)!
-    if ((counts.get(article.publisher_key) ?? 0) >= cap || selected.some(entry => entry.id === pick.id || sameStory(article, byId.get(entry.id)!))) continue
+    if ((counts.get(article.publisher_key) ?? 0) >= cap || selected.some(entry => entry.id === pick.id || sameSectorEvent(article, byId.get(entry.id)!))) continue
     selected.push(pick); counts.set(article.publisher_key,(counts.get(article.publisher_key) ?? 0) + 1)
   }
   selected.sort((a,b) => b.score - a.score || a.id.localeCompare(b.id))

@@ -24,7 +24,13 @@ Campione Videogiochi precedente (1 ottobre 2026, 21:13): dieci pick, sette etich
 
 ## Verifica
 
-In attesa di deploy e cinque campioni reali: IA, tecnologia, gaming, locale, diritto.
+PR #22 pubblicata, CI con 149 test. Primo ciclo reale 2 ottobre 2026, 19:42: dieci notizie per settore; conteggi IA 9, tecnologia 10, gaming 8, Sicilia/Catania 7, diritto 9. Tutte le richieste completate senza fallback del fornitore; la selezione finale mescola scelte IA e automatiche per rilevanza e varietà.
+
+Il controllo manuale dei dieci risultati ha però rilevato falsi positivi: robot chirurgico con “console” nel gaming, trama di una serie Netflix nel diritto, carte Cyberpunk in tecnologia. Ha rilevato anche due titoli diversi della medesima revisione NVIDIA DGX Spark da 64 GB. Per questo il primo ciclo non basta a chiudere la verifica di pertinenza.
+
+Correzione ulteriore: evidenza del tema nel titolo o nell’introduzione (240 caratteri), priorità all’analisi giuridica/penale e alle notizie direttamente di settore. Preordini Amazon esclusi dalle scelte gaming. Revisione DGX Spark con stessa memoria e pubblicazione entro 48 ore raggruppata, senza fondere modelli da 64/128 GB. Dominio della testata visibile su ogni pick, perché l’etichetta della fonte importata può differire dal sito dell’articolo.
+
+Verifica finale dopo questa correzione in attesa.
 
 ## Limiti
 
