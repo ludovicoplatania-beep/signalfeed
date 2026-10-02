@@ -5,7 +5,7 @@ Ordine vincolante; aggiornare lo stato con prove di verifica. Una modifica del c
 | Ordine | Intervento | Criterio di completamento | Stato |
 |---|---|---|---|
 | 1 | Separare importazione e generazione IA | Priorità ogni 15–60 minuti compatibilmente con piano/budget; ritardo misurato | Verificato: importazioni ogni 30 minuti, IA separata |
-| 2 | Misurare e colmare la copertura | Benchmark IA, tecnologia, gaming, locale e diritto; almeno 85% degli eventi rilevanti selezionati | In corso: campione 2026-10-02-v1, 20 eventi |
+| 2 | Misurare e colmare la copertura | Benchmark IA, tecnologia, gaming, locale e diritto; almeno 85% degli eventi rilevanti selezionati | Primo campione verificato: 18/20 (90%), prima 11/20 (55%). Due lacune residue, campioni periodici da proseguire |
 | 3 | Affidabilità verificabile | Ultimo aggiornamento, ritardi/errori visibili; nessun fallimento silenzioso | Da verificare rispetto al criterio completo |
 | 4 | Classificazione e selezione | Campione manuale: almeno 8 delle prime 10 notizie utili | Da completare |
 | 5 | Varietà nei settori | Almeno cinque editori nei primi dieci risultati quando possibile | Da completare |
