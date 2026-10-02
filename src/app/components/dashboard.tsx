@@ -83,6 +83,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
 
   useEffect(() => {
     loadEverything().then((job) => {
+      setLoading(false)
       if (job?.status === 'running') return watchUpdate(job)
     }).catch((error) => setLoadError(error instanceof Error ? error.message : 'Caricamento non disponibile')).finally(() => setLoading(false))
     const checkHealth = () => {
@@ -160,7 +161,9 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   }
 
   async function apiFetch(input: string, init: RequestInit = {}) {
-    const response = await fetch(input, { ...init, cache: 'no-store' })
+    const timeout = AbortSignal.timeout(20_000)
+    const signal = init.signal ? AbortSignal.any([init.signal, timeout]) : timeout
+    const response = await fetch(input, { ...init, signal, cache: 'no-store' })
     if (response.status === 401) {
       router.replace('/access')
       throw new Error('Accesso scaduto')
