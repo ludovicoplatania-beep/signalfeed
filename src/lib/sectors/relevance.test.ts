@@ -33,3 +33,12 @@ it('reads capitalized AI introductions without confusing Italian prepositions',(
   expect(sectorRelevance({title:'Un nuovo strumento per analizzare dati',excerpt:'Intelligenza artificiale: OpenAI presenta il modello.'},getSector('ia')!)).toBeGreaterThan(0)
   expect(sectorRelevance({title:'Comune risponde ai cittadini',excerpt:'Le risposte ai residenti sono online.'},getSector('ia')!)).toBe(0)
 })
+
+
+it('requires a local subject rather than a reality show contestant or a distant excerpt mention',()=>{
+  const sector=getSector('sicilia-catania')!
+  expect(sectorRelevance({title:'Grande Fratello Vip: Megan mostra il bigliettino',excerpt:'Il concorrente di Palermo reagisce.'},sector)).toBe(0)
+  expect(sectorRelevance({title:'Un caso di cronaca nazionale',excerpt:'Un racconto nazionale. '.repeat(20)+' Palermo.'},sector)).toBe(0)
+  expect(sectorRelevance({title:'Mostra di scultura a Catania',excerpt:'Arte in piazza.'},sector)).toBe(12)
+  expect(sectorRelevance({title:'Incendio in una palazzina',excerpt:'A Catania sono intervenuti i pompieri.'},sector)).toBeGreaterThan(0)
+})
