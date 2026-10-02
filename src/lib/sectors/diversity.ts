@@ -39,12 +39,15 @@ export function eligibleSectorArticles(articles: SectorCandidate[], read: Set<st
 }
 
 export function selectSectorPicks(proposed: RankedPick[], articles: SectorCandidate[], interests: Array<{topic: string; score: number}>, read: Set<string>, feedback: Feedback[], windowDays: number, limit = 10) {
-  const automatic = automaticPicks(articles, interests, read, feedback).map(pick => ({ ...pick, score: Math.min(99, pick.score + (articles.find(article => article.id === pick.id)?.sector_relevance ?? 0)) }))
+  const automatic = automaticPicks(articles, interests, read, feedback)
   const byId = new Map(articles.map(article => [article.id, article]))
   const model = new Map(proposed.map(pick => [pick.id, pick]))
   const ranked = automatic.map(fallback => {
     const ai = model.get(fallback.id)
-    return ai ? { ...ai, category: categoryFor(byId.get(ai.id)!), score: Math.round(ai.score * 0.4 + fallback.score * 0.6) } : fallback
+    const subjectWeight = byId.get(fallback.id)!.sector_relevance
+    const adjustment = subjectWeight === undefined ? 0 : subjectWeight - 12
+    const score = Math.max(1,Math.min(99, Math.round(ai ? ai.score * 0.4 + fallback.score * 0.6 : fallback.score) + adjustment))
+    return ai ? { ...ai, category: categoryFor(byId.get(ai.id)!), score } : { ...fallback, score }
   }).sort((a,b) => b.score - a.score || a.id.localeCompare(b.id))
   const groups: RankedPick[][] = []
   for (const pick of ranked) {

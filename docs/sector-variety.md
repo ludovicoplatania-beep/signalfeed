@@ -30,7 +30,9 @@ Il controllo manuale dei dieci risultati ha però rilevato falsi positivi: robot
 
 Correzione ulteriore: evidenza del tema nel titolo o nell’introduzione (240 caratteri), priorità all’analisi giuridica/penale e alle notizie direttamente di settore. Preordini Amazon esclusi dalle scelte gaming. Revisione DGX Spark con stessa memoria e pubblicazione entro 48 ore raggruppata, senza fondere modelli da 64/128 GB. Dominio della testata visibile su ogni pick, perché l’etichetta della fonte importata può differire dal sito dell’articolo.
 
-Verifica finale dopo questa correzione in attesa.
+Secondo ciclo (2 ottobre, 20:00), dopo la correzione di pertinenza: IA 9, tecnologia 10, gaming 7, Sicilia/Catania 6, diritto 8 editori su dieci notizie. Nessuna richiesta fallita, ma tutte le scelte risultavano automatiche: il bonus tematico veniva applicato integralmente alle alternative automatiche e solo al 60% alle selezioni del modello. Correzione: bonus centrato sull’evidenza del titolo (12), applicato dopo la calibrazione e in misura identica a entrambe le modalità; evidenza debole penalizzata, approfondimento giuridico/penale favorito, senza saturare tutti i punteggi a 99.
+
+Test dedicato: una scelta IA di rilevanza 90 con la stessa evidenza tematica mantiene priorità sulle alternative automatiche, e la varietà rimane di cinque editori. Verifica finale dopo questa calibrazione in attesa.
 
 ## Limiti
 
