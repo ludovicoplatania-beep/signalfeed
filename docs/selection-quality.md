@@ -53,7 +53,15 @@ Deploy `b7f35c5`, PR #20. Il modello ha valutato 160 candidati: 10 riferimenti r
 
 **9/10**, contro 5/10 prima. Dieci editori, nessun evento ripetuto osservato. La pertinenza è valutata su titolo e descrizione disponibili, non mediante apertura degli articoli; il controllo degli aperti è coperto dalla query e dai test di regressione, non da una simulazione sul profilo reale.
 
-Il ciclo ha registrato un timeout della fase `topics`, mantenendo le scelte aggiornate. Per ridurre questa richiesta: gruppi su 80 candidati pertinenti, estratti da 160 caratteri, riferimenti numerici anziché UUID ripetuti, schema JSON vincolato e massimo otto articoli per gruppo. Il tempo limite rimane invariato. Secondo ciclo di verifica in attesa.
+Il ciclo ha registrato un timeout della fase `topics`, mantenendo le scelte aggiornate. Per ridurre questa richiesta: gruppi su 80 candidati pertinenti, estratti da 160 caratteri, riferimenti numerici anziché UUID ripetuti, schema JSON vincolato e massimo otto articoli per gruppo. Il tempo limite rimane invariato. 
+
+### Secondo ciclo — produzione, 2 ottobre 2026 19:16:56–19:18:08 (Europe/Rome)
+
+Deploy `968f94f`, PR #21, stato finale **Completato**, senza avvisi di fasi fallite. Otto gruppi tematici e briefing aggiornati e osservati nella home. Le dieci scelte restano 5 IA e 5 automatiche, da dieci editori. Nell’elenco sopra BMW è sostituita dalla nuova Hyundai Tucson con IA a bordo (quarta posizione, prima di Transluce): nel criterio conservativo resta una notizia di prodotto automobilistico, non un approfondimento IA; viene conteggiata come non utile. Gli altri nove eventi restano pertinenti e distinti. **9/10 confermato** nel secondo campione.
+
+La durata di 72 secondi riguarda l’intero ciclo, non la sola selezione. Un ciclo riuscito dimostra il funzionamento osservato, non garantisce l’assenza di futuri timeout del fornitore. La segnalazione separata della fonte Valigia Blu rimane visibile: questo ciclo IA non importa le fonti.
+
+Verifiche: **139 test passati**, TypeScript, ESLint e build di produzione riusciti; CI GitHub riuscita per entrambe le PR. Prova visiva `athena-selezione-verificata.jpg`; nessuna modifica alle letture o alle preferenze per ottenere il risultato.
 
 ## Limiti
 
