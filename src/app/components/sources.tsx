@@ -93,8 +93,9 @@ export function SourcesPanel(props: SourcesPanelProps) {
                       Ultimo controllo {new Date(source.last_checked_at).toLocaleString('it-IT')} · {source.last_new_count} nuovi · {source.last_updated_count} aggiornati · {source.last_import_count} controllati
                     </div>
                   )}
+                  <p className="mt-1 text-xs text-neutral-400">Ultimo successo: {source.last_success_at ? new Date(source.last_success_at).toLocaleString('it-IT') : 'mai verificata'}</p>
                   {source.resolved_feed_url && <p className="mt-1 break-all text-xs text-neutral-400">Feed verificato: {source.resolved_feed_url}</p>}
-                  {source.last_error && <p className="mt-2 line-clamp-2 text-xs leading-5 text-rose-300">{source.last_error}</p>}
+                  {source.last_error && <p className="mt-2 break-words text-xs leading-5 text-rose-300">{source.last_error}</p>}
                 </div>
 
                 <div className="flex gap-2">

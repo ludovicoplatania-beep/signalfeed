@@ -54,5 +54,5 @@ jobs:
           }
           if (job.status === 'failed') throw new Error('News import failed; inspect Athena source status');
           console.log(JSON.stringify({ status: job.status, summary: job.result?.summary }));
-          if (job.status === 'partial') console.warn('Some sources were unavailable; details remain visible in Athena.');
+          if (job.status === 'partial') throw new Error('Import partially failed; source details remain visible in Athena.');
           JS
