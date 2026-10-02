@@ -34,7 +34,26 @@ Risultato iniziale: **5/10** nei cinque temi espliciti.
 
 ## Verifica finale
 
-In attesa del deploy e del campione reale. I test di regressione non sostituiscono questo controllo.
+### Primo ciclo — produzione, 2 ottobre 2026 19:08–19:10 (Europe/Rome)
+
+Deploy `b7f35c5`, PR #20. Il modello ha valutato 160 candidati: 10 riferimenti ricevuti, 10 accettati, nessuno respinto, una chiamata completata in 7,3 secondi. La calibrazione finale ha mantenuto 5 scelte IA e 5 automatiche.
+
+| Ordine | Notizia | Fonte | Utile | Motivo |
+|---|---|---|---|---|
+| 1 | NVIDIA DGX Spark, versione 64 GB | Dday.it | Sì | Hardware IA |
+| 2 | Leone XIV e l’AI: chi governa il potere tecnologico | Agenda Digitale | Sì | Governance IA |
+| 3 | Three firings and a fourth departure shake up OpenAI safety team | The Decoder | Sì | Sicurezza e organizzazione IA |
+| 4 | Transluce scopre tentati attacchi AI: chi controlla gli agenti? | Tom’s Hardware | Sì | Sicurezza degli agenti |
+| 5 | BMW, nuova fabbrica di batterie in Baviera | Automoto.it | No | Motori, escluso dal criterio conservativo |
+| 6 | Father of PlayStation: games have stagnated | Push Square | Sì | Industria gaming |
+| 7 | Autostrada A29, incidente a Gibellina | MeridioNews | Sì | Cronaca siciliana |
+| 8 | 67,8% dei Comuni siciliani in crisi finanziaria | IlSicilia | Sì | Enti locali siciliani |
+| 9 | DOOM: The Dark Ages, nuova modalità gratuita | Multiplayer.it | Sì | Aggiornamento videogioco |
+| 10 | Steam Hardware Survey: 32 GB overtakes 16 GB | TechPowerUp | Sì | Hardware e gaming |
+
+**9/10**, contro 5/10 prima. Dieci editori, nessun evento ripetuto osservato. La pertinenza è valutata su titolo e descrizione disponibili, non mediante apertura degli articoli; il controllo degli aperti è coperto dalla query e dai test di regressione, non da una simulazione sul profilo reale.
+
+Il ciclo ha registrato un timeout della fase `topics`, mantenendo le scelte aggiornate. Per ridurre questa richiesta: gruppi su 80 candidati pertinenti, estratti da 160 caratteri, riferimenti numerici anziché UUID ripetuti, schema JSON vincolato e massimo otto articoli per gruppo. Il tempo limite rimane invariato. Secondo ciclo di verifica in attesa.
 
 ## Limiti
 
