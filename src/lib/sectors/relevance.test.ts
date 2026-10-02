@@ -28,3 +28,8 @@ describe('thematic subject evidence',()=>{
 it('does not confuse Cyberpunk trading cards with cybersecurity',()=>{
   expect(sectorRelevance({title:'Cyberpunk e Palworld: carte da gioco a Lucca'},getSector('tecnologia')!)).toBe(0)
 })
+
+it('reads capitalized AI introductions without confusing Italian prepositions',()=>{
+  expect(sectorRelevance({title:'Un nuovo strumento per analizzare dati',excerpt:'Intelligenza artificiale: OpenAI presenta il modello.'},getSector('ia')!)).toBeGreaterThan(0)
+  expect(sectorRelevance({title:'Comune risponde ai cittadini',excerpt:'Le risposte ai residenti sono online.'},getSector('ia')!)).toBe(0)
+})
