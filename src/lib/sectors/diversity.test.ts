@@ -65,3 +65,11 @@ it('deduplicates the observed DGX Spark memory revision without merging differen
   expect(sameSectorEvent(a,{...b,title:'NVIDIA DGX Spark da 128 GB'})).toBe(false)
   expect(choose([a,b]).picks).toHaveLength(1)
 })
+
+it('applies topic evidence equally after calibration without demoting model choices automatically',()=>{
+  const items=Array.from({length:15},(_,i)=>({...article(String(i),`pub${i%5}`),sector_relevance:12}))
+  const model=automaticPicks([items[0]],[],new Set()).map(pick=>({...pick,selection_method:'ai' as const,score:90}))
+  const result=selectSectorPicks(model,items,[],new Set(),[],7)
+  expect(result.picks[0]).toMatchObject({id:'0',selection_method:'ai'})
+  expect(result.diversity.selectedPublishers).toBe(5)
+})
