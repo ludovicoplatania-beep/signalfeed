@@ -63,7 +63,17 @@ Il rate limiting in memoria è una protezione locale di base. Per installazioni 
 
 ## Modello operativo
 
-L'aggiornamento manuale chiama `POST /api/update-now` con il cookie privato. Il cron giornaliero chiama `GET /api/cron/update` e aggiorna esclusivamente il proprietario configurato.
+Il pulsante **Aggiorna** chiama `POST /api/update-rss`: importa gli articoli senza chiamate OpenAI. **Ricalcola IA** chiama `POST /api/update-ai`: aggiorna il profilo, le scelte, i temi e il riepilogo senza reimportare le fonti. L'API `/api/update-now` conserva la modalità completa per compatibilità.
+
+Vercel mantiene due processi giornalieri compatibili con Hobby: importazione alle 06:00 UTC e selezione IA alle 07:00 UTC. Gli orari effettivi dipendono dalla precisione del piano. Il blocco condiviso impedisce sovrapposizioni.
+
+Il workflow `.github/workflows/import-news.yml` controlla ogni mezz'ora le fonti attive: priorità 4–5 ogni 30 minuti, le altre ogni 60 minuti dall'ultimo controllo, con tre minuti di tolleranza per ordine dei worker e piccoli scostamenti dello scheduler. I controlli manuali forzano tutte le fonti. Nessuna importazione frequente genera selezioni IA. I runner standard di GitHub Actions sono gratuiti per questo repository pubblico; le richieste a Vercel/Supabase continuano a consumare le quote dell'applicazione.
+
+**Attivazione richiesta:** nelle Actions secrets del repository aggiungere `ATHENA_CRON_SECRET` con lo stesso valore di `CRON_SECRET` già configurato in Vercel. Non inserirlo nel codice, in un URL o nei log. Avviare manualmente “Import news” e verificare che il job finisca. Senza il secret il workflow segnala esplicitamente che l'importazione frequente non è attiva.
+
+GitHub può ritardare o saltare esecuzioni programmate e, nei repository pubblici, disattivarle dopo 60 giorni senza attività. Questa pianificazione non è un SLA: lo stato delle fonti e il processo Vercel giornaliero restano disponibili come riscontro e fallback. Per garanzie più stringenti occorre uno scheduler dedicato o un piano adeguato, da valutare separatamente.
+
+Ogni importazione registra durata e campioni del tempo dalla pubblicazione al primo ingresso per articoli pubblicati nelle ultime 24 ore. Articoli senza data, futuri, backfill e articoli già noti sono esclusi. I campioni sono nel risultato del job e nei log “Source freshness”; non sono una misura del solo tempo di rete. Se la lettura delle identità per la misura fallisce o il conteggio atomico non coincide, l'importazione prosegue e quel campione viene omesso.
 
 I topic includono ancora `user_id` per compatibilità con i dati esistenti, ma l'applicazione opera su un solo proprietario.
 

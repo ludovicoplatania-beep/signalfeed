@@ -10,7 +10,7 @@ vi.mock('./components/app-layout', () => ({
 vi.mock('./components/feed', () => ({ FeedList: ({ articles }: { articles: { id: string; title: string }[] }) => <div>{articles.map(a => <p key={a.id}>{a.title}</p>)}</div>, SavedView: () => null }))
 import HomePage from './components/dashboard'
 const initial = { sources: [], articles: [], aiPicks: [], savedArticles: [], trendingTopics: [], digests: [], update: null }
-const job = { id: 'update', status: 'running', phase: 'sources' }
+const job = { id: 'update', mode: 'rss', status: 'running', phase: 'sources' }
 const json = (data: unknown) => Promise.resolve(new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } }))
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 describe('refresh user flow', () => {
@@ -19,7 +19,7 @@ describe('refresh user flow', () => {
     vi.stubGlobal('fetch', vi.fn((url: string) => {
       if (url === '/api/data') return json(initial)
       if (url.startsWith('/api/articles')) return json({ articles: [{ id: refreshed ? 'new' : 'old', title: refreshed ? 'Nuova notizia' : 'Vecchia notizia', url: 'https://example.com/a' }], total: 1, nextOffset: 1 })
-      if (url === '/api/update-now') return json({ job })
+      if (url === '/api/update-rss') return json({ job })
       if (url === '/api/update-status') { refreshed = true; return json({ job: { ...job, status: 'completed', result: { summary: { newArticles: 1, updatedArticles: 0, sourcesOk: 1, sourcesChecked: 1 } } } }) }
       return json({ success: true })
     }))
@@ -31,7 +31,7 @@ describe('refresh user flow', () => {
     expect(screen.queryByText('Vecchia notizia')).toBeNull()
   })
   it('releases the refresh button after a network error', async () => {
-    vi.stubGlobal('fetch', vi.fn((url: string) => url === '/api/update-now' ? Promise.reject(new Error('Errore rete')) : json(initial)))
+    vi.stubGlobal('fetch', vi.fn((url: string) => url === '/api/update-rss' ? Promise.reject(new Error('Errore rete')) : json(initial)))
     render(<HomePage />)
     const button = await screen.findByText('Aggiorna test')
     fireEvent.click(button)

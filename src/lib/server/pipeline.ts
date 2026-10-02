@@ -6,6 +6,7 @@ import { generateTopics } from '@/lib/ai/generateTopics'
 import { generateDigest } from '@/lib/ai/generateDigest'
 import { getServiceSupabase } from './clients'
 
+export type RunUpdateOptions = { dueSourcesOnly?: boolean }
 export type UpdateMode = 'all' | 'rss' | 'ai' | 'profile'
 export type UpdateJob = {
   id: string; user_id: string; mode: UpdateMode; status: 'running' | 'completed' | 'partial' | 'failed'
@@ -38,7 +39,7 @@ export async function getUpdate(userId: string) {
   return data as UpdateJob | null
 }
 
-export async function runUpdate(job: UpdateJob) {
+export async function runUpdate(job: UpdateJob, options: RunUpdateOptions = {}) {
   const supabase = getServiceSupabase()
   const result: UpdateResult = { rss: [], warnings: [], stages: {}, summary: {
     sourcesChecked: 0, sourcesOk: 0, sourcesFailed: 0, itemsProcessed: 0, newArticles: 0, updatedArticles: 0, picksCount: 0, automaticPicks: 0,
@@ -67,14 +68,14 @@ export async function runUpdate(job: UpdateJob) {
     await stage('identity', () => repairArticleIdentities(job.user_id))
     if (!result.stages.identity.success) throw new Error('Riconciliazione degli articoli non riuscita')
     if (job.mode === 'all' || job.mode === 'rss') await stage('sources', async () => {
-      result.rss = await importSources(job.user_id)
+      result.rss = await importSources(job.user_id, { dueOnly: options.dueSourcesOnly })
       const ok = result.rss.filter((source) => source.success)
       result.summary = { ...result.summary, sourcesChecked: result.rss.length, sourcesOk: ok.length,
         sourcesFailed: result.rss.length - ok.length, itemsProcessed: ok.reduce((sum, source) => sum + source.count, 0),
         newArticles: ok.reduce((sum, source) => sum + source.newCount, 0), updatedArticles: ok.reduce((sum, source) => sum + source.updatedCount, 0) }
       if (result.summary.sourcesFailed) result.warnings.push(`${result.summary.sourcesFailed} fonti non aggiornate: dettagli nella sezione Fonti.`)
     })
-    if (job.mode === 'all' || job.mode === 'profile') await stage('profile', budgetMs => updateInterestProfile(job.user_id, { budgetMs }), 45_000)
+    if (job.mode === 'all' || job.mode === 'ai' || job.mode === 'profile') await stage('profile', budgetMs => updateInterestProfile(job.user_id, { budgetMs }), 45_000)
     if (job.mode === 'all' || job.mode === 'ai') {
       const candidates = await loadCandidates(job.user_id)
       await stage('picks', async budgetMs => {
