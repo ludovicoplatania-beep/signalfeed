@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         }
         try {
           const discovered = await discoverFeed({ id: 'catalog', user_id: owner.id, name: candidate.name, rss_url: candidate.feed, website_url: candidate.site, priority: 3, is_active: true }, AbortSignal.timeout(20_000))
-          if (discovered.mode !== 'rss') throw new Error('Nessun feed RSS o Atom verificabile')
+          if (discovered.mode !== 'rss' && !('verifiedPage' in candidate && candidate.verifiedPage && new URL(discovered.url).hostname === 'www.cortedicassazione.it' && new URL(discovered.url).pathname === '/it/giurisprudenza_penale.page')) throw new Error('Nessun feed RSS o Atom verificabile')
           const usable = discovered.items.filter(item => {
             try { return Boolean(item.title?.trim() && item.link && isEditorialArticle(new URL(item.link, discovered.url).toString())) } catch { return false }
           })

@@ -15,6 +15,7 @@ export type SourceAdapter = {
   feedUrls: (source: SourceRecord) => string[]
   pageUrls?: string[]
   articlePattern?: RegExp
+  pageKind?: 'cassazione-penale'
 }
 
 function text(source: SourceRecord) {
@@ -22,6 +23,17 @@ function text(source: SourceRecord) {
 }
 
 export const sourceAdapters: SourceAdapter[] = [
+  {
+    match: (source) => text(source).includes('developers.home-assistant.io'),
+    feedUrls: () => ['https://developers.home-assistant.io/blog/rss.xml', 'https://developers.home-assistant.io/blog/atom.xml'],
+    pageUrls: ['https://developers.home-assistant.io/blog'],
+  },
+  {
+    match: (source) => { try { return new URL(source.rss_url).hostname === 'www.cortedicassazione.it' && new URL(source.rss_url).pathname === '/it/giurisprudenza_penale.page' } catch { return false } },
+    feedUrls: () => [],
+    pageUrls: ['https://www.cortedicassazione.it/it/giurisprudenza_penale.page'],
+    pageKind: 'cassazione-penale',
+  },
   {
     match: (source) => text(source).includes('everyeye') && (text(source).includes('serie') || text(source).includes('serial')),
     feedUrls: () => ['https://serial.everyeye.it/feed/feed_news_rss.asp'],
