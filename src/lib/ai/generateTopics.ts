@@ -2,18 +2,15 @@ import 'server-only'
 import { createAICompletion } from './completion'
 import { getServiceSupabase } from '@/lib/server/clients'
 import { topicsResponseSchema } from './schemas'
+import { topicInput, topicFormat, topicReferences } from './topicInput'
 import { loadCandidates } from './pickArticles'
-import { balancedCandidates, type Candidate } from './ranking'
+import { selectionPool, type Candidate } from './ranking'
 
 export async function generateTopics(userId: string, candidates?: Candidate[], options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
-  const topicArticles = balancedCandidates([candidates ?? await loadCandidates(userId)], 120)
+  const topicArticles = selectionPool(candidates ?? await loadCandidates(userId), [], new Set(), [], 80)
   if (topicArticles.length < 2) return { count: 0, skipped: true }
-  const compactArticles = topicArticles.map((article) => ({
-    id: article.id, title: article.title, source: article.source_name,
-    excerpt: (article.excerpt?.trim() || article.article_content?.trim() || '').slice(0, 320),
-    published_at: article.published_at,
-  }))
+  const compactArticles = topicInput(topicArticles)
 
   const prompt = `
 Restituisci SOLO JSON valido. Nessun markdown.
@@ -28,7 +25,7 @@ Formato:
       "title": "massimo 4 parole",
       "description": "perché questo tema è rilevante, massimo 220 caratteri",
       "score": 1-100,
-      "articles": ["id1", "id2"],
+      "articles": [1, 2],
       "angle": "lettura interpretativa del tema, massimo 160 caratteri"
     }
   ]
@@ -41,7 +38,7 @@ Regole:
 - preferisci fenomeni specifici: "Crisi chip AI", "Guerra commerciale USA-Cina", "Energia nucleare europea"
 - score alto se il tema è ricorrente, urgente o strategico
 - evita duplicati semantici tra topic
-- usa solo id realmente presenti
+- usa soltanto riferimenti ref realmente presenti; massimo 8 articoli per gruppo
 
 Articoli:
 ${JSON.stringify(compactArticles)}
@@ -49,8 +46,8 @@ ${JSON.stringify(compactArticles)}
 
   const { response } = await createAICompletion({
     model: 'gpt-4o-mini',
-    response_format: { type: 'json_object' },
-    max_completion_tokens: 1_800,
+    response_format: topicFormat(topicArticles.length),
+    max_completion_tokens: 1_500,
     messages: [
       {
         role: 'system',
@@ -68,7 +65,7 @@ ${JSON.stringify(compactArticles)}
   const seenTitles = new Set<string>()
   const topics = values.slice(0, 8).flatMap((value) => {
     if (!value || typeof value !== "object") return []
-    const parsed = topicsResponseSchema.element.safeParse({ ...value,
+    const parsed = topicsResponseSchema.element.safeParse({ ...value, articles: topicReferences(value.articles, topicArticles),
       description: typeof value.description === 'string' ? value.description.slice(0, 220) : value.description,
       angle: typeof value.angle === 'string' ? value.angle.slice(0, 160) : value.angle,
     })
