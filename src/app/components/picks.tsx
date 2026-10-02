@@ -82,7 +82,7 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
       </button>
 
       <div className="relative pointer-events-none">
-        <p className="mb-3 text-xs leading-5 text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}</p>
+        <p className="mb-3 text-xs leading-5 text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}{pick.publisher_key ? ` · ${pick.publisher_key}` : ''}</p>
 
         <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
           <h3 className="line-clamp-3 text-lg font-medium [overflow-wrap:anywhere] leading-snug tracking-[-0.025em] text-white group-hover:underline md:text-xl">

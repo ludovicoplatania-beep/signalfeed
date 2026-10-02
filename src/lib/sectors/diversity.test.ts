@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { automaticPicks } from '@/lib/ai/ranking'
 import type { Feedback } from '@/lib/ai/preferences'
-import { eligibleSectorArticles, publisherKey, selectSectorPicks, type SectorCandidate } from './diversity'
+import { eligibleSectorArticles, publisherKey, sameSectorEvent, selectSectorPicks, type SectorCandidate } from './diversity'
 const article = (id: string, publisher: string, title = `Videogioco numero ${id}: nuova modalità`): SectorCandidate => ({id,title,publisher_key:publisher,source_id:`${publisher}-feed`,source_name:publisher,source_priority:3,url:`https://${publisher}.test/${id}`,excerpt:null,article_content:null,published_at:new Date().toISOString(),created_at:new Date().toISOString()})
 const choose = (items: SectorCandidate[]) => selectSectorPicks([],items,[],new Set(),[],7)
 
@@ -56,4 +56,12 @@ describe('sector publisher variety', () => {
   it('returns an empty selection for an empty eligible pool', () => {
     expect(choose([])).toMatchObject({picks:[],diversity:{selectedPublishers:0,targetPublishers:0}})
   })
+})
+
+it('deduplicates the observed DGX Spark memory revision without merging different versions',()=>{
+  const a=article('1','a','NVIDIA DGX Spark, ecco la versione con soli 64 GB di RAM. Scende il prezzo: 4.999 dollari')
+  const b=article('2','b',"NVIDIA DGX Spark da 64 GB: arriva il nuovo modello per l’AI locale a 4.999 dollari")
+  expect(sameSectorEvent(a,b)).toBe(true)
+  expect(sameSectorEvent(a,{...b,title:'NVIDIA DGX Spark da 128 GB'})).toBe(false)
+  expect(choose([a,b]).picks).toHaveLength(1)
 })
