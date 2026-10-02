@@ -11,3 +11,13 @@ Un ciclo con tutte le fonti controllate fallite è fallito. Un fallimento parzia
 Limite: il database conserva un solo ultimo ciclo per utente, non uno storico permanente. Gli errori ancora presenti restano nelle singole fonti. La frequenza pianificata non garantisce l'esecuzione puntuale del servizio esterno.
 
 Verifica: test su ritardi, errori con successi recenti, sospensione, date assenti/future, esito persistente, connessione indisponibile, fallimento totale e interruzione concorrente. Verifica in produzione dell'esito conservato dopo riapertura e di un ciclo manuale in corso/completato.
+
+## Prove in produzione — 2 ottobre 2026
+
+PR #18: stato persistente e rilevamento errori/ritardi. PR #19: correzione emersa nella prova reale di ricarica durante il ciclo (l'interfaccia aspettava il termine della verifica), più timeout delle richieste di 20 secondi e test del dashboard durante un aggiornamento ancora in corso.
+
+Il ciclo avviato alle 18:37:45 Europe/Rome e concluso alle 18:38:14 ha importato 44 nuovi articoli e aggiornato 34, con 107/108 fonti riuscite. Valigia Blu ha restituito 403/429 dopo un successo alle 18:21:44. Il pannello ha mostrato stato Parziale, nome/errore della fonte, ultimo successo e ritardo mediano di 13 minuti su 43 nuovi articoli datati. Nessuna fonte eliminata per un errore intermittente.
+
+Il corpo reale dello script del workflow è stato eseguito con risposte simulate: completato → exit 0; parziale → exit 1; fallito → exit 1. CI delle due PR riuscita; 131 test complessivi, lint/typecheck/build riusciti. La prova di interruzione/fallimento totale è automatizzata; non sono stati provocati errori artificiali nelle fonti di produzione.
+
+Verifica della versione finale: la ricarica durante il nuovo ciclo mostra il briefing e «In corso / Controllo fonti» mentre il lavoro prosegue. Commit b8afae219306ba4add257bac0973ff5903fce5a2, deploy READY dpl_CxiDLUDYUa3r2pYATEJe4hccCRhk. L’esito Parziale precedente è stato recuperato correttamente dopo la riapertura.
