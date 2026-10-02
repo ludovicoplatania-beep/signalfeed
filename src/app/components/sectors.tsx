@@ -59,6 +59,7 @@ export function SectorView({ slug, query, source, period, version, savedIds, tog
   const [error, setError] = useState('')
   const abort = useRef<AbortController | null>(null)
   const generationLock = useRef(false)
+  const publisherCount = curation ? new Set(curation.picks.map(pick => pick.publisher_key ?? pick.articles?.sources?.name)).size : 0
 
   async function load(offset = 0) {
     abort.current?.abort()
@@ -113,6 +114,10 @@ export function SectorView({ slug, query, source, period, version, savedIds, tog
       </div>
       {curation ? <>
         <p className="mb-4 text-xs text-neutral-400">{curation.picks.filter(p => p.selection_method === 'ai').length} scelte IA · {curation.picks.filter(p => p.selection_method === 'automatic').length} automatiche · {new Date(curation.created_at).toLocaleString('it-IT')}{curation.warning ? ` · ${curation.warning}` : ''}</p>
+        {curation.diversity && <p className="mb-4 text-xs leading-5 text-neutral-400" aria-label="Varietà degli editori">
+          {curation.picks.length} notizie · {publisherCount} editori
+          {publisherCount >= 5 ? ' · obiettivo di varietà raggiunto' : publisherCount < curation.diversity.selectedPublishers ? ' · alcune fonti non sono più attive: ricalcola la selezione' : ` · meno di cinque editori con notizie distinte disponibili negli ultimi ${curation.diversity.windowDays} giorni, dopo le tue esclusioni e le aperture`}
+        </p>}
         <AiCurationView picks={showAllPicks ? curation.picks : curation.picks.slice(0, 2)} savedIds={savedIds} toggleSave={toggleSave} openReader={openReader} />
         {curation.picks.length > 2 && <button onClick={() => setShowAllPicks(value => !value)} aria-expanded={showAllPicks} className="mt-3 min-h-11 w-full rounded-2xl border border-[#B88A44]/15 bg-black/20 px-4 py-2.5 text-sm text-[#E2C188]">{showAllPicks ? 'Mostra meno scelte' : `Mostra le altre ${curation.picks.length - 2} scelte`}</button>}
       </> : <p className="text-sm text-neutral-400">Avvia la selezione per ottenere le scelte IA di questo settore. Il risultato resta disponibile anche sugli altri dispositivi.</p>}
