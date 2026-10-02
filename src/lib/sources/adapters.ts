@@ -6,6 +6,7 @@ export type SourceRecord = {
   rss_url: string
   is_active: boolean
   priority: number
+  last_checked_at?: string | null
   resolved_feed_url?: string | null
 }
 

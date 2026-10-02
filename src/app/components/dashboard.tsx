@@ -311,19 +311,19 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       const summary = job.result?.summary
       const selectionStatus = `${Math.max(0, (summary?.picksCount ?? 0) - (summary?.automaticPicks ?? 0))} scelte IA · ${summary?.automaticPicks ?? 0} automatiche`
       setUpdateStatus(job.status === 'failed' ? job.message || 'Aggiornamento non riuscito. Puoi riprovare.'
-        : `${job.mode === 'ai' ? selectionStatus : `${summary?.newArticles ?? 0} nuovi articoli · ${summary?.updatedArticles ?? 0} aggiornati · ${summary?.sourcesOk ?? 0}/${summary?.sourcesChecked ?? 0} fonti operative · ${selectionStatus}`}${job.message ? ` · ${job.message}` : ''}`)
+        : `${job.mode === 'ai' ? selectionStatus : `${summary?.newArticles ?? 0} nuovi articoli · ${summary?.updatedArticles ?? 0} aggiornati · ${summary?.sourcesOk ?? 0}/${summary?.sourcesChecked ?? 0} fonti operative${job.mode === 'all' ? ` · ${selectionStatus}` : ''}`}${job.message ? ` · ${job.message}` : ''}`)
     } catch (error) {
       if (!controller.signal.aborted) setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
     } finally { refreshLock.current = false; setRefreshing(false) }
   }
 
-  async function runRefresh(mode: 'all' | 'ai') {
+  async function runRefresh(mode: 'rss' | 'ai') {
     if (refreshLock.current) return
     refreshLock.current = true
     setRefreshing(true)
     setUpdateStatus('Avvio aggiornamento…')
     try {
-      const response = await apiFetch(mode === 'ai' ? '/api/update-ai' : '/api/update-now', { method: 'POST' })
+      const response = await apiFetch(mode === 'ai' ? '/api/update-ai' : '/api/update-rss', { method: 'POST' })
       if (!response.ok) throw new Error('Aggiornamento non riuscito. Puoi riprovare.')
       const data = await response.json() as { job: UpdateJob }
       refreshLock.current = false
@@ -333,7 +333,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
     } finally { refreshLock.current = false; setRefreshing(false) }
   }
 
-  async function refreshData() { await runRefresh('all') }
+  async function refreshData() { await runRefresh('rss') }
   async function refreshAI() { await runRefresh('ai') }
 
   async function logout() {

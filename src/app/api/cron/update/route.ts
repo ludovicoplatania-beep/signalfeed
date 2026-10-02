@@ -8,7 +8,7 @@ export const maxDuration = 300
 export async function GET(request: Request) {
   try {
     requireCron(request)
-    return await enqueueUpdate(getServerEnv().OWNER_USER_ID, 'all')
+    return await enqueueUpdate(getServerEnv().OWNER_USER_ID, 'ai')
   } catch (error) {
     return apiError(error, 'Errore aggiornamento programmato')
   }

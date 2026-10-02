@@ -1,0 +1,58 @@
+name: Import news
+
+on:
+  schedule:
+    # Avoid the top of the hour, which is often congested.
+    - cron: '17,47 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+concurrency:
+  group: athena-news-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Import due sources and verify completion
+        env:
+          ATHENA_CRON_SECRET: ${{ secrets.ATHENA_CRON_SECRET }}
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const secret = process.env.ATHENA_CRON_SECRET;
+          if (!secret) {
+            console.error('ATHENA_CRON_SECRET is missing: scheduled imports are not active.');
+            process.exit(1);
+          }
+          const endpoint = 'https://athena-os.vercel.app/api/cron/rss';
+          async function request(url) {
+            const response = await fetch(url, {
+              headers: { Authorization: `Bearer ${secret}` },
+              signal: AbortSignal.timeout(30_000), redirect: 'error',
+            });
+            if (!response.ok) throw new Error(`Athena returned HTTP ${response.status}`);
+            const data = await response.json();
+            if (!data.success || !data.job) throw new Error('Invalid update response');
+            return data;
+          }
+          const start = await request(endpoint);
+          let job = start.job;
+          if (!start.started && job.mode !== 'rss') {
+            console.log('Another update owns the lease; import deferred to the next scheduled run.');
+            process.exit(0);
+          }
+          const id = job.id;
+          const deadline = Date.now() + 390_000;
+          while (job.status === 'running') {
+            if (Date.now() >= deadline) throw new Error('Import did not finish within the verification deadline');
+            await new Promise(resolve => setTimeout(resolve, 5_000));
+            job = (await request(`${endpoint}?status=1`)).job;
+            if (job.id !== id) throw new Error('Import status replaced before completion could be verified');
+          }
+          if (job.status === 'failed') throw new Error('News import failed; inspect Athena source status');
+          console.log(JSON.stringify({ status: job.status, summary: job.result?.summary }));
+          if (job.status === 'partial') console.warn('Some sources were unavailable; details remain visible in Athena.');
+          JS
