@@ -29,6 +29,7 @@ export type Article = {
 }
 
 export type AiPick = {
+  publisher_key?: string
   selection_method: 'ai' | 'automatic'
   id: string
   score: number
