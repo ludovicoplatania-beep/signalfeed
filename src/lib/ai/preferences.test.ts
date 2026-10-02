@@ -22,7 +22,7 @@ describe('explicit preferences and discovery', () => {
     expect(preferenceAdjustment(a, [feedback(a, null)])).toBe(0)
   })
   it('reserves two discovery slots without read, old or disliked-source articles', () => {
-    const articles = Array.from({ length: 14 }, (_, i) => article(String(i), i < 10 ? 'known' : `new${i}`))
+    const articles = Array.from({ length: 14 }, (_, i) => article(String(i), i < 10 ? 'known' : `new${i}`, `Software innovativo notizia ${i}`))
     articles[10].published_at = new Date(Date.now() - 7 * 86_400_000).toISOString()
     const read = new Set(['11'])
     const picks = picksWithDiscovery(automaticPicks(articles, [], read), articles, new Set(['known']), read)

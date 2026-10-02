@@ -25,7 +25,7 @@ export async function GET(request: Request) {
         .select('id, score, summary, reason, category, selection_method, created_at, articles!inner(id, title, url, excerpt, image_url, article_content, published_at, duplicate_of, sources!inner(name, is_active))')
         .eq('user_id', owner.id).eq('is_current', true)
         .eq('articles.sources.is_active', true).is('articles.duplicate_of', null)
-        .order('selection_method').order('score', { ascending: false })
+        .order('score', { ascending: false }).order('article_id')
         .limit(20),
       supabase.from('saved_articles')
         .select('id, article_id, created_at, articles(duplicate_of, id, title, url, excerpt, image_url, article_content, published_at, sources(name))')

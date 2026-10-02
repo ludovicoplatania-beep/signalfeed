@@ -3,11 +3,11 @@ import { createAICompletion } from './completion'
 import { getServiceSupabase } from '@/lib/server/clients'
 import { topicsResponseSchema } from './schemas'
 import { loadCandidates } from './pickArticles'
-import type { Candidate } from './ranking'
+import { balancedCandidates, type Candidate } from './ranking'
 
 export async function generateTopics(userId: string, candidates?: Candidate[], options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
-  const topicArticles = candidates ?? await loadCandidates(userId)
+  const topicArticles = balancedCandidates([candidates ?? await loadCandidates(userId)], 120)
   if (topicArticles.length < 2) return { count: 0, skipped: true }
   const compactArticles = topicArticles.map((article) => ({
     id: article.id, title: article.title, source: article.source_name,

@@ -1,7 +1,7 @@
 import 'server-only'
 import { getServiceSupabase } from '@/lib/server/clients'
 import { pickResponseSchema } from './schemas'
-import { automaticPicks, balancedCandidates, categoryFor, picksWithDiscovery, type Candidate, type RankedPick } from './ranking'
+import { automaticPicks, balancedCandidates, selectionPool, categoryFor, picksWithDiscovery, type Candidate, type RankedPick } from './ranking'
 import { type Feedback } from './preferences'
 import { matchingTitle, sourceSummary } from '@/lib/articles/summary'
 import { AICompletionError, createAICompletion, failureCode, failureMessage } from './completion'
@@ -32,16 +32,16 @@ export async function loadCandidates(userId: string): Promise<Candidate[]> {
       groups.push((data ?? []).map((article) => ({ ...article, source_name: source.name, source_priority: source.priority ?? 3 })))
     }
   }))
-  return balancedCandidates(groups)
+  return balancedCandidates(groups, (sources?.length ?? 0) * 20)
 }
 
 export async function pickArticles(userId: string, candidates?: Candidate[], options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
-  const articles = candidates ?? await loadCandidates(userId)
-  if (!articles.length) throw new Error('Nessun articolo disponibile da fonti attive per la selezione')
+  const available = candidates ?? await loadCandidates(userId)
+  if (!available.length) throw new Error('Nessun articolo disponibile da fonti attive per la selezione')
   const [{ data: profile, error: profileError }, { data: events, error: eventsError }, { data: feedbackRows, error: feedbackError }] = await Promise.all([
     supabase.from('user_interests').select('interests').eq('user_id', userId).maybeSingle(),
-    supabase.from('user_events').select('event_type, article_id, metadata, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(120),
+    supabase.from('user_events').select('event_type, article_id, metadata, created_at').eq('user_id', userId).eq('event_type', 'article_opened').order('created_at', { ascending: false }).limit(2000),
     supabase.from('article_feedback').select('*').eq('user_id', userId).not('preference', 'is', null).order('updated_at', { ascending: false }).limit(1000),
   ])
   if (profileError) throw profileError
@@ -49,6 +49,7 @@ export async function pickArticles(userId: string, candidates?: Candidate[], opt
   if (feedbackError) throw feedbackError
   const feedback = (feedbackRows ?? []) as Feedback[]
   const readIds = new Set<string>((events ?? []).filter((event) => event.event_type === 'article_opened').map((event) => event.article_id).filter(Boolean))
+  const articles = selectionPool(available, profile?.interests ?? [], readIds, feedback)
   const fallback = automaticPicks(articles, profile?.interests ?? [], readIds, feedback)
   const knownSources = new Set<string>([
     ...feedback.filter(entry => entry.preference === 'like').map(entry => entry.source_name),
@@ -59,7 +60,7 @@ export async function pickArticles(userId: string, candidates?: Candidate[], opt
   const diagnostics: SelectionDiagnostics = { attempts: 0, elapsedMs: 0, candidateCount: articles.length, promptCharacters: 0, received: 0, accepted: 0, rejected: 0 }
   try {
     const input = JSON.stringify({
-      criteria: 'Attualità e interessi, editori diversi, priorità fonte 5=massima, non ripetere micro-notizie. Mi piace è forte; Salva significa anche leggere dopo; apertura è debole. Rispetta less_topic e less_source. Penalizza già letti e clickbait. Includi 2 scoperte tra fonti poco consultate. Usa soltanto fatti nei dati.',
+      criteria: 'Attualità e interessi, editori diversi, priorità fonte 5=massima, non ripetere micro-notizie. Mi piace è forte; Salva significa anche leggere dopo; apertura è debole. Rispetta less_topic e less_source. Evita già letti, pubblicità e micro-notizie ripetute. Priorità esplicite: IA, tecnologia, videogiochi, diritto e Sicilia/Catania; integra gli altri interessi personali. Includi fino a 2 scoperte pertinenti, senza forzare notizie fuori interesse. Usa soltanto fatti nei dati.',
       interests: profile?.interests ?? [], known_sources: [...knownSources],
       explicit_preferences: feedback.slice(0, 80).map(({ preference, title, excerpt, source_name }) => ({ preference, title, excerpt: excerpt?.slice(0, 160), source_name })),
       articles: selectionArticles(articles, readIds, feedback),
