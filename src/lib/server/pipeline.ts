@@ -32,7 +32,7 @@ export async function getUpdate(userId: string) {
   if (data?.status === 'running' && Date.now() - new Date(data.updated_at).getTime() > 360_000) {
     const message = 'Aggiornamento interrotto prima del completamento. I dati già acquisiti sono conservati: puoi riprovare.'
     const { data: expired, error: expireError } = await supabase.from('athena_updates')
-      .update({ status: 'failed', message, updated_at: new Date().toISOString() }).eq('id', data.id).eq('status', 'running').select('*').maybeSingle()
+      .update({ status: 'failed', message, updated_at: new Date().toISOString() }).eq('id', data.id).eq('status', 'running').eq('updated_at', data.updated_at).select('*').maybeSingle()
     if (expireError) throw expireError
     return (expired ?? data) as UpdateJob
   }
@@ -88,7 +88,7 @@ export async function runUpdate(job: UpdateJob, options: RunUpdateOptions = {}) 
     }
     if (job.mode === 'profile' || result.stages.picks?.success) await stage('digest', budgetMs => generateDigest(job.user_id, { budgetMs }), 45_000)
     const successes = Object.entries(result.stages).filter(([name, stage]) => name !== 'identity' && stage.success).length
-    const status = !successes ? 'failed' : result.warnings.length ? 'partial' : 'completed'
+    const status = !successes || ((job.mode === 'rss' || job.mode === 'all') && result.summary.sourcesChecked > 0 && result.summary.sourcesOk === 0) ? 'failed' : result.warnings.length ? 'partial' : 'completed'
     await save({ status, phase: 'finished', result, message: result.warnings.join(' · ').slice(0, 1_000) || null })
   } catch (error) {
     const message = error && typeof error === 'object' && 'message' in error ? String(error.message) : String(error)

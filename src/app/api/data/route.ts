@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { sourceHealth } from '@/lib/health/status'
 import { getUpdate } from '@/lib/server/pipeline'
 import { uniqueArticles } from '@/lib/articles/identity'
 import { sourceSummary } from '@/lib/articles/summary'
@@ -80,7 +81,7 @@ export async function GET(request: Request) {
       {
         success: true,
         feedback: feedback.data ?? [],
-        sources: (sources.data ?? []).map((source) => ({ ...source, is_stale: !source.last_success_at || Date.now() - new Date(source.last_success_at).getTime() > 36 * 3_600_000 })),
+        sources: (sources.data ?? []).map((source) => ({ ...source, is_stale: ['late', 'unverified', 'unknown'].includes(sourceHealth(source).status) })),
         articles: uniqueArticles(normalizedArticles),
         aiPicks: normalizedPicks,
         savedArticles: normalizedSaved.filter((entry, index, list) => list.findIndex((other) => other.article_id === entry.article_id) === index),

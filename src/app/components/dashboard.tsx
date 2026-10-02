@@ -32,6 +32,7 @@ import { FeedSkeleton, HeroSkeleton, MetricsSkeleton } from './skeletons'
 import { SectorLinks, SectorView } from './sectors'
 import { getSector } from '@/lib/sectors/catalog'
 import { DigestPanel } from './digest'
+import { UpdateHealth } from './update-health'
 
 export default function HomePage({ initialSector, initialSection = 'today' }: { initialSector?: string; initialSection?: Section } = {}) {
   const router = useRouter()
@@ -63,6 +64,9 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   const [sourceFilter, setSourceFilter] = useState('')
   const [period, setPeriod] = useState('all')
   const [updateStatus, setUpdateStatus] = useState('')
+  const [latestJob, setLatestJob] = useState<UpdateJob | null>(null)
+  const [healthError, setHealthError] = useState('')
+  const [healthNow, setHealthNow] = useState(Date.now)
 
   const [expandingSources, setExpandingSources] = useState(false)
   const [name, setName] = useState('')
@@ -81,9 +85,17 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
     loadEverything().then((job) => {
       if (job?.status === 'running') return watchUpdate(job)
     }).catch((error) => setLoadError(error instanceof Error ? error.message : 'Caricamento non disponibile')).finally(() => setLoading(false))
-    const onFocus = () => { loadEverything().catch(() => setUpdateStatus('Dati non disponibili. Riprova.')) }
+    const checkHealth = () => {
+      setHealthNow(Date.now())
+      if (document.visibilityState !== 'visible' || refreshLock.current) return
+      loadEverything().then(job => {
+        if (job?.status === 'running') return watchUpdate(job)
+      }).catch(() => setHealthError('Impossibile verificare aggiornamenti e fonti. Riprova quando la connessione è disponibile.'))
+    }
+    const timer = window.setInterval(checkHealth, 60_000)
+    const onFocus = checkHealth
     window.addEventListener('focus', onFocus)
-    return () => { window.removeEventListener('focus', onFocus); pollAbort.current?.abort(); archiveAbort.current?.abort() }
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', onFocus); pollAbort.current?.abort(); archiveAbort.current?.abort() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -170,6 +182,9 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       update: UpdateJob | null
     }
     setFeedbackEntries(data.feedback ?? [])
+    setLatestJob(data.update)
+    setHealthError('')
+    setHealthNow(Date.now())
     setSources(data.sources)
     setArticles(data.articles)
     setAiPicks(data.aiPicks.filter((pick) => Boolean(pick.articles?.id && pick.articles.title)))
@@ -305,6 +320,8 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
         const data = await response.json() as { job: UpdateJob | null }
         if (!data.job || data.job.id !== job.id) throw new Error('Aggiornamento sostituito: ricarica la pagina per verificarne lo stato.')
         job = data.job
+        setLatestJob(job)
+        setHealthNow(Date.now())
       }
       await loadEverything()
       setArchiveVersion((version) => version + 1)
@@ -313,7 +330,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       setUpdateStatus(job.status === 'failed' ? job.message || 'Aggiornamento non riuscito. Puoi riprovare.'
         : `${job.mode === 'ai' ? selectionStatus : `${summary?.newArticles ?? 0} nuovi articoli · ${summary?.updatedArticles ?? 0} aggiornati · ${summary?.sourcesOk ?? 0}/${summary?.sourcesChecked ?? 0} fonti operative${job.mode === 'all' ? ` · ${selectionStatus}` : ''}`}${job.message ? ` · ${job.message}` : ''}`)
     } catch (error) {
-      if (!controller.signal.aborted) setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
+      if (!controller.signal.aborted) { const message = error instanceof Error ? error.message : 'Aggiornamento non disponibile'; setUpdateStatus(message); setHealthError(message) }
     } finally { refreshLock.current = false; setRefreshing(false) }
   }
 
@@ -329,7 +346,9 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       refreshLock.current = false
       await watchUpdate(data.job)
     } catch (error) {
-      setUpdateStatus(error instanceof Error ? error.message : 'Aggiornamento non disponibile')
+      const message = error instanceof Error ? error.message : 'Aggiornamento non disponibile'
+      setUpdateStatus(message)
+      setHealthError(message)
     } finally { refreshLock.current = false; setRefreshing(false) }
   }
 
@@ -448,6 +467,8 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
             period={period}
             setPeriod={setPeriod}
           />
+
+          {!loading && <UpdateHealth sources={sources} job={latestJob} now={healthNow} error={healthError} />}
 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 

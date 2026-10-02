@@ -47,9 +47,15 @@ describe('independent news and AI pipelines', () => {
     expect(mocks.picks).toHaveBeenCalledOnce()
   })
   it('keeps imported news when one source fails and marks the job partial', async () => {
-    mocks.imports.mockResolvedValue([{ success: false, newCount: 0, updatedCount: 0, count: 0 }])
+    mocks.imports.mockResolvedValue([{ success: false, newCount: 0, updatedCount: 0, count: 0 }, { success: true, newCount: 1, updatedCount: 0, count: 1 }])
     await runUpdate(job('rss'))
     expect(mocks.save.mock.calls.at(-1)?.[0].status).toBe('partial')
     expect(mocks.picks).not.toHaveBeenCalled()
   })
+})
+
+it('marks import failed when every checked source fails', async () => {
+  mocks.imports.mockResolvedValue([{ success: false, newCount: 0, updatedCount: 0, count: 0 }])
+  await runUpdate(job('rss'))
+  expect(mocks.save.mock.calls.at(-1)?.[0].status).toBe('failed')
 })
