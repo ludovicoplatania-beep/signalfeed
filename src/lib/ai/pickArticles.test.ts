@@ -34,12 +34,12 @@ describe('resilient IA picks', () => {
     await pickArticles(owner, articles)
     expect(mocks.rpc.mock.calls[0][1].p_picks.filter((p: { selection_method: string }) => p.selection_method === 'ai')).toHaveLength(1)
   })
-  it('retains a valid lower-scoring AI selection ahead of fallback items', async () => {
+  it('keeps a valid AI selection without promoting it above more relevant fallback items', async () => {
     mocks.create.mockResolvedValue(response([null, { ...valid(), score: 40 }]))
     await pickArticles(owner, articles)
     const picks = mocks.rpc.mock.calls[0][1].p_picks
-    expect(picks[0].selection_method).toBe('ai')
-    expect(picks[0].article_id).toBe(articles[0].id)
+    expect(picks[0].selection_method).toBe('automatic')
+    expect(picks.find((p: { article_id: string }) => p.article_id === articles[0].id).selection_method).toBe('ai')
   })
   it('rejects a reference whose echoed title belongs to a different article', async () => {
     mocks.create.mockResolvedValue(response([{ ...valid(), title: articles[1].title }]))

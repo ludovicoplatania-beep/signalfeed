@@ -23,7 +23,7 @@ export async function generateDigest(userId: string, options: { budgetMs?: numbe
       `)
       .eq('user_id', userId)
       .eq('is_current', true)
-      .order('selection_method').order('score', { ascending: false })
+      .order('score', { ascending: false }).order('article_id')
       .limit(10),
 
     supabase
