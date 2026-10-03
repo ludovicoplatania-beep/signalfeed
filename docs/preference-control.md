@@ -12,7 +12,13 @@ Ogni pick, principale, secondario e tematico, mostra la data di selezione e il c
 
 ## Verifica
 
-Test di priorità ed esclusioni, alias IA/gaming, rimozione senza reset degli interessi appresi, conflitti fra dispositivi, aggiornamento appreso simultaneo, cache del profilo, errori di salvataggio e anteprima. Verifica reale e pubblicazione in corso.
+Pubblicato il 3 ottobre 2026 con PR #27 e #28. CI, 171 test, typecheck, lint e build superati; deployment di produzione READY.
+
+Verifica reale nell’account proprietario: tema OpenAI con priorità massima salvato e ritrovato dopo ricaricamento; motivazione “Tema scelto da te: OpenAI” e peso nel ranking verificati. Esclusione della fonte Il Post e del tema OpenAI applicate nell’anteprima. Motivo persistito e data verificati su un pick tematico. Tutte le regole temporanee rimosse al termine, con ulteriore ricaricamento: zero regole manuali e i 15 interessi appresi originali conservati.
+
+La prima verifica ha evidenziato un’anteprima troppo lenta: sostituito il caricamento di tutte le fonti con il campione recente della home. Una verifica successiva è terminata in 1.231 ms; misura singola, non garanzia di latenza.
+
+Test coprono priorità ed esclusioni, alias IA/gaming, rimozione senza reset degli interessi appresi, conflitti fra dispositivi, aggiornamento appreso simultaneo, cache del profilo, errori di salvataggio e anteprima. La concorrenza è verificata nei test; non è stato eseguito un test simultaneo su due dispositivi fisici.
 
 ## Limiti
 
