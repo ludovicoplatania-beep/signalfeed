@@ -6,4 +6,16 @@ Alle 20:29 Europe/Rome, l’interfaccia segnalava tutte le 108 fonti in ritardo.
 
 La cadenza del punto 1 è riaperta. Vercel contiene cron giornalieri, GitHub la cadenza frequente: non aumentare la tolleranza per nascondere i ritardi e non confondere il recupero manuale con una correzione della pianificazione.
 
-Prossimo intervento: verificare pg_cron/pg_net nel progetto Supabase esistente, uso di Vault per il cron secret e stato delle richieste HTTP, mantenendo la verifica del completamento della pipeline. Prima della configurazione serve ispezionare il progetto e le estensioni disponibili. Il dashboard Supabase mostra una schermata di accesso: autenticazione da ripristinare. Nessuna modifica al database o alle credenziali effettuata.
+Accesso Supabase ripristinato mediante autenticazione sicura GitHub. Confermato il progetto Babilonia, ref mhuubnpntjxsjicizehu, che contiene tutte le tabelle Athena. Query di sola lettura: Vault 0.3.1 installato; pg_cron 1.6.4 e pg_net 0.20.0 disponibili ma non installati. Nessuna modifica al database o alle credenziali effettuata.
+
+## Configurazione pronta, attivazione da confermare
+
+Migration 202610030001_rss_scheduler.sql: abilita pg_cron/pg_net, genera nel database un token casuale dedicato all’import RSS e lo conserva in Vault. Il token non viene stampato, copiato nel repository o inserito nei comandi cron. Athena invia al validatore solo l’hash SHA-256; RPC riservata a service_role. Credenziale non accettata dal cron IA. Il vecchio cron secret continua a funzionare.
+
+Import ai minuti 7 e 37, controllo HTTP ogni minuto e polling dello stato solo durante un ciclo attivo. Gli esiti HTTP sono registrati in athena_private.rss_requests; il completamento reale resta in athena_updates. Un job cron eseguito non equivale a un import riuscito. Ruoli anon/authenticated privi di accesso a funzioni e audit privati. I job sono creati INATTIVI.
+
+Dopo conferma della nuova credenziale persistente: applicare migration, invocare athena_private.invoke_rss(false), verificare esito HTTP e stato persisted della pipeline, quindi attivare i due job con cron.alter_job. Verificare un avvio pianificato prima di dichiarare il problema risolto. Disattivazione reversibile tramite cron.alter_job(active:=false); scheduler precedenti conservati come fallback.
+
+Test di autenticazione legacy, limitazione al solo endpoint RSS, rifiuto delle credenziali malformate e validatore assente; test Postgres di permessi, job spenti, idempotenza e registrazione HTTP 403. La migration è validata con interfacce simulate delle estensioni, non ancora applicata al database reale.
+
+Riferimenti: https://supabase.com/docs/guides/functions/schedule-functions e https://supabase.com/docs/guides/database/extensions/pg_net.

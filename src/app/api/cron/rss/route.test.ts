@@ -3,6 +3,7 @@ const mocks = vi.hoisted(() => ({ enqueue: vi.fn(), status: vi.fn() }))
 vi.mock('@/lib/server/env', () => ({ getServerEnv: () => ({ OWNER_USER_ID: 'owner', CRON_SECRET: 'private-test-cron' }) }))
 vi.mock('@/lib/server/updateResponse', () => ({ enqueueUpdate: mocks.enqueue }))
 vi.mock('@/lib/server/pipeline', () => ({ getUpdate: mocks.status }))
+vi.mock('@/lib/server/clients', () => ({ getServiceSupabase: () => ({rpc:vi.fn().mockResolvedValue({data:false,error:null})}) }))
 import { GET } from './route'
 beforeEach(() => {
   vi.clearAllMocks()
