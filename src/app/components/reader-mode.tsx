@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Clock3, ExternalLink, Sparkles } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -17,19 +17,25 @@ export function ReaderMode({
   toggleSave: ToggleSave
   close: () => void
 }) {
+  const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const previous = document.body.style.overflow
+    const focus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const position = window.scrollY
     document.body.style.overflow = 'hidden'
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
-    window.addEventListener('keydown', onKey)
-    return () => { document.body.style.overflow = previous; window.removeEventListener('keydown', onKey) }
-  }, [close])
+    const modal = dialog.current
+    modal?.showModal()
+    return () => { modal?.close(); document.body.style.overflow = previous; window.scrollTo({top:position,behavior:'instant'}); focus?.focus({preventScroll:true}) }
+  }, [])
   return (
-    <motion.div
+    <motion.dialog
+      ref={dialog}
+      aria-labelledby="reader-article-title"
+      onCancel={(event) => { event.preventDefault(); close() }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[70] overflow-y-auto overscroll-contain bg-[#070708]/96 text-white backdrop-blur-2xl"
+      className="fixed inset-0 z-[70] m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto overscroll-contain border-0 bg-[#070708]/96 p-0 text-white backdrop-blur-2xl backdrop:bg-black/70"
     >
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top_right,rgba(197,154,82,0.14),transparent_34%),radial-gradient(circle_at_top_left,rgba(139,92,246,0.18),transparent_30%)]" />
 
@@ -67,7 +73,7 @@ export function ReaderMode({
                 </div>
               </div>
 
-              <h1 className="max-w-5xl text-2xl font-semibold [overflow-wrap:anywhere] leading-[1.12] sm:text-3xl tracking-[-0.06em] text-white md:text-5xl lg:text-6xl">
+              <h1 id="reader-article-title" className="max-w-5xl text-2xl font-semibold [overflow-wrap:anywhere] leading-[1.12] sm:text-3xl tracking-[-0.06em] text-white md:text-5xl lg:text-6xl">
                 {article.title}
               </h1>
             </div>
@@ -99,6 +105,6 @@ export function ReaderMode({
           </div>
         </article>
       </div>
-    </motion.div>
+    </motion.dialog>
   )
 }

@@ -1,5 +1,6 @@
 import { Bell, Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star, RefreshCw, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
+import { useState } from 'react'
 import { sectors } from '@/lib/sectors/catalog'
 import { Brand } from './ui'
 import type { Section } from './types'
@@ -93,8 +94,10 @@ export function Header({
   period: string
   setPeriod: (value: string) => void
 }) {
+  const [toolsOpen, setToolsOpen] = useState(false)
   return (
     <header className="mb-5 flex min-w-0 flex-col gap-4 sm:mb-7 xl:flex-row xl:items-start xl:justify-between">
+      <div className="flex min-w-0 items-center justify-between gap-3">
       <div className="min-w-0">
         <div className="text-xs uppercase tracking-[0.24em] text-[#C59A52]">
           Athena
@@ -104,8 +107,10 @@ export function Header({
           {activeSection === 'sectors' ? sectorTitle : getSectionTitle(activeSection)}
         </h1>
       </div>
+      <button aria-expanded={toolsOpen} aria-controls="dashboard-tools" onClick={() => setToolsOpen(value => !value)} className="min-h-11 shrink-0 rounded-2xl border border-white/10 px-3 text-xs text-neutral-300 xl:hidden">{toolsOpen ? 'Chiudi strumenti' : 'Cerca e strumenti'}</button>
+      </div>
 
-      <div className="flex min-w-0 flex-col gap-2 xl:items-end">
+      <div id="dashboard-tools" className={`${toolsOpen ? 'flex' : 'hidden'} min-w-0 flex-col gap-2 xl:flex xl:items-end`}>
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
           <div className="flex min-h-11 min-w-0 items-center gap-2 rounded-2xl border border-white/[0.08] bg-black/35 px-3 py-2.5">
           <Search size={16} className="shrink-0 text-neutral-500" />

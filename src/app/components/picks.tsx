@@ -32,7 +32,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
   return (
     <motion.div
       whileHover={{ y: -4 }}
-      className="group relative min-h-[430px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-950 shadow-2xl shadow-black/40 md:min-h-[520px] md:rounded-[2.4rem]"
+      className="group relative min-h-[360px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-950 shadow-2xl shadow-black/40 md:min-h-[520px] md:rounded-[2.4rem]"
     >
       <button onClick={() => pick.articles && openReader(pick.articles)} className="absolute inset-0 z-10 text-left">
         <ArticleImage imageUrl={pick.articles?.image_url} />
@@ -50,7 +50,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
           </div>
         </div>
 
-        <div className="mt-12 md:mt-0">
+        <div className="mt-8 md:mt-0">
           <p className="mb-4 flex items-center gap-2 text-sm text-[#E2C188]">
             <Sparkles size={15} />
             {pick.reason?.startsWith('Scoperta') ? 'Scoperta per te' : pick.selection_method === 'automatic' ? 'Selezione automatica' : 'Scelta IA principale'}

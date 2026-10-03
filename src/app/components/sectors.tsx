@@ -106,15 +106,15 @@ export function SectorView({ slug, query, source, period, version, savedIds, tog
     finally { generationLock.current = false; setGenerating(false) }
   }
   return <div className="space-y-5 sm:space-y-6">
-    <div className="space-y-3"><SectorLinks active={slug} /><p className="px-1 text-xs leading-5 text-neutral-400 sm:text-sm">{sector.description}</p></div>
+    <div className="space-y-3"><SectorLinks active={slug} /><p className="hidden px-1 text-xs leading-5 text-neutral-400 sm:block sm:text-sm">{sector.description}</p></div>
     <section className="rounded-3xl border border-[#B88A44]/15 bg-[linear-gradient(145deg,rgba(139,92,246,0.045),rgba(197,154,82,0.035))] p-3 sm:p-5" aria-label="Selezione IA del settore">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0"><h2 className="text-lg font-medium tracking-tight sm:text-xl">Scelte IA del settore</h2><p className="mt-1 text-xs text-neutral-400">Dalle notizie recenti del settore, secondo interessi e preferenze.</p></div>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="min-w-0"><h2 className="text-base font-medium tracking-tight sm:text-xl">Scelte IA del settore</h2><p className="mt-1 hidden text-xs text-neutral-400 sm:block">Dalle notizie recenti del settore, secondo interessi e preferenze.</p></div>
         <button onClick={generate} disabled={generating || loading || total === 0} className="min-h-11 shrink-0 rounded-2xl border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.18),rgba(0,0,0,0.35))] px-4 py-2.5 text-sm text-[#E2C188] disabled:opacity-50">{generating ? 'Selezione in corso…' : curation ? 'Ricalcola IA' : 'Seleziona con IA'}</button>
       </div>
       {curation ? <>
-        <p className="mb-4 text-xs text-neutral-400">{curation.picks.filter(p => p.selection_method === 'ai').length} scelte IA · {curation.picks.filter(p => p.selection_method === 'automatic').length} automatiche · {new Date(curation.created_at).toLocaleString('it-IT')}{curation.warning ? ` · ${curation.warning}` : ''}</p>
-        {curation.diversity && <p className="mb-4 text-xs leading-5 text-neutral-400" aria-label="Varietà degli editori">
+        <p className="mb-2 text-xs text-neutral-400">{curation.picks.filter(p => p.selection_method === 'ai').length} scelte IA · {curation.picks.filter(p => p.selection_method === 'automatic').length} automatiche · {new Date(curation.created_at).toLocaleString('it-IT')}{curation.warning ? ` · ${curation.warning}` : ''}</p>
+        {curation.diversity && <p className="mb-3 text-xs leading-5 text-neutral-400" aria-label="Varietà degli editori">
           {curation.picks.length} notizie · {publisherCount} editori
           {publisherCount >= 5 ? ' · obiettivo di varietà raggiunto' : publisherCount < curation.diversity.selectedPublishers ? ' · alcune fonti non sono più attive: ricalcola la selezione' : ` · meno di cinque editori con notizie distinte disponibili negli ultimi ${curation.diversity.windowDays} giorni, dopo le tue esclusioni e le aperture`}
         </p>}
