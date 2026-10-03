@@ -23,3 +23,8 @@ it('labels subscription and truncated text partial',()=>{
 it('ignores structured text from a different article on the page',()=>{
  expect(extractReader(`<script type="application/ld+json">${JSON.stringify({'@type':'NewsArticle',url:'https://example.com/other',articleBody:text,isAccessibleForFree:true})}</script>`, 'https://example.com/requested')).toBeNull()
 })
+
+it('prefers editorial content over longer page recommendations',()=>{
+ const extracted=extractReader(`<main><article><div class="entry-content"><p>${text}</p></div><div class="related"><p>${'Suggerimento '.repeat(1000)}</p></div></article><p>${'Navigazione '.repeat(1000)}</p></main>`)
+ expect(extracted?.body).toBe(text.trim())
+})
