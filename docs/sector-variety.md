@@ -2,7 +2,7 @@
 
 ## Criterio
 
-Almeno cinque testate nei primi dieci pick quando esistono notizie pertinenti, distinte e non escluse. Contare i siti editoriali, non gli ID dei feed; non equivale a certificare l’indipendenza dei gruppi societari proprietari. Nessuna notizia fuori settore, promozione o copia dello stesso evento viene aggiunta per raggiungere il numero.
+Almeno cinque testate nei primi dieci pick quando esistono notizie pertinenti, distinte e non escluse. Contare i siti editoriali, non gli ID dei feed; non equivale a certificare l’indipendenza dei gruppi societari proprietari. La varietà viene calcolata dopo i controlli di pertinenza, promozioni e duplicati riconosciuti; non allentare questi controlli per raggiungere il numero. Le euristiche non certificano la correttezza semantica di ogni articolo.
 
 ## Problema rilevato
 
@@ -32,8 +32,24 @@ Correzione ulteriore: evidenza del tema nel titolo o nell’introduzione (240 ca
 
 Secondo ciclo (2 ottobre, 20:00), dopo la correzione di pertinenza: IA 9, tecnologia 10, gaming 7, Sicilia/Catania 6, diritto 8 editori su dieci notizie. Nessuna richiesta fallita, ma tutte le scelte risultavano automatiche: il bonus tematico veniva applicato integralmente alle alternative automatiche e solo al 60% alle selezioni del modello. Correzione: bonus centrato sull’evidenza del titolo (12), applicato dopo la calibrazione e in misura identica a entrambe le modalità; evidenza debole penalizzata, approfondimento giuridico/penale favorito, senza saturare tutti i punteggi a 99.
 
-Test dedicato: una scelta IA di rilevanza 90 con la stessa evidenza tematica mantiene priorità sulle alternative automatiche, e la varietà rimane di cinque editori. Verifica finale dopo questa calibrazione in attesa.
+Test dedicato: una scelta IA di rilevanza 90 con la stessa evidenza tematica mantiene priorità sulle alternative automatiche, e la varietà rimane di cinque editori. Verifica reale dopo questa calibrazione (2 ottobre, 20:10): gaming 6 editori (4 IA / 6 automatiche), IA 9 (2/8), tecnologia 10 (2/8), diritto 8 (2/8); dieci notizie per settore, senza errori o fallback del fornitore. Ogni elenco è stato espanso e controllato manualmente. I falsi positivi robot chirurgico, trama Netflix e carte Cyberpunk non compaiono, e la revisione DGX Spark da 64 GB compare una sola volta per selezione.
+
+Nel locale, lo stesso controllo ha trovato Grande Fratello Vip entrato per il riferimento marginale a un concorrente siciliano. Ulteriore filtro: titolo locale, oppure riferimento geografico nell’introduzione di 240 caratteri, escludendo reality/gossip privi di tema locale nel titolo. La cultura realmente locale rimane ammessa. Il ciclo del 2 ottobre, 20:16, aveva otto editori ma conservava il falso positivo: la frase «la reazione gela tutti» era interpretata come la città di Gela, aggirando il filtro per un titolo considerato geografico. Ripresa il 3 ottobre: normalizzazione delle costruzioni verbali «gela tutti/il/la…» prima della verifica geografica, con test sul titolo esatto e su notizie autentiche di Gela. Ciclo corretto verificato online il 3 ottobre, 18:13:36: dieci notizie, sette editori, sei scelte IA e quattro automatiche, senza avvisi di fallback. Il titolo del Grande Fratello non compare. Restano nove notizie locali e una recensione cinematografica ambientata a Palermo: sei editori con copertura effettivamente locale, quindi almeno cinque anche escludendo il falso positivo. Sono presenti due anticipazioni della stessa partita Catania–Crotone: il raggruppamento semantico resta incompleto.
+
+CI finale PR #26: typecheck, lint, suite di 160 test e build riusciti. Le PR #22–26 documentano le correzioni emerse dai cicli reali, anziché certificare la prima versione soltanto sulla varietà numerica.
+
+## Risultato del benchmark conclusivo
+
+| Settore | Data del ciclo | Notizie | Editori visualizzati | IA / automatiche |
+|---|---|---|---|---|
+| Videogiochi | 2 ottobre, 20:10 | 10 | 6 | 4 / 6 |
+| Intelligenza artificiale | 2 ottobre, 20:10 | 10 | 9 | 2 / 8 |
+| Tecnologia | 2 ottobre, 20:10 | 10 | 10 | 2 / 8 |
+| Diritto e giustizia | 2 ottobre, 20:10 | 10 | 8 | 2 / 8 |
+| Sicilia e Catania | 3 ottobre, 18:13 | 10 | 7 (6 escludendo cinema) | 6 / 4 |
+
+Editori del ciclo locale: qds.it, etnanews24.it, livesicilia.it, palermotoday.it, cataniatoday.it, ilsicilia.it; badtaste.it è il falso positivo cinematografico. Il criterio di varietà è raggiunto in tutti i cinque settori controllati; non equivale a certificare pertinenza perfetta o dieci eventi semanticamente distinti. Le altre quattro selezioni, già verificate, non sono state rigenerate dopo la correzione esclusivamente locale.
 
 ## Limiti
 
-La deduplicazione resta lessicale; eventi multilingua e titoli molto diversi possono sfuggire. La finestra temporale e il limite di venti articoli per fonte definiscono il materiale considerato, non tutta la copertura storica degli editori. Domini distinti dello stesso gruppo societario restano testate distinte; suffissi nazionali composti più comuni sono normalizzati, senza una mappa completa delle proprietà editoriali. La curation cronologica è separata dalla selezione: la regola di varietà si applica ai pick, non all’ordine di tutte le notizie del settore.
+La deduplicazione resta lessicale con la correzione della revisione DGX; eventi multilingua e titoli molto diversi possono sfuggire. Nel campione locale del 20:10, Il Post e ANSA trattano entrambi l’inchiesta Armao con titoli abbastanza diversi da non essere riconosciuti come copie: la varietà di editori non equivale a dieci eventi semanticamente distinti. La soluzione generale con gruppi persistenti e cronologia resta il punto 10 della roadmap. La finestra temporale e il limite di venti articoli per fonte definiscono il materiale considerato, non tutta la copertura storica degli editori. Domini distinti dello stesso gruppo societario restano testate distinte; suffissi nazionali composti più comuni sono normalizzati, senza una mappa completa delle proprietà editoriali. La curation cronologica è separata dalla selezione: la regola di varietà si applica ai pick, non all’ordine di tutte le notizie del settore.

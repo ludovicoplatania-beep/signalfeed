@@ -8,7 +8,7 @@ Ordine vincolante; aggiornare lo stato con prove di verifica. Una modifica del c
 | 2 | Misurare e colmare la copertura | Benchmark IA, tecnologia, gaming, locale e diritto; almeno 85% degli eventi rilevanti selezionati | Primo campione verificato: 18/20 (90%), prima 11/20 (55%). Due lacune residue, campioni periodici da proseguire |
 | 3 | Affidabilità verificabile | Ultimo aggiornamento, ritardi/errori visibili; nessun fallimento silenzioso | Pubblicato: stato persistente, ritardi secondo pianificazione, errori per fonte e fasi; verifica reale di fallimento parziale e test dei cicli interrotti |
 | 4 | Classificazione e selezione | Campione manuale: almeno 8 delle prime 10 notizie utili | Verificato in produzione: 9/10 in due cicli (prima 5/10); 139 test. Corrette categorie, rilevanza, aperti, scoperte e carico dei gruppi tematici. Vedi selection-quality.md |
-| 5 | Varietà nei settori | Almeno cinque editori nei primi dieci risultati quando possibile | Da completare |
+| 5 | Varietà nei settori | Almeno cinque editori nei primi dieci risultati quando possibile | Verificato in produzione: gaming 6, IA 9, tecnologia 10, diritto 8, locale 7 (6 escludendo il falso positivo cinematografico), su dieci pick. Vincolo anche nel fallback; conteggio visibile; 160 test e build. Limiti di pertinenza/deduplicazione documentati in sector-variety.md |
 | 6 | Controllo preferenze | Preferenze persistenti/immediate, motivo e data di ogni pick | Da completare |
 | 7 | Esperienza mobile | Prima notizia utile nella schermata iniziale; settori entro due tocchi; telefono/tablet reali | Da completare |
 | 8 | Lettore e biblioteca | Testo completo dove disponibile, parziale esplicito, letto/non letto, cartelle/tag, ricerca | Da completare |
