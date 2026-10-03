@@ -1,0 +1,11 @@
+import {describe,it,expect} from 'vitest'
+import {editorialAllowed,editorialBoost,manualSchema,type Interest} from './editorial'
+import {automaticPicks,selectionPool} from './ranking'
+const prefs:Interest[]=[{topic:'processo penale',score:100,origin:'manual',mode:'prioritize'},{topic:'coupon',score:0,origin:'manual',mode:'exclude'},{topic:'Fonte esclusa',score:0,origin:'manual',mode:'exclude',source_id:'00000000-0000-4000-8000-000000000001'}]
+const article={id:'a',title:'Processo penale: nuova sentenza della Cassazione',excerpt:null,source_id:'other',source_name:'Fonte',source_priority:1,url:'https://example.org/a',published_at:new Date().toISOString(),created_at:new Date().toISOString(),article_content:null}
+describe('explicit editorial rules',()=>{
+ it('boosts an explicit priority independently of learned core interests and explains it',()=>{expect(editorialBoost(article,prefs)).toEqual({boost:20,topic:'processo penale'});expect(automaticPicks([article],prefs,new Set())[0].score).toBeGreaterThan(automaticPicks([article],[],new Set())[0].score);expect(automaticPicks([article],prefs,new Set())[0].reason).toContain('Tema scelto da te: processo penale')})
+ it('excludes matching topics and owner sources before selection including automatic fallback',()=>{expect(editorialAllowed({...article,title:'Nuovo coupon per la spesa'},prefs)).toBe(false);expect(selectionPool([{...article,source_id:prefs[2].source_id!},article],prefs,new Set(),[])).toEqual([article]);expect(editorialAllowed({...article,title:'Una nuova sentenza penale'},prefs)).toBe(true)})
+ it('matches short sector names and phrases without a single-word accidental boost',()=>{expect(editorialAllowed({...article,title:'OpenAI annuncia un nuovo modello'},[{topic:'IA',score:0,origin:'manual',mode:'exclude'}])).toBe(false);expect(editorialBoost({...article,title:'Il processo industriale si rinnova'},prefs).boost).toBe(0)})
+ it('rejects duplicate rules, invalid priorities and untrusted fields',()=>{expect(manualSchema.safeParse([prefs[0],prefs[0]]).success).toBe(false);expect(manualSchema.safeParse([{...prefs[0],score:101}]).success).toBe(false);expect(manualSchema.safeParse([{...prefs[0],user_id:'other'}]).success).toBe(false)})
+})

@@ -102,7 +102,7 @@ export async function pickArticles(userId: string, candidates?: Candidate[], opt
   console.info('AI selection result', diagnostics)
   const proposedIds = new Set(proposed.map((pick) => pick.id))
   proposed = [...proposed, ...fallback.filter((pick) => !proposedIds.has(pick.id))]
-  const picks = picksWithDiscovery(proposed, articles, knownSources, readIds, feedback)
+  const picks = picksWithDiscovery(proposed, articles, knownSources, readIds, feedback, 10, profile?.interests ?? [])
   if (!picks.length) throw new Error('Nessuna selezione valida: mantenute le selezioni precedenti')
   const { data: count, error: saveError } = await supabase.rpc('athena_replace_picks', {
     p_user: userId, p_picks: picks.map(({ id, ...pick }) => ({ ...pick, article_id: id })),

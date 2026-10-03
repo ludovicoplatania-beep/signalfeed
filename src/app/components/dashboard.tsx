@@ -1,5 +1,7 @@
 'use client'
 
+import { EditorialPreferences } from './editorial-preferences'
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
@@ -472,6 +474,8 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
           />
 
           {!loading && <UpdateHealth sources={sources} job={latestJob} now={healthNow} error={healthError} />}
+
+          {!loading && <EditorialPreferences sources={sources} onChanged={loadEverything} />}
 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 
