@@ -20,10 +20,13 @@ export function extractReader(html:string, expectedUrl?:string){
  }
  $('script[type="application/ld+json"]').each((_,el)=>{try{visit(JSON.parse($(el).text()))}catch{/* malformed publisher metadata */}})
  const structured=Boolean(body)
- $('script,style,noscript,nav,footer,header,aside,form,[aria-hidden="true"]').remove()
+ $('script,style,noscript,nav,footer,header,aside,form,[aria-hidden="true"],[class*="related"],[class*="recommend"],[class*="newsletter"],[class*="social"],[class*="share"]').remove()
  if(!body){
-  const containers=$('[itemprop="articleBody"],article,main');
-  containers.each((_,el)=>{const text=$(el).find('p,h2,h3,li').map((_,p)=>$(p).text().trim()).get().filter(Boolean).join('\n\n'); if(text.length>body.length)body=text})
+  for(const selector of ['[itemprop="articleBody"],.entry-content,.article-content,.article-body','article','main']){
+   let candidate=''
+   $(selector).each((_,el)=>{const text=$(el).find('p,h2,h3,li').map((_,p)=>$(p).text().trim()).get().filter(Boolean).join('\n\n');if(text.length>candidate.length)candidate=text})
+   if(candidate.length>=200){body=candidate;break}
+  }
  }
  body=load(body).root().text().replace(/[ \t]+/g,' ').trim() || body.trim()
  // Keep paragraph boundaries from plain text rather than treating the body as HTML.
