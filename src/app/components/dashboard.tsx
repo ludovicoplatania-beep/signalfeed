@@ -93,7 +93,9 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   useLayoutEffect(() => {
     if (!restoreSection.current) return
     restoreSection.current = false
-    window.scrollTo({ top: sectionPositions.current.get(activeSection) ?? 0, behavior: 'instant' })
+    const position = sectionPositions.current.get(activeSection) ?? 0
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: position, behavior: 'instant' }))
+    return () => window.cancelAnimationFrame(frame)
   }, [activeSection])
 
   useEffect(() => {
@@ -455,7 +457,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   }
 
   return (
-    <ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen bg-[#070708] pb-32 text-neutral-100 xl:pb-0">
+    <ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen [overflow-anchor:none] bg-[#070708] pb-32 text-neutral-100 xl:pb-0">
       <BackgroundGlow />
 
       <MobileNav activeSection={activeSection} setActiveSection={navigateSection} />
