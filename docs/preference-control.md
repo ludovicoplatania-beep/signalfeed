@@ -6,7 +6,7 @@ Il pannello “Personalizza le scelte”, disponibile anche nei settori, disting
 
 Le regole personali persistono nella struttura JSON del profilo esistente: nessuna migrazione. Gli aggiornamenti IA preservano le regole manuali. Scritture con controllo della versione e tentativi condizionati impediscono che il profilo appreso o un secondo dispositivo cancellino modifiche più recenti. Il timestamp degli interessi appresi è distinto dalle modifiche manuali, per non saltare l’elaborazione di nuovi segnali.
 
-Home e settori filtrano le esclusioni prima della selezione; anche il fallback automatico le rispetta. I temi personali aggiungono un peso indipendente al ranking. L’anteprima usa il materiale disponibile e il ranking automatico, senza chiamate IA: verifica subito le regole salvate. Le selezioni storiche conservano motivo e data; per sostituirle serve il ricalcolo IA. Il feed cronologico e i salvati restano consultabili.
+Home e settori filtrano le esclusioni prima della selezione; anche il fallback automatico le rispetta. I temi personali aggiungono un peso indipendente al ranking. L’anteprima usa il campione recente della home (fino a 100 notizie, bilanciato per editore) e il ranking automatico, senza chiamate IA: verifica subito le regole salvate. Le selezioni storiche conservano motivo e data; per sostituirle serve il ricalcolo IA. Il feed cronologico e i salvati restano consultabili.
 
 Ogni pick, principale, secondario e tematico, mostra la data di selezione e il controllo “Perché questa notizia”, con motivazione persistita e distinzione IA/automatica.
 
