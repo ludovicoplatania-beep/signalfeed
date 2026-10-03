@@ -30,7 +30,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
         {articles.length === 0 ? (
           <EmptyState text="Nessun articolo trovato." />
         ) : (
-          groupStories(articles).map(({ article, alternatives }, index) => (
+          (library ? articles.map(article=>({article,alternatives:[] as Article[]})) : groupStories(articles)).map(({ article, alternatives }, index) => (
             <motion.div
               key={article.id}
               initial={{ opacity: 0, y: 18 }}

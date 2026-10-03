@@ -13,7 +13,7 @@ export async function GET(request:Request){
   if(error)throw error; if(!article)return NextResponse.json({success:false,message:'Articolo non trovato'},{status:404})
   const {data:cache,error:cacheError}=await db.from('reader_cache').select('body,content_status,checked_at').eq('user_id',owner.id).eq('article_id',id).maybeSingle()
   if(cacheError)throw cacheError
-  if(cache&&Date.now()-Date.parse(cache.checked_at)<86400000)return NextResponse.json({success:true,body:cache.body,status:cache.content_status},{headers:{'Cache-Control':'private, no-store'}})
+  if(cache&&Date.now()-Date.parse(cache.checked_at)<(cache.content_status==='partial'?300000:86400000))return NextResponse.json({success:true,body:cache.body,status:cache.content_status},{headers:{'Cache-Control':'private, no-store'}})
   enforceRateLimit(`reader:${owner.id}`,20)
   let content=fallbackReader(article.article_content,article.excerpt); let message:string|null=null
   try{const page=await safeFetchText(article.url,'text/html',AbortSignal.timeout(12000)); const extracted=extractReader(page.text,page.url); if(extracted&&extracted.body.length>content.body.length)content=extracted; else message='La fonte non ha fornito un testo più completo.'}
