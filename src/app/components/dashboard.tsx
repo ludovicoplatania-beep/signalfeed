@@ -88,6 +88,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   const sectionPositions = useRef(new Map<Section, number>())
   const restoreSection = useRef(false)
   const loadedArchiveKey = useRef('')
+  const recentArticleIds = useRef<string | null>(null)
 
   useLayoutEffect(() => {
     if (!restoreSection.current) return
@@ -205,6 +206,9 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
     setHealthError('')
     setHealthNow(Date.now())
     setSources(data.sources)
+    const signature = data.articles.map(article => article.id).join('|')
+    if (recentArticleIds.current !== null && recentArticleIds.current !== signature) setArchiveVersion(value => value + 1)
+    recentArticleIds.current = signature
     setArticles(data.articles)
     setAiPicks(data.aiPicks.filter((pick) => Boolean(pick.articles?.id && pick.articles.title)))
     setSavedArticles(data.savedArticles)
