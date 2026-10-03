@@ -10,7 +10,9 @@ Fra le sezioni dello stesso dashboard viene memorizzata la posizione; tornando a
 
 ## Verifica e limiti
 
-174 test, typecheck, lint e build superati. Test specifici coprono accesso diretto ai nove settori, cancellazione del lettore, ritorno del focus e dello scorrimento, mantenimento delle pagine dell’archivio. Verifica browser dopo pubblicazione da registrare.
+Pubblicato il 3 ottobre 2026 con PR #29, #30 e #31; produzione READY sul commit bfe0dfc. 174 test, typecheck, lint e build superati anche in CI. Test specifici coprono accesso diretto ai nove settori, cancellazione del lettore, ritorno del focus e dello scorrimento, mantenimento delle pagine dell’archivio.
+
+Verifica reale nel browser desktop autenticato: lettore modale, Escape, ripristino del focus e posizione 548 prima/dopo; archivio con due pagine caricate e 99 titoli, conservati passando ai salvati e tornando. Nel passaggio da tastiera, posizione 7226 prima/dopo. Il clic automatizzato produceva uno scorrimento aggiuntivo di 107 px prima della navigazione: non equiparare questa prova a un tocco su dispositivo reale. Ripristino differito al frame successivo ed esclusione dall’ancoraggio automatico del browser. Pagine conservate invalidate quando gli import modificano la lista recente.
 
 La posizione fra sezioni è mantenuta durante la sessione del dashboard, non attraverso ricaricamento o navigazione fra diverse pagine tematiche. I cambiamenti ai filtri e gli aggiornamenti possono cambiare il contenuto. Il layout non garantisce un titolo interamente visibile con ogni dimensione del testo o titolo eccezionalmente lungo.
 
