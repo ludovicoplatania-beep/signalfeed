@@ -42,7 +42,7 @@ it('reader is modal, supports cancellation and restores position and focus on cl
  origin.remove()
 })
 it('returning to the archive keeps loaded pages and restores the previous position',async()=>{
- const data={sources:[],articles:[],aiPicks:[],savedArticles:[],trendingTopics:[],digests:[],update:null}
+ const data={success:true,entries:[],sources:[],articles:[],aiPicks:[],savedArticles:[],trendingTopics:[],digests:[],update:null}
  const fetchMock=vi.fn(async(input:string)=>new Response(JSON.stringify(input.startsWith('/api/articles')?{articles:[{...article,id:input.includes('offset=1')?'second':'first',title:input.includes('offset=1')?'Seconda notizia':'Prima notizia',url:input.includes('offset=1')?'https://example.com/second':'https://example.com/first'}],total:2,nextOffset:input.includes('offset=1')?2:1}:data),{status:200}))
  vi.stubGlobal('fetch',fetchMock)
  let y=0;vi.spyOn(window,'scrollY','get').mockImplementation(()=>y)

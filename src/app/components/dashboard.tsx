@@ -1,4 +1,5 @@
 'use client'
+import { LibraryProvider } from './library'
 
 import { EditorialPreferences } from './editorial-preferences'
 
@@ -457,7 +458,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   }
 
   return (
-    <ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen [overflow-anchor:none] bg-[#070708] pb-32 text-neutral-100 xl:pb-0">
+    <LibraryProvider><ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen [overflow-anchor:none] bg-[#070708] pb-32 text-neutral-100 xl:pb-0">
       <BackgroundGlow />
 
       <MobileNav activeSection={activeSection} setActiveSection={navigateSection} />
@@ -465,6 +466,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       <AnimatePresence>
         {selectedArticle && (
           <ReaderMode
+            key={selectedArticle.id}
             article={selectedArticle}
             saved={savedIds.has(selectedArticle.id)}
             toggleSave={toggleSave}
@@ -665,6 +667,6 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
           )}
         </section>
       </div>
-    </main></ArticleFeedbackProvider>
+    </main></ArticleFeedbackProvider></LibraryProvider>
   )
 }
