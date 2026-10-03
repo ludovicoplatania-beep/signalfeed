@@ -2,6 +2,7 @@ import 'server-only'
 import { createAICompletion } from './completion'
 import { getServiceSupabase } from '@/lib/server/clients'
 import { interestsResponseSchema } from './schemas'
+import { writeEditorial } from '@/lib/server/editorial'
 
 export async function updateInterestProfile(userId: string, options: { budgetMs?: number } = {}) {
   const supabase = getServiceSupabase()
@@ -20,10 +21,11 @@ export async function updateInterestProfile(userId: string, options: { budgetMs?
   if (error) throw error
   if (feedbackError) throw feedbackError
   if (!events?.length && !feedback?.length) return { skipped: true }
-  const { data: existing, error: existingError } = await supabase.from('user_interests').select('updated_at').eq('user_id', userId).maybeSingle()
+  const { data: existing, error: existingError } = await supabase.from('user_interests').select('interests,updated_at').eq('user_id', userId).maybeSingle()
   if (existingError) throw existingError
   const latestSignal = Math.max(new Date(events?.[0]?.created_at ?? 0).getTime(), new Date(feedback?.[0]?.updated_at ?? 0).getTime())
-  if (existing?.updated_at && new Date(existing.updated_at).getTime() >= latestSignal) return { skipped: true }
+  const learnedAt = Math.max(0,...(existing?.interests??[]).map((i:{learned_at?:string})=>new Date(i.learned_at??0).getTime())) || ((existing?.interests??[]).some((i:{origin?:string})=>i.origin==='manual') ? 0 : new Date(existing?.updated_at??0).getTime())
+  if (learnedAt >= latestSignal) return { skipped: true }
 
   const prompt = `
 Restituisci ESCLUSIVAMENTE JSON valido.
@@ -82,13 +84,6 @@ ${JSON.stringify(events)}
     const parsed = interestsResponseSchema.parse(JSON.parse(raw))
     const interests = parsed.interests
 
-    const { error: saveError } = await supabase
-      .from('user_interests')
-      .upsert({
-        user_id: userId,
-        interests,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
-    if (saveError) throw saveError
+    await writeEditorial(userId, interests, null, 'learned')
     return { skipped: false }
 }

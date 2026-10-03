@@ -1,3 +1,4 @@
+import { editorialAllowed, editorialBoost, type Interest } from './editorial'
 import { sameEvent } from '@/lib/articles/stories'
 import { canonicalArticleUrl } from '@/lib/articles/identity'
 import { classifyArticle } from '@/lib/sectors/catalog'
@@ -64,27 +65,28 @@ export function balancedCandidates(groups: Candidate[][], limit = 120) {
   return result
 }
 
-export function automaticPicks(articles: Candidate[], interests: Array<{ topic: string; score: number }>, readIds: Set<string>, feedback: Feedback[] = []) {
+export function automaticPicks(articles: Candidate[], interests: Interest[], readIds: Set<string>, feedback: Feedback[] = []) {
   return articles.map((article): RankedPick => {
     const age = article.published_at ? Math.max(0, (Date.now() - new Date(article.published_at).getTime()) / 3_600_000) : Infinity
     const freshness = age < 6 ? 45 : age < 24 ? 40 : age < 72 ? 30 : age < 168 ? 18 : 5
     const tokens = meaningfulTokens(`${article.title} ${article.excerpt ?? ''}`)
     const core = classifyArticle(article).some(slug => ['ia', 'tecnologia', 'videogiochi', 'diritto', 'sicilia-catania'].includes(slug))
-    const affinity = interests.reduce((score, interest) => {
+    const affinity = interests.filter(i=>i.origin!=='manual').reduce((score, interest) => {
       const words = [...meaningfulTokens(interest.topic)]
       const matches = words.filter(word => tokens.has(word)).length
       return Math.max(score, matches > 0 && matches >= Math.ceil(words.length / 2) ? Math.min(20, interest.score / 5) : 0)
     }, core ? 30 : 0)
     const promotional = /\b(codice sconto|coupon|sponsored|sponsorizzato|offerta lampo|compra ora|buy now)\b/i.test(article.title)
     const preference = preferenceAdjustment(article, feedback)
-    return { id: article.id, score: Math.max(1, Math.min(99, Math.round(freshness + affinity + article.source_priority * 2 + preference - (promotional ? 35 : 0) - (readIds.has(article.id) ? 25 : 0)))),
+    const personal = editorialBoost(article, interests)
+    return { id: article.id, score: Math.max(1, Math.min(99, Math.round(freshness + affinity + personal.boost + article.source_priority * 2 + preference - (promotional ? 35 : 0) - (readIds.has(article.id) ? 25 : 0)))),
       summary: sourceSummary(article), category: categoryFor(article), selection_method: 'automatic',
-      reason: `${preference > 0 ? 'Vicino ai tuoi Mi piace' : preference < 0 ? 'Ridotto per la tua preferenza' : readIds.has(article.id) ? 'Approfondimento già consultato' : 'Articolo non ancora consultato'} · ${article.source_name}. Ordinato per attualità, interessi e priorità della fonte.`.slice(0, 180) }
+      reason: `${personal.topic ? `Tema scelto da te: ${personal.topic}` : preference > 0 ? 'Vicino ai tuoi Mi piace' : preference < 0 ? 'Ridotto per la tua preferenza' : readIds.has(article.id) ? 'Approfondimento già consultato' : 'Articolo non ancora consultato'} · ${article.source_name}. Ordinato per attualità, interessi e priorità della fonte.`.slice(0, 180) }
   }).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id))
 }
 
 // Reserve discovery slots when fresh, unread articles from unfamiliar publishers exist.
-export function picksWithDiscovery(picks: RankedPick[], articles: Candidate[], knownSources: Set<string>, readIds: Set<string>, feedback: Feedback[] = [], limit = 10) {
+export function picksWithDiscovery(picks: RankedPick[], articles: Candidate[], knownSources: Set<string>, readIds: Set<string>, feedback: Feedback[] = [], limit = 10, interests: Interest[] = []) {
   const unread = articles.filter(article => !readIds.has(article.id))
   const pool = diversifyPicks(automaticPicks(unread, [], new Set(), feedback), unread, limit).length >= limit ? unread : articles
   const eligible = pool.filter(article => !feedback.some(entry => entry.article_id === article.id && entry.preference?.startsWith('less_')))
@@ -92,7 +94,7 @@ export function picksWithDiscovery(picks: RankedPick[], articles: Candidate[], k
   const adjusted = picks.filter(pick => byId.has(pick.id)).map(pick => {
     // Calibrate model relevance against independent content/date/preference signals.
     // Automatic scores already include preference weights.
-    return { ...pick, category: categoryFor(byId.get(pick.id)!), score: pick.selection_method === 'ai' ? Math.max(1, Math.min(99, Math.round(pick.score * 0.4 + (automaticPicks([byId.get(pick.id)!], [], readIds, feedback)[0].score) * 0.6))) : pick.score }
+    return { ...pick, category: categoryFor(byId.get(pick.id)!), score: pick.selection_method === 'ai' ? Math.max(1, Math.min(99, Math.round(pick.score * 0.4 + (automaticPicks([byId.get(pick.id)!], interests, readIds, feedback)[0].score) * 0.6))) : pick.score }
   })
   const discovery = adjusted.filter(pick => {
     const article = byId.get(pick.id)!
@@ -130,7 +132,8 @@ export function diversifyPicks(picks: RankedPick[], articles: Candidate[], limit
 }
 
 // Rank all fetched records before bounding the model input; no publisher monopolizes the pool.
-export function selectionPool(articles: Candidate[], interests: Array<{ topic: string; score: number }>, readIds: Set<string>, feedback: Feedback[], limit = 160) {
+export function selectionPool(articles: Candidate[], interests: Interest[], readIds: Set<string>, feedback: Feedback[], limit = 160) {
+  articles = articles.filter(article=>editorialAllowed(article,interests))
   const byId = new Map(articles.map(article => [article.id, article]))
   const unread = articles.filter(article => !readIds.has(article.id))
   const pool = unread.length >= limit ? unread : articles

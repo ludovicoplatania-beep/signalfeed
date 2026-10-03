@@ -1,3 +1,4 @@
+import { editorialAllowed } from '@/lib/ai/editorial'
 import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { getServiceSupabase } from '@/lib/server/clients'
@@ -90,7 +91,7 @@ export async function curateSector(user: string, sector: Sector) {
     if (profileError || feedbackError || eventsError) throw profileError || feedbackError || eventsError
     const read = new Set<string>((events ?? []).map(event => event.article_id).filter(Boolean))
     const preferences = (feedback ?? []) as Feedback[]
-    const eligible = eligibleSectorArticles(fetched, read, preferences, windowDays)
+    const eligible = eligibleSectorArticles(fetched.filter(article=>editorialAllowed(article,profile?.interests??[])), read, preferences, windowDays)
     const ranked = automaticPicks(eligible, profile?.interests ?? [], read, preferences)
     const byId = new Map(eligible.map(article => [article.id, article]))
     const balanced = new Map<string,SectorCandidate[]>()

@@ -3,6 +3,13 @@ import { Sparkles } from 'lucide-react'
 import { ArticleImage, ArticleThumbnail, Panel, Pill, ArticleActions } from './ui'
 import type { AiPick, OpenReader, ToggleSave } from './types'
 
+function PickExplanation({pick}:{pick:AiPick}) {
+  return <div className="pointer-events-auto mt-3 text-xs leading-5 text-neutral-300">
+    <p className="text-neutral-400">Selezionata: <time dateTime={pick.created_at}>{new Date(pick.created_at).toLocaleString('it-IT')}</time></p>
+    <details><summary className="min-h-11 cursor-pointer py-2 text-[#E2C188]">Perché questa notizia</summary><p>{pick.reason || 'Selezionata per attualità, interessi e priorità della fonte.'}</p><p className="mt-2 text-neutral-400">{pick.selection_method==='automatic'?'Selezione automatica':'Selezione IA'}</p></details>
+  </div>
+}
+
 function GlassScore({ value }: { value: number }) {
   return (
     <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-[#B88A44]/35 bg-black/55 text-sm font-semibold text-[#E2C188] shadow-[0_0_22px_rgba(184,138,68,0.10)] backdrop-blur-xl">
@@ -58,6 +65,7 @@ export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
           <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-300 md:text-lg md:leading-8">
             {pick.summary}
           </p>
+          <PickExplanation pick={pick} />
         </div>
       </div>
     </motion.div>
@@ -89,6 +97,7 @@ export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
             {pick.articles?.title}
           </h3>
         </button>
+        <PickExplanation pick={pick} />
         <div className="pointer-events-auto mt-4 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
           <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
           <div aria-label={`Rilevanza ${pick.score} su 100`} className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B88A44]/30 bg-black/50 px-2 text-sm font-semibold text-[#E2C188]">{pick.score}</div>
@@ -127,6 +136,7 @@ export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickList
               </p>
             </button>
 
+            <div className="md:col-start-2"><PickExplanation pick={pick} /></div>
             <div className="md:col-start-2 xl:col-start-auto"><ArticleActions articleId={pick.articles?.id}
               saved={pick.articles ? savedIds.has(pick.articles.id) : false}
               onClick={() => toggleSave(pick.articles?.id)}
