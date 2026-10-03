@@ -19,3 +19,7 @@ Dopo conferma della nuova credenziale persistente: applicare migration, invocare
 Test di autenticazione legacy, limitazione al solo endpoint RSS, rifiuto delle credenziali malformate e validatore assente; test Postgres di permessi, job spenti, idempotenza e registrazione HTTP 403. La migration è validata con interfacce simulate delle estensioni, non ancora applicata al database reale.
 
 Riferimenti: https://supabase.com/docs/guides/functions/schedule-functions e https://supabase.com/docs/guides/database/extensions/pg_net.
+
+## Attivazione confermata e applicata
+
+Il 3 ottobre l’utente ha confermato l’attivazione. Migration applicata al progetto reale; job import e monitor attivi, rispettivamente ai minuti 7/37 e ogni minuto. RLS abilitata anche sull’audit privato. Prova richiesta 1: HTTP 202, nessun errore; ciclo RSS iniziato alle 19:20:38 UTC e completato alle 19:20:39. Nessuna fonte in scadenza in quel momento: zero fonti controllate è uno skip previsto, non un test di nuova importazione. Rimane da misurare un ciclo pianificato con fonti in scadenza prima di considerare verificata la puntualità nel tempo. Token generato e custodito in Vault, mai letto o copiato.

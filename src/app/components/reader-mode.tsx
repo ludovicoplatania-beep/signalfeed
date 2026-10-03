@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock3, ExternalLink, Sparkles } from 'lucide-react'
+import { ArrowLeft, Clock3, ExternalLink } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { ArticleImage, ArticleActions } from './ui'
+import { fallbackReader, type ContentStatus } from '@/lib/articles/readerStatus'
+import { useLibrary } from './library'
 import type { Article, ToggleSave } from './types'
 
 export function ReaderMode({
@@ -17,6 +19,17 @@ export function ReaderMode({
   toggleSave: ToggleSave
   close: () => void
 }) {
+  const { entries, update, error: libraryError } = useLibrary()
+  const [content, setContent] = useState<{body:string;status:ContentStatus}>(()=>fallbackReader(article.article_content,article.excerpt))
+  const [loading,setLoading] = useState(true)
+  const [contentError,setContentError] = useState('')
+  const [pending,setPending] = useState(false)
+  useEffect(()=>{
+    const controller=new AbortController()
+    fetch(`/api/reader?id=${encodeURIComponent(article.id)}`,{signal:controller.signal}).then(async response=>{const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||'Testo non disponibile');setContent({body:data.body,status:data.status});setContentError(data.message??'')}).catch(error=>{if(!controller.signal.aborted)setContentError(error.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})
+    return()=>controller.abort()
+  },[article.id])
+  async function toggleRead(){setPending(true);try{await update(article.id,{read:!entries[article.id]?.read_at})}catch{/* provider shows error */}finally{setPending(false)}}
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const previous = document.body.style.overflow
@@ -50,6 +63,7 @@ export function ReaderMode({
           <div className="col-span-full flex justify-end sm:ml-auto"><ArticleActions articleId={article.id} saved={saved} onClick={() => toggleSave(article.id)} small /></div>
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-neutral-300"><span>{entries[article.id]?.read_at?'Letto':'Da leggere'}</span><button disabled={pending} onClick={()=>{void toggleRead()}} className="min-h-11 rounded-xl border border-white/10 px-4">{entries[article.id]?.read_at?'Segna da leggere':'Segna letto'}</button>{libraryError&&<p role="alert">{libraryError}</p>}</div>
         <article className="overflow-hidden rounded-3xl border border-[#B88A44]/14 bg-black/45 shadow-2xl shadow-black/60 backdrop-blur-2xl">
           <div className="relative min-h-[240px] overflow-hidden md:h-[500px]">
             <ArticleImage imageUrl={article.image_url} />
@@ -80,28 +94,10 @@ export function ReaderMode({
           </div>
 
           <div className="mx-auto max-w-3xl px-5 py-9 md:px-0 md:py-14">
-            {article.excerpt && (
-              <section className="rounded-[2rem] border border-[#8b5cf6]/14 bg-white/[0.03] p-5 backdrop-blur-xl">
-                <div className="mb-3 flex items-center gap-2 text-sm text-[#E2C188]">
-                  <Sparkles size={15} />
-                  Introduzione della fonte
-                </div>
+            <p role="status" className="mb-5 rounded-xl border border-[#B88A44]/20 p-3 text-sm text-[#E2C188]">{loading?'Recupero del testo dalla fonte…':content.status==='full'?'Testo completo fornito dalla fonte':content.status==='partial'?'Contenuto parziale · consulta la fonte per il testo integrale':'Testo estratto dalla fonte · completezza non verificata'}</p>
+            {contentError&&<p className="mb-5 text-sm text-neutral-400">{contentError}</p>}
+            {content.body ? <div className="whitespace-pre-line text-lg leading-9 text-neutral-300">{content.body}</div> : <p className="text-neutral-400">Testo non disponibile. Puoi aprire la fonte originale.</p>}
 
-                <p className="text-lg leading-8 text-neutral-300">
-                  {article.excerpt}
-                </p>
-              </section>
-            )}
-
-            {article.article_content ? (
-              <div className="mt-10 whitespace-pre-line text-lg leading-9 text-neutral-300">
-                {article.article_content}
-              </div>
-            ) : (
-              <div className="mt-10 rounded-3xl border border-white/[0.08] bg-black/25 p-6 text-sm leading-7 text-neutral-400">
-                Testo completo non disponibile per questo articolo. Puoi comunque aprire la fonte originale.
-              </div>
-            )}
           </div>
         </article>
       </div>
