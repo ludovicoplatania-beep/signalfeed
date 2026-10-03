@@ -2,7 +2,7 @@
 
 import { EditorialPreferences } from './editorial-preferences'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 
@@ -40,8 +40,11 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<Section>(initialSector ? 'sectors' : initialSection)
   function navigateSection(section: Section) {
+    if (section === activeSection && !initialSector) return
+    sectionPositions.current.set(activeSection, window.scrollY)
     if (section === 'sectors') { router.push('/settori/ia'); return }
     if (initialSector) { router.push(`/?sezione=${section}`); return }
+    restoreSection.current = true
     setActiveSection(section)
   }
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
@@ -82,6 +85,15 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   const refreshLock = useRef(false)
   const pollAbort = useRef<AbortController | null>(null)
   const archiveAbort = useRef<AbortController | null>(null)
+  const sectionPositions = useRef(new Map<Section, number>())
+  const restoreSection = useRef(false)
+  const loadedArchiveKey = useRef('')
+
+  useLayoutEffect(() => {
+    if (!restoreSection.current) return
+    restoreSection.current = false
+    window.scrollTo({ top: sectionPositions.current.get(activeSection) ?? 0, behavior: 'instant' })
+  }, [activeSection])
 
   useEffect(() => {
     loadEverything().then((job) => {
@@ -104,6 +116,8 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
 
   useEffect(() => {
     if (activeSection !== 'feed') return
+    const key = JSON.stringify([query, sourceFilter, period, archiveVersion])
+    if (loadedArchiveKey.current === key) return
     const timer = window.setTimeout(() => {
       searchArchive().catch((error) => {
         if (error instanceof Error && error.name === 'AbortError') return
@@ -215,6 +229,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
       setArchiveArticles((current) => uniqueArticles(append ? [...current, ...data.articles] : data.articles))
       setArchiveTotal(data.total)
       setArchiveNextOffset(data.nextOffset)
+      loadedArchiveKey.current = JSON.stringify([query, sourceFilter, period, archiveVersion])
     } finally {
       if (archiveAbort.current === controller) setArchiveLoading(false)
     }
@@ -480,8 +495,8 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 
           {activeSection === 'today' && (
-            <>
-              <div className="mb-6"><SectorLinks /></div>
+            <div className="flex flex-col">
+              <div className="order-3 mb-6 xl:order-0"><SectorLinks /></div>
               {onboardingStep && (
                 <Onboarding
                   step={onboardingStep}
@@ -490,7 +505,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
                 />
               )}
 
-              {refreshing ? (
+              <div className="order-2 xl:order-0">{refreshing ? (
                 <MetricsSkeleton />
               ) : (
                 <Metrics
@@ -501,10 +516,11 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
                 />
               )}
 
+              </div>
               {refreshing ? (
                 <HeroSkeleton />
               ) : heroPick ? (
-                <section className="mb-10 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+                <section className="order-1 mb-6 grid gap-4 xl:order-0 xl:mb-10 xl:grid-cols-[1.2fr_0.8fr]">
                   <HeroPick
                     pick={heroPick}
                     saved={heroPick.articles ? savedIds.has(heroPick.articles.id) : false}
@@ -528,7 +544,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
                 <EmptyState text="Nessuna selezione AI disponibile." />
               )}
 
-              <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
+              <section className="order-4 grid gap-8 xl:order-0 xl:grid-cols-[1fr_390px]">
                 {refreshing ? (
                   <FeedSkeleton />
                 ) : (
@@ -579,7 +595,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
                   />
                 </aside>
               </section>
-            </>
+            </div>
           )}
 
           {activeSection === 'feed' && (
