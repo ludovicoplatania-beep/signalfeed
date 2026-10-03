@@ -24,7 +24,12 @@ export function extractReader(html:string, expectedUrl?:string){
  if(!body){
   for(const selector of ['[itemprop="articleBody"],.entry-content,.article-content,.article-body','article','main']){
    let candidate=''
-   $(selector).each((_,el)=>{const text=$(el).find('p,h2,h3,li').map((_,p)=>$(p).text().trim()).get().filter(Boolean).join('\n\n');if(text.length>candidate.length)candidate=text})
+   $(selector).each((_,el)=>{
+    const paragraphs=$(el).find('p,h2,h3,li').map((_,p)=>$(p).text().replace(/\s+/g,' ').trim()).get().filter(Boolean)
+    const cutoff=paragraphs.findIndex(text=>/^(?:Ti potrebbe interessare|Altri episodi|Leggi anche|Related articles|You may also like|Abbonati al(?: .*)?)$/i.test(text))
+    const text=(cutoff>=0?paragraphs.slice(0,cutoff):paragraphs).join('\n\n')
+    if(text.length>candidate.length){candidate=text;if(cutoff>=0&&/^abbonati/i.test(paragraphs[cutoff]))restricted=true}
+   })
    if(candidate.length>=200){body=candidate;break}
   }
  }
@@ -33,6 +38,6 @@ export function extractReader(html:string, expectedUrl?:string){
 
  const truncated=body.length>100000; body=body.slice(0,100000)
  if(body.length<200)return null
- const partial=restricted||truncated||/continua a leggere|abbonati per|subscribe to (?:continue|read)|read the full article|continue reading/i.test(body)
+ const partial=restricted||truncated||/continua a leggere|abbonati (?:per|al)|contenuti visibili agli abbonati|accedi per leggere|subscribe to (?:continue|read)|read the full article|continue reading/i.test(body)
  return {body,status:(partial?'partial':structured&&free?'full':'unverified') as ContentStatus}
 }

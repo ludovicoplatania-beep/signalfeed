@@ -28,3 +28,13 @@ it('prefers editorial content over longer page recommendations',()=>{
  const extracted=extractReader(`<main><article><div class="entry-content"><p>${text}</p></div><div class="related"><p>${'Suggerimento '.repeat(1000)}</p></div></article><p>${'Navigazione '.repeat(1000)}</p></main>`)
  expect(extracted?.body).toBe(text.trim())
 })
+
+it('labels a subscriber-only podcast description partial and excludes the subscription block and other episodes',()=>{
+ const extracted=extractReader(`<main><p>${text}</p><h2>Abbonati al</h2><p>Questa pagina fa parte dei contenuti visibili agli abbonati del Post.</p><h2>Altri episodi</h2><p>Un altro episodio non pertinente.</p></main>`)
+ expect(extracted).toEqual({body:text.trim(),status:'partial'})
+})
+it('cuts recommendation headings without cutting editorial sentences containing the same words',()=>{
+ const extracted=extractReader(`<article><p>${text} Ti potrebbe interessare capire questa ricerca.</p><h2>Ti potrebbe interessare</h2><p>Altra notizia</p></article>`)
+ expect(extracted?.body).toContain('Ti potrebbe interessare capire questa ricerca.')
+ expect(extracted?.body).not.toContain('Altra notizia')
+})
