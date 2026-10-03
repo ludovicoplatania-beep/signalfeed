@@ -29,9 +29,12 @@ export function sectorRelevance(article: {title:string;excerpt?:string|null}, se
     return new Set(matches.map(term=>term.toLowerCase())).size >= 2 || hasAI(intro) ? 4 : 0
   }
   if (sector.slug === 'sicilia-catania') {
-    if (titleMatch) return 12
+    // Do not interpret the verb in 'gela tutti' as the Sicilian city.
+    const localTitle = article.title.replace(/\bgela\s+(tutti|tutte|il|la|lo|i|gli|le)\b/gi, '')
+    const localIntro = intro.replace(/\bgela\s+(tutti|tutte|il|la|lo|i|gli|le)\b/gi, '')
+    if (classifyArticle({title:localTitle}).includes(sector.slug)) return 12
     if (/grande fratello|reality|gossip|love island|temptation island/i.test(article.title)) return 0
-    return classifyArticle({ title: intro }).includes(sector.slug) ? 4 : 0
+    return classifyArticle({ title: localIntro }).includes(sector.slug) ? 4 : 0
   }
   return titleMatch ? 12 : 4
 }

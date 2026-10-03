@@ -42,3 +42,10 @@ it('requires a local subject rather than a reality show contestant or a distant 
   expect(sectorRelevance({title:'Mostra di scultura a Catania',excerpt:'Arte in piazza.'},sector)).toBe(12)
   expect(sectorRelevance({title:'Incendio in una palazzina',excerpt:'A Catania sono intervenuti i pompieri.'},sector)).toBeGreaterThan(0)
 })
+
+it('does not confuse the verb gela with the Sicilian city in the observed gossip headline',()=>{
+  const sector=getSector('sicilia-catania')!
+  expect(sectorRelevance({title:'Grande Fratello Vip: Megan mostra il bigliettino a Piera e Jonathan ma la reazione gela tutti',excerpt:'Un concorrente siciliano rimane sorpreso.'},sector)).toBe(0)
+  expect(sectorRelevance({title:'Gela, apertura del nuovo ospedale'},sector)).toBe(12)
+  expect(sectorRelevance({title:'Il concerto a Gela conquista tutti'},sector)).toBe(12)
+})
