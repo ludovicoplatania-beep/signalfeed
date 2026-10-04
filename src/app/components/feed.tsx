@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { LibraryEditor, useLibrary } from './library'
+import { OfflineDownload } from './offline-download'
 import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
@@ -68,7 +69,7 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
               <div className="flex items-center justify-start md:col-start-2 xl:col-start-auto xl:items-start xl:justify-end">
                 <ArticleActions articleId={article.id} saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} small />
               </div>
-              {library && <div className="col-span-full md:col-start-2"><LibraryEditor id={article.id} /></div>}
+              {library && <div className="col-span-full md:col-start-2"><LibraryEditor id={article.id} /><OfflineDownload article={article} /></div>}
               {alternatives.length > 0 && <details className="col-span-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-neutral-300 md:col-start-2">
                 <summary className="cursor-pointer">Altre coperture ({alternatives.length})</summary>
                 <div className="mt-3 space-y-2">{alternatives.map(alternative => <button key={alternative.id} className="block w-full rounded-lg p-2 text-left hover:bg-white/5" onClick={() => openReader(alternative)}><span className="text-[#C59A52]">{alternative.sources?.name ?? 'Fonte'}</span> · {alternative.title}</button>)}</div>
@@ -102,7 +103,7 @@ export function SavedView({
 
   return (
     <div>
-      <div className="mb-5 grid gap-3 sm:grid-cols-3"><input aria-label="Cerca nei salvati" placeholder="Cerca titolo, testo, fonte o tag" value={query} onChange={e=>setQuery(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-black/30 px-3"/><select aria-label="Filtra cartella" value={folder} onChange={e=>setFolder(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-[#111] px-3"><option value="">Tutte le cartelle</option>{folders.map(name=><option key={name}>{name}</option>)}</select><select aria-label="Filtra lettura" value={state} onChange={e=>setState(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-[#111] px-3"><option value="all">Tutti</option><option value="unread">Da leggere</option><option value="read">Letti</option></select></div>
+      <div className="mb-4"><a href="/offline.html" className="inline-flex min-h-11 items-center rounded-xl border border-[#B88A44]/25 px-4 text-[#E2C188]">Biblioteca offline</a><p className="mt-2 text-sm text-neutral-400">Scarica gli articoli prima di scollegarti. Le copie e le traduzioni restano su questo dispositivo, fino alla rimozione o alla pulizia dei dati del browser.</p></div><div className="mb-5 grid gap-3 sm:grid-cols-3"><input aria-label="Cerca nei salvati" placeholder="Cerca titolo, testo, fonte o tag" value={query} onChange={e=>setQuery(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-black/30 px-3"/><select aria-label="Filtra cartella" value={folder} onChange={e=>setFolder(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-[#111] px-3"><option value="">Tutte le cartelle</option>{folders.map(name=><option key={name}>{name}</option>)}</select><select aria-label="Filtra lettura" value={state} onChange={e=>setState(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-[#111] px-3"><option value="all">Tutti</option><option value="unread">Da leggere</option><option value="read">Letti</option></select></div>
       {error&&<p role="alert" className="mb-3 text-amber-300">{error}</p>}
     <FeedList
       library
