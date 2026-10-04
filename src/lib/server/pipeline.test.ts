@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
-  repair: vi.fn(), imports: vi.fn(), profile: vi.fn(), candidates: vi.fn(),
+  alerts:vi.fn(),repair: vi.fn(), imports: vi.fn(), profile: vi.fn(), candidates: vi.fn(),
   eventGroups:vi.fn(),eventUpdates:vi.fn(),picks: vi.fn(), topics: vi.fn(), digest: vi.fn(), save: vi.fn(),
 }))
 vi.mock('@/lib/rss/importSources', () => ({ importSources: mocks.imports, repairArticleIdentities: mocks.repair }))
 vi.mock('@/lib/ai/updateInterestProfile', () => ({ updateInterestProfile: mocks.profile }))
 vi.mock('@/lib/ai/pickArticles', () => ({ pickArticles: mocks.picks, loadCandidates: mocks.candidates }))
 vi.mock('@/lib/ai/generateTopics', () => ({ generateTopics: mocks.topics }))
+vi.mock('@/lib/alerts/server',()=>({runAlerts:mocks.alerts}))
 vi.mock('@/lib/events/sync',()=>({syncEvents:mocks.eventGroups}))
 vi.mock('@/lib/events/incremental',()=>({attachEventUpdates:mocks.eventUpdates}))
 vi.mock('@/lib/ai/generateDigest', () => ({ generateDigest: mocks.digest }))
@@ -21,6 +22,7 @@ function job(mode: UpdateMode) {
 }
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.alerts.mockResolvedValue({created:0,delivered:0,failed:0})
   mocks.repair.mockResolvedValue(0)
   mocks.imports.mockResolvedValue([])
   mocks.profile.mockResolvedValue(undefined)
@@ -70,3 +72,5 @@ it('attaches matching imported coverages without starting semantic AI grouping',
  expect(mocks.eventGroups).not.toHaveBeenCalled()
  expect(result.stages.event_updates.success).toBe(true)
 })
+
+it('runs optional alerts in RSS without AI and exposes delivery failures',async()=>{mocks.alerts.mockResolvedValue({created:1,delivered:0,failed:1});const result=await runUpdate(job('rss'));expect(mocks.alerts).toHaveBeenCalledWith('owner');expect(result.warnings.some(w=>w.includes('push'))).toBe(true);expect(mocks.picks).not.toHaveBeenCalled()})

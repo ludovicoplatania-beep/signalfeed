@@ -1,3 +1,4 @@
+import { AudioPlayer } from './audio-player'
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Clock3, ExternalLink } from 'lucide-react'
@@ -135,6 +136,7 @@ export function ReaderMode({
             <div className="mb-5 flex flex-wrap gap-3"><button disabled={loading||translating||!content.body} onClick={()=>{void translate()}} aria-pressed={showTranslation} className="min-h-11 rounded-xl border border-[#B88A44]/30 px-4 text-[#E2C188]">{translating?'Traduzione…':'Traduci in italiano'}</button><button onClick={()=>setShowTranslation(false)} aria-pressed={!showTranslation} className="min-h-11 rounded-xl border border-white/15 px-4">Testo originale</button></div>
             {showTranslation&&translation&&<p className="mb-4 text-sm text-neutral-400">Traduzione IA · può contenere errori · {new Date(translation.translatedAt).toLocaleString('it-IT')}{content.status==='partial'?' · tradotto soltanto il testo parziale disponibile':''}</p>}
             {translationError&&<p role="alert" className="mb-4 text-amber-300">{translationError}</p>}
+            <AudioPlayer key={`${article.id}:${showTranslation}:${loading}:${content.body.length}`} text={loading?'':(showTranslation&&translation?translation.body:content.body)} />
             {content.body ? <div className="whitespace-pre-line text-lg leading-9 text-neutral-300">{showTranslation&&translation?translation.body:content.body}</div> : <p className="text-neutral-400">Testo non disponibile. Puoi aprire la fonte originale.</p>}
 
           </div>

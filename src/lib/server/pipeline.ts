@@ -1,4 +1,5 @@
 import 'server-only'
+import { runAlerts } from '@/lib/alerts/server'
 import { importSources, repairArticleIdentities, type SourceResult } from '@/lib/rss/importSources'
 import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
 import { pickArticles, loadCandidates, type SelectionDiagnostics } from '@/lib/ai/pickArticles'
@@ -78,6 +79,7 @@ export async function runUpdate(job: UpdateJob, options: RunUpdateOptions = {}) 
       if (result.summary.sourcesFailed) result.warnings.push(`${result.summary.sourcesFailed} fonti non aggiornate: dettagli nella sezione Fonti.`)
     })
     if(result.summary.newArticles>0)await stage('event_updates',()=>attachEventUpdates(job.user_id))
+    if (job.mode==='rss'||job.mode==='all') await stage('alerts',async()=>{const alerts=await runAlerts(job.user_id);if(alerts.failed)result.warnings.push(`${alerts.failed} invii push non riusciti: dettagli in Avvisi.`)},25_000)
     if (job.mode === 'all' || job.mode === 'ai' || job.mode === 'profile') await stage('profile', budgetMs => updateInterestProfile(job.user_id, { budgetMs }), 45_000)
     if (job.mode === 'all' || job.mode === 'ai') {
       const candidates = await loadCandidates(job.user_id)

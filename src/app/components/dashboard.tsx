@@ -1,4 +1,5 @@
 'use client'
+import { AlertsPanel,disableDevicePush } from './alerts'
 import { LibraryProvider } from './library'
 
 import { EditorialPreferences } from './editorial-preferences'
@@ -39,7 +40,7 @@ import { DigestPanel } from './digest'
 import { UpdateHealth } from './update-health'
 import { EventsView } from './events'
 
-export default function HomePage({ initialSector, initialSection = 'today', initialEvent }: { initialSector?: string; initialSection?: Section; initialEvent?:string } = {}) {
+export default function HomePage({ initialSector, initialSection = 'today', initialEvent, initialAlert }: { initialSector?: string; initialSection?: Section; initialEvent?:string; initialAlert?:string } = {}) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<Section>(initialSector ? 'sectors' : initialSection)
   function navigateSection(section: Section) {
@@ -334,7 +335,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
     setRefreshing(true)
     let job = initial
     const deadline = Date.now() + 390_000
-    const phases: Record<string, string> = { queued: 'Avvio', identity: 'Riconciliazione articoli', sources: 'Controllo fonti', profile: 'Aggiornamento interessi', picks: 'Selezione articoli', topics: 'Aggiornamento temi', events:'Raccolta eventi', event_updates:'Nuove coperture degli eventi', digest: 'Preparazione riepilogo' }
+    const phases: Record<string, string> = { queued: 'Avvio', identity: 'Riconciliazione articoli', sources: 'Controllo fonti', profile: 'Aggiornamento interessi', picks: 'Selezione articoli', topics: 'Aggiornamento temi', events:'Raccolta eventi', event_updates:'Nuove coperture degli eventi', alerts:'Avvisi selettivi', digest: 'Preparazione riepilogo' }
     try {
       while (job.status === 'running') {
         if (Date.now() > deadline) throw new Error('Aggiornamento ancora in corso. Riapri la pagina per verificarne lo stato.')
@@ -386,6 +387,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
   async function refreshAI() { await runRefresh('ai') }
 
   async function logout() {
+    await disableDevicePush()
     await clearOffline()
     await fetch('/api/access/logout', { method: 'POST' })
     router.replace('/access')
@@ -502,7 +504,8 @@ export default function HomePage({ initialSector, initialSection = 'today', init
 
           {!loading && <UpdateHealth sources={sources} job={latestJob} now={healthNow} error={healthError} />}
 
-          {!loading && <EditorialPreferences sources={sources} onChanged={loadEverything} />}
+          {!loading && <><AlertsPanel openReader={openArticle} initialAlert={initialAlert} />
+          <EditorialPreferences sources={sources} onChanged={loadEverything} /></>}
 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 

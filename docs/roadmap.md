@@ -16,3 +16,6 @@ Ordine vincolante; aggiornare lo stato con prove di verifica. Una modifica del c
 | 10 | Pagine eventi | Gruppi persistenti, cronologia, coperture multilingua, fonti primarie | Implementato e migrazione applicata: URL stabili, cronologia delle coperture, lingue e tagli, collegamenti ufficiali citati. 206 test; prima raccolta locale verificata in produzione. Ulteriori verifiche ancora in corso. Vedi event-pages.md |
 | 11 | Avvisi selettivi e audio | Argomenti configurabili, frequenza, orari silenziosi; facoltativi | Da completare |
 | 12 | Costi e portabilità | Budget IA misurato; export e ripristino verificato | Da completare |
+
+## Punto 11 — avvisi selettivi e audio (04/10/2026)
+Implementati avvisi persistenti facoltativi, filtri per settore/argomento, limiti atomici e orari silenziosi, Web Push con outbox/errori visibili e voce del dispositivo nel lettore. Migrazione applicata e VAPID configurato solo produzione; 216 test/typecheck/lint/build passati. Dettagli e limiti in selective-alerts-audio.md. Verifica live dopo deploy; ricezione push e audio fisico da provare sul telefono/tablet. Nessuna attivazione automatica degli avvisi.
