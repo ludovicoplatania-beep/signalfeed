@@ -11,6 +11,7 @@ const sections = [
   { id: 'ai', label: 'Scelte AI', icon: Cpu },
   { id: 'sectors', label: 'Settori', icon: LayoutGrid },
   { id: 'saved', label: 'Salvati', icon: Star },
+  { id: 'events', label: 'Eventi', icon: Newspaper },
   { id: 'sources', label: 'Fonti', icon: Compass },
 ]
 
@@ -173,6 +174,7 @@ export function Header({
 }
 
 function getSectionTitle(section: string) {
+  if(section==='events')return 'Eventi e coperture'
   switch (section) {
     case 'today':
       return 'Il tuo briefing'

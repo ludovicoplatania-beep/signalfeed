@@ -37,15 +37,17 @@ import { SectorLinks, SectorView } from './sectors'
 import { getSector } from '@/lib/sectors/catalog'
 import { DigestPanel } from './digest'
 import { UpdateHealth } from './update-health'
+import { EventsView } from './events'
 
-export default function HomePage({ initialSector, initialSection = 'today' }: { initialSector?: string; initialSection?: Section } = {}) {
+export default function HomePage({ initialSector, initialSection = 'today', initialEvent }: { initialSector?: string; initialSection?: Section; initialEvent?:string } = {}) {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<Section>(initialSector ? 'sectors' : initialSection)
   function navigateSection(section: Section) {
-    if (section === activeSection && !initialSector) return
+    if (section === activeSection && !initialSector && !initialEvent) return
     sectionPositions.current.set(activeSection, window.scrollY)
+    if (section === 'events') { router.push('/eventi'); return }
     if (section === 'sectors') { router.push('/settori/ia'); return }
-    if (initialSector) { router.push(`/?sezione=${section}`); return }
+    if (initialSector || initialEvent || initialSection==='events') { router.push(`/?sezione=${section}`); return }
     restoreSection.current = true
     setActiveSection(section)
   }
@@ -332,7 +334,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
     setRefreshing(true)
     let job = initial
     const deadline = Date.now() + 390_000
-    const phases: Record<string, string> = { queued: 'Avvio', identity: 'Riconciliazione articoli', sources: 'Controllo fonti', profile: 'Aggiornamento interessi', picks: 'Selezione articoli', topics: 'Aggiornamento temi', digest: 'Preparazione riepilogo' }
+    const phases: Record<string, string> = { queued: 'Avvio', identity: 'Riconciliazione articoli', sources: 'Controllo fonti', profile: 'Aggiornamento interessi', picks: 'Selezione articoli', topics: 'Aggiornamento temi', events:'Raccolta eventi', event_updates:'Nuove coperture degli eventi', digest: 'Preparazione riepilogo' }
     try {
       while (job.status === 'running') {
         if (Date.now() > deadline) throw new Error('Aggiornamento ancora in corso. Riapri la pagina per verificarne lo stato.')
@@ -657,6 +659,8 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
           {activeSection === 'ai' && (
             <AiCurationView picks={validPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
           )}
+
+          {activeSection === 'events' && <EventsView key={initialEvent??'all'} id={initialEvent} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 
           {activeSection === 'topic' && selectedTopic && (
             <TopicView

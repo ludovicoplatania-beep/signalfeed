@@ -1,4 +1,4 @@
-export type Section = 'today' | 'feed' | 'sources' | 'saved' | 'ai' | 'topic' | 'sectors'
+export type Section = 'today' | 'feed' | 'sources' | 'saved' | 'ai' | 'topic' | 'sectors' | 'events'
 
 export type Source = {
   id: string

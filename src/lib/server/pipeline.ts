@@ -4,6 +4,8 @@ import { updateInterestProfile } from '@/lib/ai/updateInterestProfile'
 import { pickArticles, loadCandidates, type SelectionDiagnostics } from '@/lib/ai/pickArticles'
 import { generateTopics } from '@/lib/ai/generateTopics'
 import { generateDigest } from '@/lib/ai/generateDigest'
+import { syncEvents } from '@/lib/events/sync'
+import { attachEventUpdates } from '@/lib/events/incremental'
 import { getServiceSupabase } from './clients'
 
 export type RunUpdateOptions = { dueSourcesOnly?: boolean }
@@ -75,6 +77,7 @@ export async function runUpdate(job: UpdateJob, options: RunUpdateOptions = {}) 
         newArticles: ok.reduce((sum, source) => sum + source.newCount, 0), updatedArticles: ok.reduce((sum, source) => sum + source.updatedCount, 0) }
       if (result.summary.sourcesFailed) result.warnings.push(`${result.summary.sourcesFailed} fonti non aggiornate: dettagli nella sezione Fonti.`)
     })
+    if(result.summary.newArticles>0)await stage('event_updates',()=>attachEventUpdates(job.user_id))
     if (job.mode === 'all' || job.mode === 'ai' || job.mode === 'profile') await stage('profile', budgetMs => updateInterestProfile(job.user_id, { budgetMs }), 45_000)
     if (job.mode === 'all' || job.mode === 'ai') {
       const candidates = await loadCandidates(job.user_id)
@@ -85,6 +88,7 @@ export async function runUpdate(job: UpdateJob, options: RunUpdateOptions = {}) 
         if (picks.warning) result.warnings.push(picks.warning)
       }, 65_000)
       await stage('topics', budgetMs => generateTopics(job.user_id, candidates, { budgetMs }), 45_000)
+      await stage('events', budgetMs => syncEvents(job.user_id, candidates, { budgetMs }), 45_000)
     }
     if (job.mode === 'profile' || result.stages.picks?.success) await stage('digest', budgetMs => generateDigest(job.user_id, { budgetMs }), 45_000)
     const successes = Object.entries(result.stages).filter(([name, stage]) => name !== 'identity' && stage.success).length
