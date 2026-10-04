@@ -1,0 +1,62 @@
+'use client'
+import { useEffect,useRef,useState } from 'react'
+import { sectors } from '@/lib/sectors/catalog'
+import { defaultAlertSettings,type AlertSettings } from '@/lib/alerts/rules'
+import type { Article,OpenReader } from './types'
+type Alert={id:string;reason:string;created_at:string;read_at:string|null;articles:Article}
+type Data={settings:AlertSettings&{updated_at:string|null};alerts:Alert[];publicKey:string|null;pushReady:boolean;deliveries:{status:string;last_error:string|null;attempted_at:string|null}[]}
+function settingsOnly(settings:AlertSettings){return Object.fromEntries(Object.keys(defaultAlertSettings).map(key=>[key,settings[key as keyof AlertSettings]])) as AlertSettings}
+function applicationKey(key:string){const raw=atob(key.replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,char=>char.charCodeAt(0))}
+export async function disableDevicePush(){if(!('serviceWorker'in navigator))return;const registration=await navigator.serviceWorker.getRegistration();const subscription=await registration?.pushManager?.getSubscription();if(!subscription)return;const response=await fetch('/api/alerts/subscriptions',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:subscription.endpoint})});if(!response.ok)throw new Error('Disattivazione push non riuscita.');await subscription.unsubscribe()}
+export function AlertsPanel({openReader,initialAlert}:{openReader:OpenReader;initialAlert?:string}){
+ const [open,setOpen]=useState(Boolean(initialAlert)),[data,setData]=useState<Data|null>(null),[draft,setDraft]=useState<AlertSettings>(defaultAlertSettings),[keywords,setKeywords]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[device,setDevice]=useState(false),[dirty,setDirty]=useState(false)
+ const opened=useRef(false),lock=useRef(false)
+ async function load(signal?:AbortSignal,replaceDraft=false){const response=await fetch('/api/alerts',{cache:'no-store',signal});const value=await response.json();if(!response.ok)throw new Error(value.message??'Avvisi non disponibili');if(signal?.aborted)return;if(!value.settings||!Array.isArray(value.alerts)||!Array.isArray(value.deliveries))throw new Error('Risposta avvisi non valida');setData(value);if(replaceDraft){setDraft(settingsOnly(value.settings));setKeywords(value.settings.keywords.join(', '));setDirty(false)}
+ if(initialAlert&&!opened.current){const alert=value.alerts.find((a:Alert)=>a.id===initialAlert);opened.current=true;if(alert){void openReader(alert.articles);void markRead(alert.id)}else setMessage('Avviso non più disponibile nella raccolta recente.')}
+ }
+ useEffect(()=>{const controller=new AbortController();void Promise.resolve().then(()=>load(controller.signal,true)).catch(()=>{if(!controller.signal.aborted)setMessage('Avvisi non disponibili. Ricarica per riprovare.')});if('serviceWorker'in navigator)void navigator.serviceWorker.getRegistration().then(registration=>registration?.pushManager?.getSubscription()).then(subscription=>{if(!controller.signal.aborted)setDevice(Boolean(subscription))}).catch(()=>{})
+ const timer=window.setInterval(()=>{if(document.visibilityState==='visible'&&!lock.current)void load(controller.signal).catch(()=>setMessage('Impossibile verificare nuovi avvisi.'))},60000)
+ return()=>{controller.abort();window.clearInterval(timer)}
+ // eslint-disable-next-line react-hooks/exhaustive-deps
+ },[])
+ async function action(work:()=>Promise<void>){if(lock.current)return;lock.current=true;setBusy(true);setMessage('');try{await work()}catch(error){setMessage(error instanceof Error?error.message:'Operazione non riuscita')}finally{lock.current=false;setBusy(false)}}
+ async function save(){if(!data)return;await action(async()=>{const settings={...draft,keywords:[...new Set(keywords.split(',').map(value=>value.trim()).filter(Boolean))]};const response=await fetch('/api/alerts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({settings,version:data.settings.updated_at})});const result=await response.json();if(!response.ok)throw new Error(result.message??'Salvataggio non riuscito');setData(current=>current?{...current,settings:result.settings}:null);setDraft(settingsOnly(result.settings));setKeywords(result.settings.keywords.join(', '));setDirty(false);setMessage(settings.enabled?'Avvisi attivi dai prossimi articoli importati.':'Avvisi disattivati su tutti i dispositivi.')})}
+ async function activate(){await action(async()=>{
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window))throw new Error('Push non supportato. Su iPhone e iPad apri Athena dalla schermata Home dopo averla aggiunta.')
+  if(!data?.publicKey||!data.pushReady)throw new Error('Invio push non configurato.')
+  if(Notification.permission==='denied')throw new Error('Permesso negato: riattivalo dalle impostazioni del browser.')
+  const permission=await Notification.requestPermission();if(permission!=='granted')throw new Error('Permesso non concesso. Gli avvisi restano consultabili qui.')
+  const registration=await navigator.serviceWorker.ready
+  const previous=await registration.pushManager.getSubscription();const subscription=previous??await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:applicationKey(data.publicKey)})
+  const json=subscription.toJSON();const response=await fetch('/api/alerts/subscriptions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:json.endpoint,keys:json.keys})});const result=await response.json();if(!response.ok){if(!previous)await subscription.unsubscribe();throw new Error(result.message??'Attivazione non riuscita')}
+  setDevice(true);setMessage('Push attivo su questo dispositivo. Riceve avvisi solo quando le regole sono abilitate.')
+ })}
+ async function markRead(id:string){const response=await fetch('/api/alerts',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});if(response.ok)setData(current=>current?{...current,alerts:current.alerts.map(alert=>alert.id===id?{...alert,read_at:new Date().toISOString()}:alert)}:null)}
+ function change(values:Partial<AlertSettings>){setDraft(current=>({...current,...values}));setDirty(true)}
+ const input='min-h-11 w-full rounded-xl border border-white/15 bg-[#111015] p-3 text-sm text-white'
+ const unread=data?.alerts.filter(alert=>!alert.read_at).length??0
+ return <section className="mb-5 rounded-2xl border border-[#B88A44]/20 bg-white/[0.025] p-3 sm:p-5">
+  <button className="min-h-11 w-full text-left text-sm text-[#E2C188]" aria-expanded={open} onClick={()=>setOpen(!open)}>Avvisi selettivi {unread?`· ${unread} da leggere `:''}{open?'−':'+'}</button>
+  {open&&<div className="mt-3 space-y-4">
+   <p className="text-xs leading-5 text-neutral-400">Solo sviluppi recenti nei temi scelti. Massimo un avviso per intervallo, con limite giornaliero e fascia silenziosa; le tue esclusioni personali si applicano anche qui. Gli avvisi sono facoltativi. L’audio si attiva dal lettore.</p>
+   {data&&<>
+    <label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" checked={draft.enabled} disabled={busy} onChange={event=>change({enabled:event.target.checked})}/>Abilita avvisi</label>
+    <fieldset disabled={busy}><legend className="text-xs text-neutral-300">Settori da seguire</legend><div className="mt-2 grid grid-cols-2 gap-2">{sectors.map(sector=><label className="flex min-h-11 items-center gap-2 text-xs" key={sector.slug}><input type="checkbox" checked={draft.sectors.includes(sector.slug)} onChange={event=>change({sectors:event.target.checked?[...draft.sectors,sector.slug]:draft.sectors.filter(slug=>slug!==sector.slug)})}/>{sector.name}</label>)}</div></fieldset>
+    <label className="block text-xs text-neutral-300">Argomenti specifici, separati da virgola<input className={input} value={keywords} maxLength={970} disabled={busy} placeholder="Es. OpenAI, Cassazione, Nintendo" onChange={event=>{setKeywords(event.target.value);setDirty(true)}}/></label>
+    <div className="grid grid-cols-2 gap-3">
+     <label className="text-xs text-neutral-300">Massimo al giorno<select className={input} value={draft.max_per_day} disabled={busy} onChange={event=>change({max_per_day:Number(event.target.value)})}>{[1,2,3,4,5].map(n=><option value={n} key={n}>{n}</option>)}</select></label>
+     <label className="text-xs text-neutral-300">Intervallo minimo<select className={input} value={draft.interval_minutes} disabled={busy} onChange={event=>change({interval_minutes:Number(event.target.value)})}>{[60,120,240,360,720].map(n=><option value={n} key={n}>{n/60} ore</option>)}</select></label>
+     <label className="text-xs text-neutral-300">Silenzio dalle<select className={input} value={draft.quiet_start} disabled={busy} onChange={event=>change({quiet_start:Number(event.target.value)})}>{Array.from({length:24},(_,n)=><option value={n} key={n}>{String(n).padStart(2,'0')}:00</option>)}</select></label>
+     <label className="text-xs text-neutral-300">Silenzio fino alle<select className={input} value={draft.quiet_end} disabled={busy} onChange={event=>change({quiet_end:Number(event.target.value)})}>{Array.from({length:24},(_,n)=><option value={n} key={n}>{String(n).padStart(2,'0')}:00</option>)}</select></label>
+    </div>
+    <p className="text-xs text-neutral-400">Fuso: {draft.timezone} · orari uguali disattivano la fascia silenziosa. Le verifiche seguono i cicli di importazione, normalmente ogni 30 minuti. L’importanza è stimata dal titolo e può essere imprecisa.</p>
+    <div className="grid gap-2 sm:grid-cols-2"><button className={input+' disabled:opacity-40'} disabled={busy||!dirty} onClick={()=>void save()}>Salva avvisi</button><button className={input} disabled={busy} onClick={()=>void action(async()=>{await load(undefined,true);setMessage('Impostazioni ricaricate.')})}>Ricarica avvisi</button></div>
+    <div className="rounded-xl border border-white/10 p-3"><p className="mb-2 text-sm">Notifiche su questo dispositivo: {device?'attive':'disattivate'}</p><button className={input} disabled={busy||!data.pushReady} onClick={()=>void(device?action(async()=>{await disableDevicePush();setDevice(false);setMessage('Push disattivato su questo dispositivo.')}):activate())}>{device?'Disattiva push su questo dispositivo':'Attiva push su questo dispositivo'}</button><p className="mt-2 text-xs leading-5 text-neutral-400">Il permesso è richiesto soltanto premendo il pulsante. Le notifiche mostrano un messaggio generico; il titolo dell’articolo resta dentro Athena. Su iPhone/iPad usa l’app aggiunta alla schermata Home.</p></div>
+    <button className={input} disabled={busy||dirty} onClick={()=>void action(async()=>{const response=await fetch('/api/alerts/check',{method:'POST'});const value=await response.json();if(!response.ok)throw new Error(value.message??'Verifica non riuscita');await load();setMessage(`${value.created} nuovi avvisi · ${value.delivered} invii push accettati · ${value.failed} invii non riusciti. Le regole di silenzio e frequenza restano attive.`)})}>Verifica avvisi adesso</button>
+    <details><summary className="min-h-11 cursor-pointer text-sm">Stato degli ultimi invii push</summary>{data.deliveries.length?data.deliveries.map((delivery,index)=><p className="mt-2 text-xs" key={index}>{({pending:'In attesa',sending:'Invio in corso',sent:'Accettato dal servizio push',failed:'Invio non riuscito',expired:'Dispositivo non più raggiungibile'} as Record<string,string>)[delivery.status]}{delivery.last_error?` · ${delivery.last_error}`:''}</p>):<p className="text-xs">Nessun invio effettuato.</p>}</details>
+    <div aria-label="Avvisi recenti"><h3 className="text-sm text-[#E2C188]">Avvisi recenti</h3>{data.alerts.length?data.alerts.map(alert=><button key={alert.id} className="mt-3 w-full rounded-xl border border-white/10 p-3 text-left" onClick={()=>{void openReader(alert.articles);void markRead(alert.id)}}><p className="text-sm">{alert.read_at?'':'● '}{alert.articles.title}</p><p className="mt-1 text-xs text-neutral-400">{alert.articles.sources?.name} · {new Date(alert.created_at).toLocaleString('it-IT')}</p><p className="mt-2 text-xs text-neutral-300">{alert.reason}</p></button>):<p className="mt-3 text-xs text-neutral-400">Nessun avviso. Dopo l’attivazione saranno valutati i nuovi articoli importati.</p>}</div>
+   </>}
+   {message&&<p role="status" className="text-sm text-neutral-300">{message}</p>}
+  </div>}
+ </section>
+}
