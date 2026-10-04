@@ -16,7 +16,7 @@ export const backupSchema = z.object({format:z.literal('athena-backup'),version:
 }).strict().superRefine((b,ctx)=>{
  const sources=new Set(b.sources.map(s=>s.key)),articles=new Set(b.articles.map(a=>a.key))
  const canonical=new Set(b.articles.map(a=>canonicalArticleUrl(a.url)))
- if(sources.size!==b.sources.length||articles.size!==b.articles.length||canonical.size!==b.articles.length||new Set(b.sources.map(s=>s.rss_url.replace(/\/$/,''))).size!==b.sources.length)ctx.addIssue({code:'custom',message:'Chiavi o URL duplicati'})
+ if(sources.size!==b.sources.length||articles.size!==b.articles.length||canonical.size!==b.articles.length)ctx.addIssue({code:'custom',message:'Chiavi o URL duplicati'})
  for(const a of b.articles)if(!sources.has(a.source_key)||!canonicalArticleUrl(a.url))ctx.addIssue({code:'custom',message:'Fonte mancante'})
  for(const list of [b.saved,b.library,b.feedback,b.reader]) {
   if(new Set(list.map(x=>x.article_key)).size!==list.length)ctx.addIssue({code:'custom',message:'Articoli duplicati'})

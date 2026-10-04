@@ -14,6 +14,7 @@ beforeAll(async()=>{
  create table alert_settings(user_id uuid primary key,enabled boolean,sectors text[],keywords text[],max_per_day integer,interval_minutes integer,quiet_start integer,quiet_end integer,timezone text);
  insert into auth.users values('${owner}'),('${other}');`)
  await db.exec(readFileSync(new URL('./202610040003_cost_portability.sql',import.meta.url),'utf8'))
+ await db.exec(readFileSync(new URL('./202610040004_backup_legacy_feeds.sql',import.meta.url),'utf8'))
 },30000)
 afterAll(()=>db.close())
 const restore=(who:string,value:unknown,apply:boolean)=>db.query<{result:Record<string,number>}>('select athena_restore_backup($1,$2::jsonb,$3) result',[who,JSON.stringify(value),apply])
@@ -46,4 +47,10 @@ it('denies browser roles on backup functions and cost tables',async()=>{
   expect((await db.query<{allowed:boolean}>("select has_function_privilege($1,'athena_restore_backup(uuid,jsonb,boolean)','execute') allowed",[role])).rows[0].allowed).toBe(false)
   expect((await db.query<{allowed:boolean}>("select has_table_privilege($1,'ai_usage','select') allowed",[role])).rows[0].allowed).toBe(false)
  }
+})
+
+it('previews and applies equivalent legacy feeds once on an empty owner',async()=>{
+ const v={...backup,sources:[...backup.sources,{...backup.sources[0],key:'00000000-0000-4000-8000-000000000009'}],articles:[],saved:[],library:[],feedback:[],reader:[]}
+ expect((await restore(other,v,false)).rows[0].result.sources).toBe(1)
+ expect((await restore(other,v,true)).rows[0].result.sources).toBe(1)
 })

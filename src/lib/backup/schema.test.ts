@@ -9,3 +9,8 @@ it('recalculates canonical URLs and rejects secret fields or broken references',
  expect(backupSchema.safeParse({...base,articles:[base.articles[0],base.articles[0]]}).success).toBe(false)
  expect(backupSchema.safeParse({...base,version:2}).success).toBe(false)
 })
+
+it('accepts legacy source aliases without dropping their references',()=>{
+ const value={...base,sources:[...base.sources,{...base.sources[0],key:'00000000-0000-4000-8000-000000000003'}]}
+ expect(backupSchema.parse(value).sources).toHaveLength(2)
+})
