@@ -1,14 +1,15 @@
 import 'server-only'
 import {getServiceSupabase} from '@/lib/server/clients'
 import {loadCandidates} from '@/lib/ai/pickArticles'
-import {selectionPool,type Candidate} from '@/lib/ai/ranking'
+import {type Candidate} from '@/lib/ai/ranking'
 import {createAICompletion} from '@/lib/ai/completion'
 import {validGroups} from './clustering'
+import {eventPool} from './pool'
 export async function syncEvents(userId:string,candidates?:Candidate[],options:{budgetMs?:number}={}){
  const db=getServiceSupabase()
  const {data:stored,error}=await db.from('news_events').select('id,title,event_articles(article_id)').eq('user_id',userId).order('updated_at',{ascending:false}).limit(24)
  if(error)throw error
- const pool=selectionPool(candidates??await loadCandidates(userId),[],new Set(),[],160)
+ const pool=eventPool(candidates??await loadCandidates(userId),240)
  // Keep previous anchors in the input so new coverages can retain an existing event URL.
  const anchorIds=[...new Set((stored??[]).flatMap(group=>(group.event_articles as {article_id:string}[]).slice(0,2).map(member=>member.article_id)))]
  if(anchorIds.length){const {data:anchors,error:anchorError}=await db.from('articles').select('id,title,url,excerpt,article_content,published_at,created_at,source_id,sources!inner(name,user_id)').in('id',anchorIds).eq('sources.user_id',userId).is('duplicate_of',null)
