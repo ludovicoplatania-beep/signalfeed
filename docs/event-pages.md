@@ -7,7 +7,7 @@
 - La cronologia conserva le coperture aggiunte. Non pretende di ricostruire tutte le revisioni del testo fatte dalla testata, né identifica automaticamente contraddizioni fattuali.
 
 ## Aggiornamenti e limiti
-- L'aggiornamento IA e il pulsante Aggiorna eventi eseguono il raggruppamento semantico multilingua su massimo 160 candidati bilanciati, più due ancore per ciascuna delle ultime 24 raccolte.
+- L'aggiornamento IA e il pulsante Aggiorna eventi eseguono il raggruppamento semantico multilingua su massimo 240 candidati distribuiti tra editori (URL duplicati esclusi; tutte le coperture concorrenti conservate), più due ancore per ciascuna delle ultime 24 raccolte.
 - Riutilizzo dell'ID basato su un articolo effettivamente condiviso con un gruppo persistente; mai soltanto sul titolo. Il database serializza scritture dello stesso owner, impedisce duplicati e rifiuta articoli di altri owner.
 - Una copertura viene assegnata a un solo evento. Gruppi preesistenti non vengono automaticamente fusi; una rigenerazione senza novità lascia identità e coperture intatte. La raccolta di tutti gli eventi dell'intero archivio non è garantita dal campione finito.
 - Durante RSS, in presenza di articoli nuovi, confronto conservativo dei titoli tramite sameEvent (date entro 48 ore, numeri uguali, token fortemente coincidenti); nessuna chiamata IA. Confronta fino a 240 articoli recenti con 400 appartenenze. I collegamenti meno ovvi o tra lingue diverse attendono il ciclo IA o un aggiornamento manuale.
@@ -21,5 +21,5 @@
 
 ## Sicurezza e verifica
 - Migrazione 202610040001_events.sql applicata al progetto Babilonia. Tre tabelle con RLS attiva e SELECT negato ad anon/authenticated; API owner-only e RPC service_role.
-- 205 test locali, typecheck, lint e build. Test su ID stabile, aggiunte, idempotenza, scope owner, riferimenti IA validi, multilingua, fonti ufficiali, accesso mobile entro due tocchi e assenza di chiamate IA nell'import RSS.
-- Verifica live dopo deployment ancora da registrare.
+- 206 test locali, typecheck, lint e build. Test su ID stabile, aggiunte, idempotenza, scope owner, riferimenti IA validi, multilingua, fonti ufficiali, accesso mobile entro due tocchi e assenza di chiamate IA nell'import RSS.
+- Prima prova live: quattro coperture di Catania–Crotone del 03/10, dalle 14:19 alle 22:45, raccolte nello stesso evento con date e testate coerenti. Campione ampliato da 160 a 240 candidati per non subordinare i confronti internazionali alla graduatoria personale del feed; ricerca globale applicata agli eventi e alle coperture. Verifiche multilingua, fonti primarie e persistenza dopo rigenerazione da completare.

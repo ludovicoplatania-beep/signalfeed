@@ -660,7 +660,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
             <AiCurationView picks={validPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
           )}
 
-          {activeSection === 'events' && <EventsView key={initialEvent??'all'} id={initialEvent} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
+          {activeSection === 'events' && <EventsView key={initialEvent??'all'} id={initialEvent} query={query} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 
           {activeSection === 'topic' && selectedTopic && (
             <TopicView

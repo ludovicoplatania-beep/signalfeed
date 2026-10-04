@@ -3,6 +3,7 @@ const officialHosts=['openai.com','anthropic.com','deepmind.google','blog.google
 export function primaryUrl(raw:string,base?:string){
  try{const url=new URL(raw,base);if(!['https:','http:'].includes(url.protocol)||url.username||url.password||url.pathname==='/'||url.pathname.length<4)return null
   const host=url.hostname.toLowerCase().replace(/^www\./,'')
+  if(/^(community|forum|forums)\./.test(host))return null
   if(!officialHosts.some(official=>host===official||host.endsWith('.'+official)))return null
   if(/^\/(blog|newsroom|news|research|about|home|company|products)\/?$/i.test(url.pathname)||/privacy|cookies|terms|login|sign-in|contact|subscribe/i.test(url.pathname))return null
   url.hash='';return url.toString()
