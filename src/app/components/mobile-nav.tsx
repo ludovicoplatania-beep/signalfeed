@@ -50,6 +50,7 @@ export function MobileNav({
     <dialog ref={picker} aria-labelledby="mobile-sector-title" className="fixed inset-x-0 top-auto bottom-[max(1rem,env(safe-area-inset-bottom))] mx-auto max-h-[80dvh] w-[calc(100%-1.5rem)] max-w-md overflow-y-auto rounded-3xl border border-[#B88A44]/30 bg-[#101013] p-4 text-neutral-100 shadow-2xl backdrop:bg-black/70">
       <div className="mb-3 flex items-center justify-between gap-3"><h2 id="mobile-sector-title" className="text-lg font-medium text-[#E2C188]">Scegli un settore</h2><button autoFocus onClick={() => picker.current?.close()} className="min-h-11 rounded-xl border border-white/10 px-3 text-sm">Chiudi</button></div>
       <nav aria-label="Scelta rapida del settore" className="grid grid-cols-2 gap-2">{sectors.map(sector => <Link key={sector.slug} href={`/settori/${sector.slug}`} onClick={() => picker.current?.close()} className="flex min-h-14 items-center rounded-2xl border border-[#B88A44]/15 bg-white/[0.025] px-3 py-3 text-sm text-neutral-200 hover:border-[#B88A44]/40">{sector.name}</Link>)}</nav>
+      <Link href="/eventi" onClick={()=>picker.current?.close()} className="mt-3 flex min-h-12 items-center rounded-2xl border border-[#B88A44]/30 px-3 text-[#E2C188]">Eventi e coperture</Link>
     </dialog>
     </>
   )
