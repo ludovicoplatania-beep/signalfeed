@@ -6,7 +6,7 @@ export function OfflineDownload({article,translation}:{article:Article;translati
   const [available,setAvailable]=useState(false)
   const [pending,setPending]=useState(false)
   const [message,setMessage]=useState('')
-  useEffect(()=>{let active=true;readOffline(article.id).then(value=>{if(active)setAvailable(Boolean(value))}).catch(()=>{});return()=>{active=false}},[article.id])
+  useEffect(()=>{let active=true;const refresh=()=>{void readOffline(article.id).then(value=>{if(active)setAvailable(Boolean(value))}).catch(()=>{})};refresh();window.addEventListener('athena-offline-changed',refresh);return()=>{active=false;window.removeEventListener('athena-offline-changed',refresh)}},[article.id])
   async function download() {
     setPending(true);setMessage('')
     try {

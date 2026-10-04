@@ -22,9 +22,10 @@ async function operation<T>(mode: IDBTransactionMode, run: (store: IDBObjectStor
 }
 export function readOffline(id: string) { return operation<OfflineArticle | undefined>('readonly', store => store.get(id)) }
 export function listOffline() { return operation<OfflineArticle[]>('readonly', store => store.getAll()) }
-export function writeOffline(entry: OfflineArticle) { return operation('readwrite', store => store.put(entry)) }
-export function removeOffline(id: string) { return operation('readwrite', store => store.delete(id)) }
-export function clearOffline() { return operation('readwrite', store => store.clear()) }
+async function changed<T>(result:Promise<T>){const value=await result;window.dispatchEvent(new Event('athena-offline-changed'));return value}
+export function writeOffline(entry: OfflineArticle) { return changed(operation('readwrite', store => store.put(entry))) }
+export function removeOffline(id: string) { return changed(operation('readwrite', store => store.delete(id))) }
+export function clearOffline() { return changed(operation('readwrite', store => store.clear())) }
 export async function prepareOfflineShell() {
   if (!('serviceWorker' in navigator) || !('caches' in window)) throw new Error('Questo browser non supporta la lettura offline')
   await navigator.serviceWorker.register('/sw.js')
