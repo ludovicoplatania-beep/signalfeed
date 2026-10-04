@@ -22,9 +22,9 @@ self.addEventListener('fetch', event => {
   }
 })
 self.addEventListener('push',event=>{
- let payload={};try{payload=event.data?.json()??{}}catch{/* Show a generic visible notification for malformed payloads. */}
+ let payload={};try{const value=event.data?.json();payload=value&&typeof value==='object'?value:{}}catch{/* Show a generic visible notification for malformed payloads. */}
  const valid=/^\/\?avviso=[0-9a-f-]{36}$/i.test(payload.url??'')
- event.waitUntil(self.registration.showNotification('Athena · nuovo aggiornamento',{body:'Una notizia corrisponde ai tuoi avvisi. Apri Athena per leggerla.',icon:'/icons/icon-192.png',badge:'/icons/favicon-32.png',tag:typeof payload.tag==='string'?payload.tag.slice(0,100):'athena-update',data:{url:valid?payload.url:'/'}}))
+ event.waitUntil(self.registration.showNotification(payload.type==='test'?'Athena · prova push':'Athena · nuovo aggiornamento',{body:payload.type==='test'?'Notifica di prova di Athena. Nessun articolo selezionato.':'Una notizia corrisponde ai tuoi avvisi. Apri Athena per leggerla.',icon:'/icons/icon-192.png',badge:'/icons/favicon-32.png',tag:typeof payload.tag==='string'?payload.tag.slice(0,100):'athena-update',data:{url:valid?payload.url:'/'}}))
 })
 self.addEventListener('notificationclick',event=>{
  event.notification.close()

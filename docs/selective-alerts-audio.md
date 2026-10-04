@@ -8,6 +8,7 @@
 
 ## Push facoltativo
 - Web Push standard con web-push, payload cifrato e chiavi VAPID lato server (privata sensitive solo produzione; pubblica restituita all'owner). Nessun abbonamento aggiuntivo.
+- Invia push di prova permette una verifica manuale del dispositivo, con TTL 60 secondi e limite una richiesta/minuto. La prova è esplicitamente distinta dagli avvisi e non seleziona articoli.
 - Permesso richiesto soltanto sul pulsante Attiva push su questo dispositivo. La configurazione globale e l'adesione del singolo dispositivo sono indipendenti; massimo dieci dispositivi. iOS/iPadOS richiedono l'app aggiunta alla Home.
 - Notifica generica senza titolo/articolo sullo schermo bloccato. Tap apre l'avviso solo dopo accesso owner; URL stesso origin e UUID validato. Logout disattiva e rimuove l'iscrizione del dispositivo.
 - Endpoint limitati a FCM, Mozilla e Apple per impedire richieste verso URL arbitrari; endpoint/chiavi non vengono restituiti dalla raccolta né registrati nei log.
@@ -21,5 +22,5 @@
 
 ## Verifica
 - Migrazione 202610040002_alerts.sql applicata a Babilonia; quattro tabelle RLS e SELECT negato ad anon/authenticated, RPC service_role, API owner-only.
-- 216 test, typecheck, lint e build locali passati: quiet hours e DST, cap e intervallo, owner scope, claim atomico, endpoint sicuri, segmentazione senza perdita di testo, opt-in esplicito, persistenza impostazioni, pausa/ripresa/cancellazione audio e RSS senza chiamate IA.
-- Chiavi produzione configurate prima del deploy. Verifica live del pannello e dei controlli prevista dopo pubblicazione. Consegna push e audio fisico su telefono/tablet richiedono una prova sul dispositivo: il browser cloud non la sostituisce.
+- 219 test, typecheck, lint e build locali passati: quiet hours e DST, cap e intervallo, owner scope, claim atomico, endpoint sicuri, segmentazione senza perdita di testo, opt-in esplicito, persistenza impostazioni, pausa/ripresa/cancellazione audio e RSS senza chiamate IA.
+- Chiavi produzione configurate prima del deploy. Verifica live: impostazioni IA/tecnologia/videogiochi salvate e ricaricate, avvisi globali disattivati, massimo 3/giorno, intervallo 2 ore, silenzio 22–08. Verifica manuale restituisce zero avvisi/invii/errori. Audio avviato nel cloud, interruzione della voce mostrata esplicitamente; nessuna dichiarazione di ascolto fisico. Consegna push e audio fisico su telefono/tablet richiedono una prova sul dispositivo: il browser cloud non la sostituisce.
