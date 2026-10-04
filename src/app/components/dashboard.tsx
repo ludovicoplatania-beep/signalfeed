@@ -23,7 +23,7 @@ import type {
 } from './types'
 import { ArticleFeedbackProvider, PreferencesPanel } from './article-feedback'
 import type { Preference } from '@/lib/ai/preferences'
-import { BackgroundGlow, EmptyState } from './ui'
+import { EmptyState } from './ui'
 import { Header, Sidebar } from './app-layout'
 import { MobileNav } from './mobile-nav'
 import { ReaderMode } from './reader-mode'
@@ -34,8 +34,8 @@ import { clearOffline } from '@/lib/offline/storage'
 import { TrendingTopics, TopicView } from './topics'
 import { SourcesPanel } from './sources'
 import { Onboarding } from './onboarding'
-import { FeedSkeleton, HeroSkeleton, MetricsSkeleton } from './skeletons'
-import { SectorLinks, SectorView } from './sectors'
+import { FeedSkeleton, HeroSkeleton } from './skeletons'
+import { SectorView } from './sectors'
 import { getSector } from '@/lib/sectors/catalog'
 import { DigestPanel } from './digest'
 import { UpdateHealth } from './update-health'
@@ -451,22 +451,22 @@ export default function HomePage({ initialSector, initialSection = 'today', init
     await loadEverything()
   }
 
-  if (loadError && !loading) return <main className="min-h-screen bg-[#070708] p-8 text-white"><p>{loadError}</p><button onClick={() => { setLoading(true); loadEverything().catch((error) => setLoadError(String(error))).finally(() => setLoading(false)) }}>Riprova</button></main>
+  if (loadError && !loading) return <main className="min-h-screen bg-background p-8 text-foreground"><p>{loadError}</p><button onClick={() => { setLoading(true); loadEverything().catch((error) => setLoadError(String(error))).finally(() => setLoading(false)) }}>Riprova</button></main>
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#070708]">
+      <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="space-y-3">
-          <div className="h-5 w-52 animate-pulse rounded-full bg-white/10" />
-          <div className="h-5 w-40 animate-pulse rounded-full bg-white/10" />
+          <div className="h-5 w-52 animate-pulse rounded-full bg-surface" />
+          <div className="h-5 w-40 animate-pulse rounded-full bg-surface" />
         </div>
       </main>
     )
   }
 
   return (
-    <LibraryProvider><ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen [overflow-anchor:none] bg-[#070708] pb-32 text-neutral-100 xl:pb-0">
-      <BackgroundGlow />
+    <LibraryProvider><ArticleFeedbackProvider initial={preferences} onSaved={loadEverything}><main className="min-h-screen [overflow-anchor:none] bg-background pb-32 text-foreground xl:pb-0">
+
 
       <MobileNav activeSection={activeSection} setActiveSection={navigateSection} />
 
@@ -505,15 +505,21 @@ export default function HomePage({ initialSector, initialSection = 'today', init
 
           {!loading && <UpdateHealth sources={sources} job={latestJob} now={healthNow} error={healthError} />}
 
-          {!loading && <><AlertsPanel openReader={openArticle} initialAlert={initialAlert} />
+          {!loading && (activeSection === 'more' || Boolean(initialAlert)) && <><AlertsPanel openReader={openArticle} initialAlert={initialAlert} />
           <EditorialPreferences sources={sources} onChanged={loadEverything} />
-          <CostBackup onChanged={loadEverything} /></>}
+          <CostBackup onChanged={loadEverything} />
+          <PreferencesPanel entries={feedbackEntries} />
+          <Metrics sources={sources} articles={articles} aiPicks={validPicks} savedArticles={savedArticles} />
+          <button onClick={() => navigateSection('sources')} className="mt-4 min-h-11 rounded-xl border border-line bg-surface px-4 text-sm text-accent">Gestisci le fonti</button>
+          </>}
+
+          {['today', 'feed', 'ai', 'events'].includes(activeSection) && <nav aria-label="Modalità di lettura" className="mb-5 flex gap-1 overflow-x-auto border-b border-line">{([{id:'today',label:'Per te'},{id:'feed',label:'Recenti'},{id:'ai',label:'Scelte IA'},{id:'events',label:'Eventi'}] as const).map(mode => <button key={mode.id} onClick={() => navigateSection(mode.id)} aria-current={activeSection === mode.id ? 'page' : undefined} className={`min-h-11 shrink-0 border-b-2 px-3 text-sm ${activeSection === mode.id ? 'border-accent font-medium text-accent' : 'border-transparent text-muted'}`}>{mode.label}</button>)}</nav>}
 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 
           {activeSection === 'today' && (
             <div className="flex flex-col">
-              <div className="order-3 mb-6 xl:order-0"><SectorLinks /></div>
+
               {onboardingStep && (
                 <Onboarding
                   step={onboardingStep}
@@ -522,22 +528,10 @@ export default function HomePage({ initialSector, initialSection = 'today', init
                 />
               )}
 
-              <div className="order-2 xl:order-0">{refreshing ? (
-                <MetricsSkeleton />
-              ) : (
-                <Metrics
-                  sources={sources}
-                  articles={articles}
-                  aiPicks={validPicks}
-                  savedArticles={savedArticles}
-                />
-              )}
-
-              </div>
               {refreshing ? (
                 <HeroSkeleton />
               ) : heroPick ? (
-                <section className="order-1 mb-6 grid gap-4 xl:order-0 xl:mb-10 xl:grid-cols-[1.2fr_0.8fr]">
+                <section className="mb-6 grid items-start gap-3 lg:grid-cols-2">
                   <HeroPick
                     pick={heroPick}
                     saved={heroPick.articles ? savedIds.has(heroPick.articles.id) : false}
@@ -545,7 +539,6 @@ export default function HomePage({ initialSector, initialSection = 'today', init
                     openReader={openArticle}
                   />
 
-                  <div className="grid gap-4">
                     {sidePicks.map((pick) => (
                       <SidePick
                         key={pick.id}
@@ -555,7 +548,6 @@ export default function HomePage({ initialSector, initialSection = 'today', init
                         openReader={openArticle}
                       />
                     ))}
-                  </div>
                 </section>
               ) : (
                 <EmptyState text="Nessuna selezione AI disponibile." />
@@ -566,7 +558,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
                   <FeedSkeleton />
                 ) : (
                   <FeedList
-                    articles={filteredArticles}
+                    articles={filteredArticles.filter(article => ![heroPick, ...sidePicks].some(pick => pick?.articles?.id === article.id))}
                     savedIds={savedIds}
                     toggleSave={toggleSave}
                     openReader={openArticle}
@@ -576,7 +568,6 @@ export default function HomePage({ initialSector, initialSection = 'today', init
                 )}
 
                 <aside className="space-y-5">
-                  <PreferencesPanel entries={feedbackEntries} />
                   <DigestPanel
                     digest={digests[0]}
                     articles={[...articles, ...validPicks.flatMap((pick) => pick.articles ? [pick.articles] : [])]}
@@ -590,26 +581,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
 
                   <AiSideList picks={lowerPicks} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />
 
-                  <SourcesPanel
-                    sources={sources}
-                    expandSources={expandSources}
-                    expanding={expandingSources}
-                    name={name}
-                    setName={setName}
-                    websiteUrl={websiteUrl}
-                    setWebsiteUrl={setWebsiteUrl}
-                    rssUrl={rssUrl}
-                    setRssUrl={setRssUrl}
-                    priority={priority}
-                    setPriority={setPriority}
-                    editing={Boolean(editingSource)}
-              editSource={editSource}
-              cancelEdit={cancelEdit}
-              addSource={addSource}
-                    toggleSource={toggleSource}
-                    deleteSource={deleteSource}
-                    message={message}
-                  />
+
                 </aside>
               </section>
             </div>
@@ -626,7 +598,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
                 subtitle={`${archiveTotal.toLocaleString('it-IT')} risultati nell’intero archivio.`}
               />
               {archiveArticles.length < archiveTotal && (
-                <button disabled={archiveLoading} onClick={() => searchArchive(archiveNextOffset, true)} className="mt-5 w-full rounded-2xl border border-white/[0.1] bg-white/[0.04] px-5 py-3 text-sm text-neutral-200 hover:bg-white/[0.07] disabled:opacity-50">
+                <button disabled={archiveLoading} onClick={() => searchArchive(archiveNextOffset, true)} className="mt-5 w-full rounded-2xl border border-line bg-surface px-5 py-3 text-sm text-foreground hover:bg-surface disabled:opacity-50">
                   {archiveLoading ? 'Caricamento…' : 'Carica altri risultati'}
                 </button>
               )}

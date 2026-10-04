@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { ReadingDensity, useReadingDensity } from './reading-density'
 import { LibraryEditor, useLibrary } from './library'
 import { OfflineDownload } from './offline-download'
-import { motion } from 'framer-motion'
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
 import { Clock3 } from 'lucide-react'
@@ -17,34 +17,33 @@ type FeedListProps = {
   title: string
   subtitle: string
   library?: boolean
+  showDensity?: boolean
 }
 
-export function FeedList({ articles, savedIds, toggleSave, openReader, title, subtitle, library = false }: FeedListProps) {
+export function FeedList({ articles, savedIds, toggleSave, openReader, title, subtitle, library = false, showDensity = true }: FeedListProps) {
+  const compact = useReadingDensity()
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-      <div className="mb-5">
-        <h2 className="text-xl font-medium tracking-[-0.04em] text-white sm:text-2xl">{title}</h2>
-        <p className="mt-2 text-sm text-neutral-400">{subtitle}</p>
+    <div>
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-x-3 gap-y-1"><div>
+        <h2 className="text-xl font-medium tracking-[-0.04em] text-foreground sm:text-2xl">{title}</h2>
+        <p className="mt-1 text-xs leading-5 text-muted">{subtitle}</p></div>{showDensity && <ReadingDensity />}
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-white/[0.07] bg-white/[0.025]">
+      <div className="min-w-0">
         {articles.length === 0 ? (
           <EmptyState text="Nessun articolo trovato." />
         ) : (
-          (library ? articles.map(article=>({article,alternatives:[] as Article[]})) : groupStories(articles)).map(({ article, alternatives }, index) => (
-            <motion.div
+          (library ? articles.map(article=>({article,alternatives:[] as Article[]})) : groupStories(articles)).map(({ article, alternatives }) => (
+            <article
               key={article.id}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.015 }}
-              className="grid grid-cols-1 gap-3 border-b border-white/[0.06] p-4 transition last:border-b-0 hover:bg-white/[0.04] md:grid-cols-[96px_minmax(0,1fr)] xl:grid-cols-[112px_minmax(0,1fr)_auto] md:gap-4 md:p-5"
+              className={`article-row ${compact ? 'py-3' : 'py-4 sm:py-5'} grid grid-cols-[minmax(0,1fr)_80px] gap-x-4 gap-y-2 border-b border-line last:border-b-0 sm:grid-cols-[minmax(0,1fr)_96px]`}
             >
-              <button onClick={() => openReader(article)} className="hidden text-left md:block">
-                <ArticleThumbnail imageUrl={article.image_url} />
-              </button>
+              {article.image_url && <button onClick={() => openReader(article)} aria-label={`Leggi: ${article.title}`} className="col-start-2 row-start-1 self-start text-left">
+                <ArticleThumbnail imageUrl={article.image_url} compact />
+              </button>}
 
-              <button onClick={() => openReader(article)} className="min-w-0 text-left">
-                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-neutral-400">
+              <button onClick={() => openReader(article)} className={`col-start-1 row-start-1 min-w-0 text-left ${article.image_url ? '' : 'col-span-full'}`}>
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-muted">
                   <span>{article.sources?.name ?? 'Fonte'}</span>
                   <span>•</span>
                   <Clock3 size={13} />
@@ -55,30 +54,30 @@ export function FeedList({ articles, savedIds, toggleSave, openReader, title, su
                   </span>
                 </div>
 
-                <h3 className="text-base font-medium [overflow-wrap:anywhere] leading-snug tracking-[-0.02em] text-neutral-100 sm:text-lg md:text-xl">
+                <h3 className="text-lg font-semibold [overflow-wrap:anywhere] leading-snug tracking-[-0.02em] text-foreground sm:text-lg md:text-xl">
                   {article.title}
                 </h3>
 
-                {article.excerpt && (
-                  <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-neutral-400">
+                {!compact && article.excerpt && (
+                  <p className="mt-2 line-clamp-2 max-w-3xl text-sm leading-6 text-muted">
                     {article.excerpt}
                   </p>
                 )}
               </button>
 
-              <div className="flex items-center justify-start md:col-start-2 xl:col-start-auto xl:items-start xl:justify-end">
+              <div className="col-span-full flex items-center justify-start">
                 <ArticleActions articleId={article.id} saved={savedIds.has(article.id)} onClick={() => toggleSave(article.id)} small />
               </div>
-              {library && <div className="col-span-full md:col-start-2"><LibraryEditor id={article.id} /><OfflineDownload article={article} /></div>}
-              {alternatives.length > 0 && <details className="col-span-full rounded-xl border border-white/10 bg-black/20 p-3 text-sm text-neutral-300 md:col-start-2">
+              {library && <details className="col-span-full text-sm text-muted"><summary className="min-h-11 cursor-pointer py-2 text-accent">Organizza e scarica</summary><LibraryEditor id={article.id} /><OfflineDownload article={article} /></details>}
+              {alternatives.length > 0 && <details className="col-span-full rounded-xl border border-line bg-surface p-3 text-sm text-foreground">
                 <summary className="cursor-pointer">Altre coperture ({alternatives.length})</summary>
-                <div className="mt-3 space-y-2">{alternatives.map(alternative => <button key={alternative.id} className="block w-full rounded-lg p-2 text-left hover:bg-white/5" onClick={() => openReader(alternative)}><span className="text-[#C59A52]">{alternative.sources?.name ?? 'Fonte'}</span> · {alternative.title}</button>)}</div>
+                <div className="mt-3 space-y-2">{alternatives.map(alternative => <button key={alternative.id} className="block w-full rounded-lg p-2 text-left hover:bg-surface" onClick={() => openReader(alternative)}><span className="text-accent">{alternative.sources?.name ?? 'Fonte'}</span> · {alternative.title}</button>)}</div>
               </details>}
-            </motion.div>
+            </article>
           ))
         )}
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -103,8 +102,8 @@ export function SavedView({
 
   return (
     <div>
-      <div className="mb-4"><a href="/offline.html" className="inline-flex min-h-11 items-center rounded-xl border border-[#B88A44]/25 px-4 text-[#E2C188]">Biblioteca offline</a><p className="mt-2 text-sm text-neutral-400">Scarica gli articoli prima di scollegarti. Le copie e le traduzioni restano su questo dispositivo, fino alla rimozione o alla pulizia dei dati del browser.</p></div><div className="mb-5 grid gap-3 sm:grid-cols-3"><input aria-label="Cerca nei salvati" placeholder="Cerca titolo, testo, fonte o tag" value={query} onChange={e=>setQuery(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-black/30 px-3"/><select aria-label="Filtra cartella" value={folder} onChange={e=>setFolder(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-[#111] px-3"><option value="">Tutte le cartelle</option>{folders.map(name=><option key={name}>{name}</option>)}</select><select aria-label="Filtra lettura" value={state} onChange={e=>setState(e.target.value)} className="min-h-11 rounded-xl border border-white/10 bg-[#111] px-3"><option value="all">Tutti</option><option value="unread">Da leggere</option><option value="read">Letti</option></select></div>
-      {error&&<p role="alert" className="mb-3 text-amber-300">{error}</p>}
+      <div className="mb-4"><a href="/offline.html" className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-accent">Biblioteca offline</a><p className="mt-2 text-sm text-muted">Scarica gli articoli prima di scollegarti. Le copie e le traduzioni restano su questo dispositivo, fino alla rimozione o alla pulizia dei dati del browser.</p></div><div className="mb-5 grid gap-3 sm:grid-cols-3"><input aria-label="Cerca nei salvati" placeholder="Cerca titolo, testo, fonte o tag" value={query} onChange={e=>setQuery(e.target.value)} className="min-h-11 rounded-xl border border-line bg-surface px-3"/><select aria-label="Filtra cartella" value={folder} onChange={e=>setFolder(e.target.value)} className="min-h-11 rounded-xl border border-line bg-background px-3"><option value="">Tutte le cartelle</option>{folders.map(name=><option key={name}>{name}</option>)}</select><select aria-label="Filtra lettura" value={state} onChange={e=>setState(e.target.value)} className="min-h-11 rounded-xl border border-line bg-background px-3"><option value="all">Tutti</option><option value="unread">Da leggere</option><option value="read">Letti</option></select></div>
+      {error&&<p role="alert" className="mb-3 text-warning">{error}</p>}
     <FeedList
       library
       articles={articles}

@@ -1,166 +1,48 @@
-import { motion } from 'framer-motion'
-import { Sparkles } from 'lucide-react'
-import { ArticleImage, ArticleThumbnail, Panel, Pill, ArticleActions } from './ui'
+import { formatDistanceToNow } from 'date-fns'
+import { it } from 'date-fns/locale'
+import { ArticleThumbnail, ArticleActions } from './ui'
 import type { AiPick, OpenReader, ToggleSave } from './types'
 
-function PickExplanation({pick}:{pick:AiPick}) {
-  return <div className="pointer-events-auto mt-3 text-xs leading-5 text-neutral-300">
-    <p className="text-neutral-400">Selezionata: <time dateTime={pick.created_at}>{new Date(pick.created_at).toLocaleString('it-IT')}</time></p>
-    <details><summary className="min-h-11 cursor-pointer py-2 text-[#E2C188]">Perché questa notizia</summary><p>{pick.reason || 'Selezionata per attualità, interessi e priorità della fonte.'}</p><p className="mt-2 text-neutral-400">{pick.selection_method==='automatic'?'Selezione automatica':'Selezione IA'}</p></details>
-  </div>
-}
-
-function GlassScore({ value }: { value: number }) {
-  return (
-    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-[#B88A44]/35 bg-black/55 text-sm font-semibold text-[#E2C188] shadow-[0_0_22px_rgba(184,138,68,0.10)] backdrop-blur-xl">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.20),transparent_72%)]" />
-      <span className="relative z-10">{value}</span>
+function PickExplanation({ pick }: { pick: AiPick }) {
+  return <details className="text-sm text-muted">
+    <summary className="flex min-h-11 cursor-pointer items-center text-accent">Perché questa scelta</summary>
+    <div className="space-y-2 pb-2 leading-6">
+      <p>{pick.reason || 'Selezionata per attualità, interessi e priorità della fonte.'}</p>
+      <p>Selezionata il <time dateTime={pick.created_at}>{new Date(pick.created_at).toLocaleString('it-IT')}</time> · {pick.selection_method === 'automatic' ? 'automatica' : 'IA'} · rilevanza {pick.score}/100.</p>
     </div>
-  )
+  </details>
 }
 
-type PickProps = {
-  pick: AiPick
-  saved: boolean
-  toggleSave: ToggleSave
-  openReader: OpenReader
-}
-
-export function HeroPick({ pick, saved, toggleSave, openReader }: PickProps) {
-  if (!pick.articles) return null
-
-  return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      className="group relative min-h-[360px] overflow-hidden rounded-[2rem] border border-white/[0.08] bg-neutral-950 shadow-2xl shadow-black/40 md:min-h-[520px] md:rounded-[2.4rem]"
-    >
-      <button onClick={() => pick.articles && openReader(pick.articles)} className="absolute inset-0 z-10 text-left">
-        <ArticleImage imageUrl={pick.articles?.image_url} />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/62 to-black/10" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(184,138,68,0.16),transparent_32%),radial-gradient(circle_at_82%_12%,rgba(139,92,246,0.18),transparent_30%)]" />
-      </button>
-
-      <div className="pointer-events-none relative z-20 flex flex-col justify-between p-5 md:absolute md:inset-0 md:p-10">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <Pill>{pick.articles?.sources?.name ?? 'Fonte'} · {pick.category}</Pill>
-
-          <div className="pointer-events-auto flex flex-wrap items-center gap-2 md:gap-3">
-            <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} />
-            <GlassScore value={pick.score} />
-          </div>
-        </div>
-
-        <div className="mt-8 md:mt-0">
-          <p className="mb-4 flex items-center gap-2 text-sm text-[#E2C188]">
-            <Sparkles size={15} />
-            {pick.reason?.startsWith('Scoperta') ? 'Scoperta per te' : pick.selection_method === 'automatic' ? 'Selezione automatica' : 'Scelta IA principale'}
-          </p>
-
-          <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
-            <h2 className="max-w-4xl text-3xl font-semibold [overflow-wrap:anywhere] leading-[1.04] tracking-[-0.055em] text-white md:text-6xl">
-              {pick.articles?.title}
-            </h2>
-          </button>
-
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-300 md:text-lg md:leading-8">
-            {pick.summary}
-          </p>
-          <PickExplanation pick={pick} />
-        </div>
+type PickProps = { pick: AiPick; saved: boolean; toggleSave: ToggleSave; openReader: OpenReader }
+function PickCard({ pick, saved, toggleSave, openReader, featured = false }: PickProps & { featured?: boolean }) {
+  const article = pick.articles
+  if (!article) return null
+  return <article className="min-w-0 rounded-2xl border border-line bg-surface p-4 sm:p-5">
+    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-muted">
+      <span>{article.sources?.name ?? 'Fonte'}</span>
+      {article.published_at && <span>· {formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: it })}</span>}
+      <span className="rounded-md bg-accent-soft px-2 py-0.5 text-accent">{pick.selection_method === 'automatic' ? 'Per te' : 'Scelta IA'}</span>
+    </div>
+    <button onClick={() => openReader(article)} className="flex w-full items-start gap-4 text-left">
+      <div className="min-w-0 flex-1">
+        <h2 className={`${featured ? 'text-[22px] sm:text-2xl' : 'text-lg sm:text-xl'} font-semibold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere]`}>{article.title}</h2>
+        {featured && pick.summary && <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{pick.summary}</p>}
       </div>
-    </motion.div>
-  )
+      {article.image_url && <div className="w-20 shrink-0 sm:w-24"><ArticleThumbnail imageUrl={article.image_url} compact /></div>}
+    </button>
+    <div className="mt-2 flex flex-wrap items-start justify-between gap-x-3">
+      <PickExplanation pick={pick} />
+      <ArticleActions articleId={article.id} saved={saved} onClick={() => toggleSave(article.id)} small />
+    </div>
+  </article>
 }
-
-export function SidePick({ pick, saved, toggleSave, openReader }: PickProps) {
-  if (!pick.articles) return null
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.35 }}
-      className="group relative min-w-0 min-h-[150px] overflow-hidden rounded-[1.6rem] border border-white/[0.08] bg-neutral-950 p-5 shadow-xl shadow-black/20 md:min-h-[170px] md:rounded-[2rem]"
-    >
-      <button onClick={() => pick.articles && openReader(pick.articles)} className="absolute inset-0 text-left">
-        <ArticleImage imageUrl={pick.articles?.image_url} />
-        <div className="absolute inset-0 bg-black/72" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_15%,rgba(139,92,246,0.16),transparent_34%)]" />
-      </button>
-
-      <div className="relative pointer-events-none">
-        <p className="mb-3 text-xs leading-5 text-neutral-400">{pick.articles?.sources?.name ?? 'Fonte'} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}{pick.reason?.startsWith('Scoperta') ? ' · Scoperta' : ''}{pick.publisher_key ? ` · ${pick.publisher_key}` : ''}</p>
-
-        <button onClick={() => pick.articles && openReader(pick.articles)} className="pointer-events-auto text-left">
-          <h3 className="line-clamp-3 text-lg font-medium [overflow-wrap:anywhere] leading-snug tracking-[-0.025em] text-white group-hover:underline md:text-xl">
-            {pick.articles?.title}
-          </h3>
-        </button>
-        <PickExplanation pick={pick} />
-        <div className="pointer-events-auto mt-4 flex items-center justify-between gap-2 border-t border-white/[0.08] pt-3">
-          <ArticleActions articleId={pick.articles?.id} saved={saved} onClick={() => toggleSave(pick.articles?.id)} small />
-          <div aria-label={`Rilevanza ${pick.score} su 100`} className="flex h-11 min-w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B88A44]/30 bg-black/50 px-2 text-sm font-semibold text-[#E2C188]">{pick.score}</div>
-        </div>
-      </div>
-    </motion.div>
-  )
-}
-
-type PickListProps = {
-  picks: AiPick[]
-  savedIds: Set<string>
-  toggleSave: ToggleSave
-  openReader: OpenReader
-}
-
-export function AiSideList({ picks, savedIds, toggleSave, openReader }: PickListProps) {
-  if (!picks.length) return null
-
-  return (
-    <Panel title="Altre priorità">
-      <div className="space-y-3">
-        {picks.map((pick) => (
-          <div
-            key={pick.id}
-            className="grid grid-cols-1 md:grid-cols-[68px_minmax(0,1fr)] xl:grid-cols-[68px_minmax(0,1fr)_auto] gap-3 rounded-2xl border border-white/[0.06] bg-black/25 p-3 hover:border-[#B88A44]/20 hover:bg-white/[0.04]"
-          >
-            <button onClick={() => pick.articles && openReader(pick.articles)} className="hidden text-left md:block">
-              <ArticleThumbnail imageUrl={pick.articles?.image_url} compact />
-            </button>
-
-            <button onClick={() => pick.articles && openReader(pick.articles)} className="text-left">
-              <div className="mb-1 text-xs text-neutral-400">{pick.category} · {pick.score} · {pick.selection_method === 'automatic' ? 'Automatica' : 'IA'}</div>
-              <p className="line-clamp-3 text-sm font-medium leading-5 text-neutral-200">
-                {pick.articles?.title}
-              </p>
-            </button>
-
-            <div className="md:col-start-2"><PickExplanation pick={pick} /></div>
-            <div className="md:col-start-2 xl:col-start-auto"><ArticleActions articleId={pick.articles?.id}
-              saved={pick.articles ? savedIds.has(pick.articles.id) : false}
-              onClick={() => toggleSave(pick.articles?.id)}
-              small
-            /></div>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  )
-}
-
+export function HeroPick(props: PickProps) { return <PickCard {...props} featured /> }
+export function SidePick(props: PickProps) { return <PickCard {...props} /> }
+type PickListProps = { picks: AiPick[]; savedIds: Set<string>; toggleSave: ToggleSave; openReader: OpenReader }
 export function AiCurationView({ picks, savedIds, toggleSave, openReader }: PickListProps) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {picks.map((pick) => (
-        <SidePick
-          key={pick.id}
-          pick={pick}
-          saved={pick.articles ? savedIds.has(pick.articles.id) : false}
-          toggleSave={toggleSave}
-          openReader={openReader}
-        />
-      ))}
-    </div>
-  )
+  return <div className="grid items-start gap-3 md:grid-cols-2">{picks.map(pick => <SidePick key={pick.id} pick={pick} saved={Boolean(pick.articles && savedIds.has(pick.articles.id))} toggleSave={toggleSave} openReader={openReader} />)}</div>
+}
+export function AiSideList(props: PickListProps) {
+  if (!props.picks.length) return null
+  return <section><h2 className="mb-3 text-lg font-semibold">Altre scelte per te</h2><AiCurationView {...props} /></section>
 }

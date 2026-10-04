@@ -23,23 +23,23 @@ export function SectorLinks({ active }: { active?: string }) {
       const selected = active === sector.slug
       return <Link key={sector.slug} href={`/settori/${sector.slug}`} aria-current={selected ? 'page' : undefined}
         className={`flex min-h-14 min-w-0 items-center gap-2.5 rounded-2xl border px-3 py-3 text-sm transition ${selected
-          ? 'border-[#B88A44]/35 bg-[linear-gradient(145deg,rgba(197,154,82,0.18),rgba(139,92,246,0.08))] text-[#E2C188] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
-          : 'border-[#B88A44]/10 bg-white/[0.025] text-neutral-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] hover:border-[#B88A44]/30 hover:bg-white/[0.05]'}`}>
-        <Icon size={18} aria-hidden="true" className="shrink-0 text-[#C59A52]" />
+          ? 'border-line  text-accent '
+          : 'border-line bg-surface text-foreground  hover:border-line hover:bg-surface'}`}>
+        <Icon size={18} aria-hidden="true" className="shrink-0 text-accent" />
         <span className="min-w-0 text-xs leading-5 sm:text-sm">{sector.name}</span>
       </Link>
     })}
   </nav>
   const current = active ? getSector(active) : undefined
   const Icon = active ? sectorIcons[active] : LayoutGrid
-  return <details key={active ?? 'all'} className="group rounded-2xl border border-[#B88A44]/20 bg-[linear-gradient(145deg,rgba(197,154,82,0.08),rgba(139,92,246,0.05))] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+  return <details key={active ?? 'all'} className="group rounded-2xl border border-line  ">
     <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
-      <Icon size={20} aria-hidden="true" className="shrink-0 text-[#C59A52]" />
-      <span className="min-w-0 flex-1 text-sm font-medium text-[#E2C188]">{current?.name ?? 'Esplora i tuoi settori'}</span>
-      <span className="text-xs text-neutral-400">{active ? 'Cambia' : '9 settori'}</span>
-      <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-neutral-400 transition group-open:rotate-180" />
+      <Icon size={20} aria-hidden="true" className="shrink-0 text-accent" />
+      <span className="min-w-0 flex-1 text-sm font-medium text-accent">{current?.name ?? 'Esplora i tuoi settori'}</span>
+      <span className="text-xs text-muted">{active ? 'Cambia' : '9 settori'}</span>
+      <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-muted transition group-open:rotate-180" />
     </summary>
-    <div className="border-t border-white/[0.06] p-3">{links}</div>
+    <div className="border-t border-line p-3">{links}</div>
   </details>
 }
 
@@ -106,26 +106,26 @@ export function SectorView({ slug, query, source, period, version, savedIds, tog
     finally { generationLock.current = false; setGenerating(false) }
   }
   return <div className="space-y-5 sm:space-y-6">
-    <div className="space-y-3"><SectorLinks active={slug} /><p className="hidden px-1 text-xs leading-5 text-neutral-400 sm:block sm:text-sm">{sector.description}</p></div>
-    <section className="rounded-3xl border border-[#B88A44]/15 bg-[linear-gradient(145deg,rgba(139,92,246,0.045),rgba(197,154,82,0.035))] p-3 sm:p-5" aria-label="Selezione IA del settore">
+    <div className="space-y-3"><SectorLinks active={slug} /><p className="hidden px-1 text-xs leading-5 text-muted sm:block sm:text-sm">{sector.description}</p></div>
+    <section className="rounded-2xl border border-line  p-3 sm:p-5" aria-label="Selezione IA del settore">
       <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0"><h2 className="text-base font-medium tracking-tight sm:text-xl">Scelte IA del settore</h2><p className="mt-1 hidden text-xs text-neutral-400 sm:block">Dalle notizie recenti del settore, secondo interessi e preferenze.</p></div>
-        <button onClick={generate} disabled={generating || loading || total === 0} className="min-h-11 shrink-0 rounded-2xl border border-[#B88A44]/30 bg-[linear-gradient(180deg,rgba(197,154,82,0.18),rgba(0,0,0,0.35))] px-4 py-2.5 text-sm text-[#E2C188] disabled:opacity-50">{generating ? 'Selezione in corso…' : curation ? 'Ricalcola IA' : 'Seleziona con IA'}</button>
+        <div className="min-w-0"><h2 className="text-base font-medium tracking-tight sm:text-xl">Scelte IA del settore</h2><p className="mt-1 hidden text-xs text-muted sm:block">Dalle notizie recenti del settore, secondo interessi e preferenze.</p></div>
+        <button onClick={generate} disabled={generating || loading || total === 0} className="min-h-11 shrink-0 rounded-2xl border border-line  px-4 py-2.5 text-sm text-accent disabled:opacity-50">{generating ? 'Selezione in corso…' : curation ? 'Ricalcola IA' : 'Seleziona con IA'}</button>
       </div>
       {curation ? <>
-        <p className="mb-2 text-xs text-neutral-400">{curation.picks.filter(p => p.selection_method === 'ai').length} scelte IA · {curation.picks.filter(p => p.selection_method === 'automatic').length} automatiche · {new Date(curation.created_at).toLocaleString('it-IT')}{curation.warning ? ` · ${curation.warning}` : ''}</p>
-        {curation.diversity && <p className="mb-3 text-xs leading-5 text-neutral-400" aria-label="Varietà degli editori">
+        <p className="mb-2 text-xs text-muted">{curation.picks.filter(p => p.selection_method === 'ai').length} scelte IA · {curation.picks.filter(p => p.selection_method === 'automatic').length} automatiche · {new Date(curation.created_at).toLocaleString('it-IT')}{curation.warning ? ` · ${curation.warning}` : ''}</p>
+        {curation.diversity && <p className="mb-3 text-xs leading-5 text-muted" aria-label="Varietà degli editori">
           {curation.picks.length} notizie · {publisherCount} editori
           {publisherCount >= 5 ? ' · obiettivo di varietà raggiunto' : publisherCount < curation.diversity.selectedPublishers ? ' · alcune fonti non sono più attive: ricalcola la selezione' : ` · meno di cinque editori con notizie distinte disponibili negli ultimi ${curation.diversity.windowDays} giorni, dopo le tue esclusioni e le aperture`}
         </p>}
         <AiCurationView picks={showAllPicks ? curation.picks : curation.picks.slice(0, 2)} savedIds={savedIds} toggleSave={toggleSave} openReader={openReader} />
-        {curation.picks.length > 2 && <button onClick={() => setShowAllPicks(value => !value)} aria-expanded={showAllPicks} className="mt-3 min-h-11 w-full rounded-2xl border border-[#B88A44]/15 bg-black/20 px-4 py-2.5 text-sm text-[#E2C188]">{showAllPicks ? 'Mostra meno scelte' : `Mostra le altre ${curation.picks.length - 2} scelte`}</button>}
-      </> : <p className="text-sm text-neutral-400">Avvia la selezione per ottenere le scelte IA di questo settore. Il risultato resta disponibile anche sugli altri dispositivi.</p>}
+        {curation.picks.length > 2 && <button onClick={() => setShowAllPicks(value => !value)} aria-expanded={showAllPicks} className="mt-3 min-h-11 w-full rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm text-accent">{showAllPicks ? 'Mostra meno scelte' : `Mostra le altre ${curation.picks.length - 2} scelte`}</button>}
+      </> : <p className="text-sm text-muted">Avvia la selezione per ottenere le scelte IA di questo settore. Il risultato resta disponibile anche sugli altri dispositivi.</p>}
     </section>
-    {error && <div role="alert" className="rounded-xl border border-red-500/30 p-4 text-sm text-red-200">{error} <button onClick={() => void load()} className="ml-3 underline">Riprova</button></div>}
+    {error && <div role="alert" className="rounded-xl border border-red-500/30 p-4 text-sm text-danger">{error} <button onClick={() => void load()} className="ml-3 underline">Riprova</button></div>}
     <div aria-busy={loading}>
       <FeedList articles={articles} savedIds={savedIds} toggleSave={toggleSave} openReader={openReader} title="Notizie del settore" subtitle={loading ? 'Caricamento notizie…' : `${total.toLocaleString('it-IT')} articoli · più recenti prima.`} />
-      {next < total && <button disabled={loading} onClick={() => void load(next)} className="mt-5 w-full rounded-xl border border-white/10 p-3 text-sm disabled:opacity-50">{loading ? 'Caricamento…' : 'Carica altre notizie'}</button>}
+      {next < total && <button disabled={loading} onClick={() => void load(next)} className="mt-5 w-full rounded-xl border border-line p-3 text-sm disabled:opacity-50">{loading ? 'Caricamento…' : 'Carica altre notizie'}</button>}
     </div>
   </div>
 }

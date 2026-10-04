@@ -47,26 +47,26 @@ export function Onboarding({
     <motion.div
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-8 overflow-hidden rounded-[2rem] border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-7"
+      className="mb-8 overflow-hidden rounded-2xl border border-line  bg-surface p-7"
     >
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div className="max-w-2xl">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-black">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-on-accent">
             {current.icon}
           </div>
 
-          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-white">
+          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-foreground">
             {current.title}
           </h2>
 
-          <p className="mt-4 text-base leading-7 text-neutral-400">
+          <p className="mt-4 text-base leading-7 text-muted">
             {current.description}
           </p>
         </div>
 
         <button
           onClick={current.onClick}
-          className="flex items-center gap-2 rounded-2xl bg-white px-5 py-4 text-sm font-medium text-black transition hover:bg-neutral-200"
+          className="flex items-center gap-2 rounded-2xl bg-accent px-5 py-4 text-sm font-medium text-on-accent transition hover:opacity-90"
         >
           {current.action}
           <ArrowRight size={16} />
