@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --background: #f7f7f4;
+  --foreground: #202629;
+  --surface: #ffffff;
+  --muted: #626b72;
+  --line: #dfe3e5;
+  --accent: #285d8e;
+  --accent-soft: #e9f0f7;
+  --on-accent: #ffffff;
+  --warning: #86520b;
+  --danger: #b33131;
+  --success: #237447;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #171b1e;
+  --foreground: #e9edef;
+  --surface: #20262b;
+  --muted: #a4afb8;
+  --line: #38424a;
+  --accent: #9bc6ef;
+  --accent-soft: #293c4e;
+  --on-accent: #17212b;
+  --warning: #ebbf79;
+  --danger: #f4a4a4;
+  --success: #91d5ab;
+}
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+}
+* { box-sizing: border-box; }
+html { background: var(--background); scroll-behavior: smooth; scroll-padding-bottom: 6rem; }
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans, system-ui), sans-serif;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+button, input, select, textarea { font-family: inherit; }
+button, a, summary { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+::selection { background: var(--accent-soft); color: var(--foreground); }
+a { color: inherit; }
+img { max-width: 100%; }
+.line-clamp-2, .line-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-2 { -webkit-line-clamp: 2; }
+.line-clamp-3 { -webkit-line-clamp: 3; }
+.article-row { content-visibility: auto; contain-intrinsic-size: auto 210px; }
+dialog::backdrop { background: rgba(15, 23, 30, .5); }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

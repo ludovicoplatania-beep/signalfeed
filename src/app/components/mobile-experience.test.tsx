@@ -56,7 +56,8 @@ it('returning to the archive keeps loaded pages and restores the previous positi
  fireEvent.click(within(nav).getByRole('button',{name:'Salvati'}))
  await screen.findByRole('heading',{name:'Articoli salvati'})
  y=0
- fireEvent.click(within(nav).getByRole('button',{name:'Feed'}))
+ fireEvent.click(within(nav).getByRole('button',{name:'Per te'}))
+ fireEvent.click(screen.getByRole('button',{name:'Recenti'}))
  await screen.findByText('Seconda notizia')
  await waitFor(()=>expect(window.scrollTo).toHaveBeenCalledWith({top:800,behavior:'instant'}))
  expect(fetchMock.mock.calls.filter(([input])=>input.startsWith('/api/articles'))).toHaveLength(2)

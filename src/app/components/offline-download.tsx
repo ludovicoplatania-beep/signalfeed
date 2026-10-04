@@ -21,5 +21,5 @@ export function OfflineDownload({article,translation}:{article:Article;translati
       setMessage(data.status==='partial'?'Scaricato l’estratto disponibile; il testo resta parziale.':'Copia disponibile su questo dispositivo.')
     }catch(error){setMessage(error instanceof Error?error.message:'Download non riuscito')}finally{setPending(false)}
   }
-  return <div className="mt-2"><button disabled={pending} onClick={()=>{void download()}} className="min-h-11 rounded-xl border border-[#B88A44]/25 px-3 text-sm text-[#E2C188]">{pending?'Download…':available?'Rimuovi copia offline':'Scarica per offline'}</button>{message&&<p role="status" className="mt-2 text-sm text-neutral-400">{message}</p>}</div>
+  return <div className="mt-2"><button disabled={pending} onClick={()=>{void download()}} className="min-h-11 rounded-xl border border-line px-3 text-sm text-accent">{pending?'Download…':available?'Rimuovi copia offline':'Scarica per offline'}</button>{message&&<p role="status" className="mt-2 text-sm text-muted">{message}</p>}</div>
 }

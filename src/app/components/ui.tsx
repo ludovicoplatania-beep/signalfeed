@@ -1,14 +1,7 @@
 import type { ReactNode } from 'react'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
 import { Bookmark, BookmarkCheck } from 'lucide-react'
 import { FeedbackButtons } from './article-feedback'
-
-export function BackgroundGlow() {
-  return (
-    <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(212,176,106,0.09),transparent_25%),radial-gradient(circle_at_90%_8%,rgba(139,92,246,0.10),transparent_28%)]" />
-  )
-}
 
 export function Brand() {
   return (
@@ -18,14 +11,14 @@ export function Brand() {
         alt="Athena"
         width={44}
         height={44}
-        className="h-11 w-11 rounded-2xl border border-[#B88A44]/25 shadow-[0_0_24px_rgba(139,92,246,0.22)]"
+        className="h-9 w-9 rounded-lg"
       />
 
       <div>
-        <div className="text-sm font-semibold tracking-[0.32em] text-white">
+        <div className="text-sm font-semibold tracking-[0.32em] text-foreground">
           ATHENA
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-[#B88A44]">
+        <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-accent">
           Il tuo briefing personale
         </div>
       </div>
@@ -35,26 +28,22 @@ export function Brand() {
 
 export function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <motion.div
-      whileHover={{ y: -3 }}
-      className="flex min-h-[120px] flex-col justify-between rounded-[1.5rem] border border-[#B88A44]/10 bg-white/[0.025] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] md:min-h-[145px] md:rounded-[1.7rem] md:p-5"
+    <div
+      className="flex min-h-[120px] flex-col justify-between rounded-2xl border border-line bg-surface p-4  md:min-h-[145px] md:rounded-2xl md:p-5"
     >
-      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-neutral-400 md:text-xs md:tracking-[0.18em]">
+      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted md:text-xs md:tracking-[0.18em]">
         {label}
       </div>
-      <div className="mt-4 text-3xl font-semibold tracking-[-0.055em] text-white md:text-4xl">
+      <div className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
         {value}
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 export function Score({ value }: { value: number }) {
   return (
-    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-[#B88A44]/30 bg-black/45 text-sm font-semibold text-[#C59A52] backdrop-blur-xl">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.16),transparent_70%)]" />
-
-      <div className="absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" />
+    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface text-sm font-semibold text-accent ">
 
       <span className="relative z-10">{value}</span>
     </div>
@@ -62,7 +51,7 @@ export function Score({ value }: { value: number }) {
 }
 export function Pill({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-full border border-[#B88A44]/20 bg-black/40 px-3 py-1 text-xs text-neutral-300 backdrop-blur">
+    <div className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-foreground ">
       {children}
     </div>
   )
@@ -82,13 +71,11 @@ export function ArticleImage({ imageUrl }: { imageUrl?: string | null }) {
     )
   }
 
-  return (
-    <div className="absolute inset-0 bg-gradient-to-br from-[#B88A44]/40 via-[#8b5cf6]/25 to-black" />
-  )
+  return null
 }
 
 export function ArticleThumbnail({ imageUrl, compact = false }: { imageUrl?: string | null; compact?: boolean }) {
-  const size = compact ? 'h-16' : 'h-24'
+  const size = compact ? 'h-20' : 'h-24'
 
   if (imageUrl) {
     return (
@@ -98,18 +85,18 @@ export function ArticleThumbnail({ imageUrl, compact = false }: { imageUrl?: str
         width={400}
         height={compact ? 64 : 96}
         unoptimized
-        className={`hidden ${size} w-full rounded-2xl object-cover md:block`}
+        className={`${size} w-full rounded-lg object-cover`}
       />
     )
   }
 
-  return <div className={`hidden ${size} rounded-2xl bg-gradient-to-br from-[#B88A44]/35 to-[#8b5cf6]/25 md:block`} />
+  return <div className={`${size} rounded-2xl    `} />
 }
 
 export function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-[1.7rem] border border-[#B88A44]/10 bg-white/[0.025] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
-      <h3 className="mb-5 text-lg font-medium tracking-tight text-white">
+    <div className="rounded-2xl border border-line bg-surface p-5 ">
+      <h3 className="mb-5 text-lg font-medium tracking-tight text-foreground">
         {title}
       </h3>
       {children}
@@ -123,14 +110,14 @@ export function Input({ value, setValue, placeholder }: { value: string; setValu
       value={value}
       onChange={(e) => setValue(e.target.value)}
       placeholder={placeholder}
-      className="w-full rounded-2xl border border-white/[0.08] bg-black/30 px-4 py-3 text-sm text-neutral-200 outline-none placeholder:text-neutral-600 focus:border-[#B88A44]/40"
+      className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-muted focus:border-line"
     />
   )
 }
 
 export function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-[2rem] border border-dashed border-[#B88A44]/15 bg-white/[0.02] p-10 text-center text-neutral-500">
+    <div className="rounded-2xl border border-dashed border-line bg-surface p-10 text-center text-muted">
       {text}
     </div>
   )
@@ -154,21 +141,21 @@ export function SaveButton({
         event.stopPropagation()
         onClick()
       }}
-      className={`group relative flex items-center gap-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-black/45 text-sm font-medium text-white backdrop-blur-xl transition hover:border-[#B88A44]/30 ${
+      className={`group relative flex items-center gap-2 rounded-lg text-sm font-medium text-muted transition hover:bg-accent-soft hover:text-accent ${
         small ? 'min-h-11 min-w-11 justify-center px-3 py-2' : 'min-h-11 px-4 py-3'
       }`}
     >
-      <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100 bg-[radial-gradient(circle_at_top,rgba(197,154,82,0.18),transparent_70%)]" />
+
 
       <div className="relative z-10 flex items-center gap-2">
         {saved ? (
-          <BookmarkCheck size={16} className="text-[#C59A52]" />
+          <BookmarkCheck size={18} className="text-accent" />
         ) : (
-          <Bookmark size={16} className="text-[#C59A52]" />
+          <Bookmark size={18} className="text-muted" />
         )}
 
         {!small && (
-          <span className="text-neutral-200">
+          <span className="text-foreground">
             {saved ? 'Salvato' : 'Salva'}
           </span>
         )}
