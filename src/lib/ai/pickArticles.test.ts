@@ -1,3 +1,4 @@
+vi.mock('./meter',()=>({MeterError:class extends Error{},reserveAttempt:vi.fn(async()=>'attempt'),settleAttempt:vi.fn(async()=>{})}))
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ create: vi.fn(), rpc: vi.fn(), from: vi.fn() }))
 vi.mock('@/lib/server/clients', () => ({ getOpenAI: () => ({ chat: { completions: { create: mocks.create } } }), getServiceSupabase: () => ({ from: mocks.from, rpc: mocks.rpc }) }))

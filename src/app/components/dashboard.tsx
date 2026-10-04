@@ -1,4 +1,5 @@
 'use client'
+import { CostBackup } from './cost-backup'
 import { AlertsPanel,disableDevicePush } from './alerts'
 import { LibraryProvider } from './library'
 
@@ -505,7 +506,8 @@ export default function HomePage({ initialSector, initialSection = 'today', init
           {!loading && <UpdateHealth sources={sources} job={latestJob} now={healthNow} error={healthError} />}
 
           {!loading && <><AlertsPanel openReader={openArticle} initialAlert={initialAlert} />
-          <EditorialPreferences sources={sources} onChanged={loadEverything} /></>}
+          <EditorialPreferences sources={sources} onChanged={loadEverything} />
+          <CostBackup onChanged={loadEverything} /></>}
 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 

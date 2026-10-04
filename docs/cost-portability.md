@@ -1,0 +1,17 @@
+# Costi IA e portabilità — punto 12
+
+Il pannello «Costi IA e backup» è disponibile nella home, nei settori e nella biblioteca. La misurazione inizia con questa versione: non ricostruisce i mesi precedenti. Ogni tentativo, inclusi retry, rifiuti e risposte troncate, prenota una stima conservativa e registra i token restituiti. Un timeout senza usage conserva una quota incerta; un arresto del processo conserva la prenotazione. Non vengono salvati prompt o testi delle richieste nel registro costi.
+
+Tariffa gpt-4o-mini verificata il 04/10/2026: input 0,15 USD/milione, input cached 0,075, output 0,60. Fonte: https://developers.openai.com/api/docs/models/gpt-4o-mini . Costi arrotondati al microdollaro. Le stime sono delle sole chiamate Athena e non sostituiscono la fattura OpenAI; hosting e database esclusi. Il mese è UTC. Tetto disabilitato finché l’utente lo attiva (valore iniziale proposto 5 USD). Prenotazioni atomiche impediscono che richieste parallele superino il tetto previsto; quando non è possibile registrare il costo non viene chiamato il provider. RSS, lettore, salvati e voce del dispositivo non dipendono dal budget IA.
+
+## Backup v1
+JSON `athena-backup`, con versione e data, massimo 3,9 MB. Include tutte le fonti dell’owner, interessi manuali/appresi, configurazione budget e avvisi, articoli collegati a salvati/biblioteca/feedback, mi piace/esclusioni, cartelle/tag/stato letto e testi già acquisiti dal lettore. Snapshot coerente tramite una sola query, senza paginazione silenziosamente troncata. Sono escluse password, sessioni, chiavi API, sottoscrizioni push, costi storici, archivio completo del feed, gruppi eventi, selezioni IA e cache offline/traduzioni locali. Il file contiene preferenze e articoli personali: conservarlo privatamente.
+
+Il ripristino è aggiuntivo: i valori già presenti vengono conservati. Un file non viene applicato finché il server non ne valida versione, campi, riferimenti e URL; l’anteprima è legata al contenuto con SHA-256. Il server ricalcola gli URL canonici. Nuovi UUID vengono associati tramite RSS URL e URL canonico, quindi il file è portabile su un’installazione configurata con un diverso owner. Le preferenze che escludono fonti vengono rimappate. Nuove fonti e regole avvisi iniziano disattivate, da controllare e abilitare manualmente. I dispositivi push devono essere riattivati separatamente.
+
+L’intero ripristino avviene in una transazione con rollback su errore. La seconda importazione non duplica i dati. Un conflitto con articoli di un altro owner blocca l’operazione. Le funzioni e tabelle sono accessibili solo al servizio backend, con autenticazione owner sulle API.
+
+Per una nuova installazione: clonare GitHub, configurare Vercel e un database Supabase con le migrazioni in ordine, impostare le credenziali attraverso il gestore env (mai dentro il backup), accedere alla nuova Athena, scegliere il file, controllare l’anteprima e ripristinare. Dopo l’importazione verificare i conteggi e le cartelle; attivare le fonti desiderate e riscaricare i salvati offline sui dispositivi. Le guide `docs/` e la roadmap nel repository descrivono le funzioni senza dipendere dalla chat.
+
+## Verifiche
+230 test passati; database vuoto → ripristino → export con UUID nuovi, cartelle/tag/testi/feedback e associazioni conservati; seconda importazione senza aggiunte. Conflitto owner verificato con rollback anche delle fonti inserite. Prenotazioni parallele/certe/incerte e permessi database verificati. Build, typecheck e lint passati. Verifica finale in produzione descritta nella PR.
