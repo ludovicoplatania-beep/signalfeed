@@ -4,6 +4,8 @@ import { ACCESS_COOKIE, verifyAccessToken } from '@/lib/auth/session'
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   if (
+    pathname === '/offline.html' ||
+    pathname === '/offline.js' ||
     pathname === '/access' ||
     pathname === '/api/access/login' ||
     pathname.startsWith('/api/cron/')

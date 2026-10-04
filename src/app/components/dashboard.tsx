@@ -28,6 +28,7 @@ import { ReaderMode } from './reader-mode'
 import { Metrics } from './metrics'
 import { HeroPick, SidePick, AiSideList, AiCurationView } from './picks'
 import { FeedList, SavedView } from './feed'
+import { clearOffline } from '@/lib/offline/storage'
 import { TrendingTopics, TopicView } from './topics'
 import { SourcesPanel } from './sources'
 import { Onboarding } from './onboarding'
@@ -383,6 +384,7 @@ export default function HomePage({ initialSector, initialSection = 'today' }: { 
   async function refreshAI() { await runRefresh('ai') }
 
   async function logout() {
+    await clearOffline()
     await fetch('/api/access/logout', { method: 'POST' })
     router.replace('/access')
   }

@@ -6,6 +6,8 @@ import { it } from 'date-fns/locale'
 import { ArticleImage, ArticleActions } from './ui'
 import { fallbackReader, type ContentStatus } from '@/lib/articles/readerStatus'
 import { useLibrary } from './library'
+import { readOffline, writeOffline } from '@/lib/offline/storage'
+import { OfflineDownload } from './offline-download'
 import type { Article, ToggleSave } from './types'
 
 export function ReaderMode({
@@ -24,11 +26,44 @@ export function ReaderMode({
   const [loading,setLoading] = useState(true)
   const [contentError,setContentError] = useState('')
   const [pending,setPending] = useState(false)
+  const [translation,setTranslation]=useState<{body:string;original:string;translatedAt:string}|null>(null)
+  const [showTranslation,setShowTranslation]=useState(false)
+  const [translating,setTranslating]=useState(false)
+  const [translationError,setTranslationError]=useState('')
   useEffect(()=>{
     const controller=new AbortController()
-    fetch(`/api/reader?id=${encodeURIComponent(article.id)}`,{signal:controller.signal}).then(async response=>{const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||'Testo non disponibile');setContent({body:data.body,status:data.status});setContentError(data.message??'')}).catch(error=>{if(!controller.signal.aborted)setContentError(error.message)}).finally(()=>{if(!controller.signal.aborted)setLoading(false)})
+    async function load(){
+      const offline=await readOffline(article.id).catch(()=>undefined)
+      if(controller.signal.aborted)return
+      if(offline){setContent({body:offline.body,status:offline.status});setTranslation(offline.translation??null)}
+      try{
+        const response=await fetch(`/api/reader?id=${encodeURIComponent(article.id)}`,{signal:controller.signal})
+        const data=await response.json()
+        if(!response.ok||!data.success)throw new Error(data.message||'Testo non disponibile')
+        if(controller.signal.aborted)return
+        setContent({body:data.body,status:data.status});setContentError(data.message??'')
+        if(offline?.translation?.original!==data.body)setTranslation(null)
+      }catch(error){if(!controller.signal.aborted)setContentError(offline?'Stai leggendo la copia scaricata su questo dispositivo.':error instanceof Error?error.message:'Testo non disponibile')}
+      finally{if(!controller.signal.aborted)setLoading(false)}
+    }
+    void load()
     return()=>controller.abort()
   },[article.id])
+  async function translate(){
+    if(translation?.original===content.body){setShowTranslation(true);return}
+    setTranslating(true);setTranslationError('')
+    try{
+      const response=await fetch('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({article_id:article.id})})
+      const data=await response.json()
+      if(!response.ok||!data.success)throw new Error(data.message||'Traduzione non disponibile')
+      setContent({body:data.original,status:data.status})
+      const value={body:data.body,original:data.original,translatedAt:data.translatedAt}
+      setTranslation(value);setShowTranslation(true)
+      const offline=await readOffline(article.id)
+      if(offline)await writeOffline({...offline,body:data.original,status:data.status,translation:value})
+    }catch(error){setTranslationError(error instanceof Error?error.message:'Traduzione non disponibile')}
+    finally{setTranslating(false)}
+  }
   async function toggleRead(){setPending(true);try{await update(article.id,{read:!entries[article.id]?.read_at})}catch{/* provider shows error */}finally{setPending(false)}}
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => {
@@ -64,6 +99,7 @@ export function ReaderMode({
         </div>
 
         <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-neutral-300"><span>{entries[article.id]?.read_at?'Letto':'Da leggere'}</span><button disabled={pending} onClick={()=>{void toggleRead()}} className="min-h-11 rounded-xl border border-white/10 px-4">{entries[article.id]?.read_at?'Segna da leggere':'Segna letto'}</button>{libraryError&&<p role="alert">{libraryError}</p>}</div>
+        {saved&&<div className="mb-4"><OfflineDownload article={article} translation={translation??undefined}/></div>}
         <article className="overflow-hidden rounded-3xl border border-[#B88A44]/14 bg-black/45 shadow-2xl shadow-black/60 backdrop-blur-2xl">
           <div className="relative min-h-[240px] overflow-hidden md:h-[500px]">
             <ArticleImage imageUrl={article.image_url} />
@@ -96,7 +132,10 @@ export function ReaderMode({
           <div className="mx-auto max-w-3xl px-5 py-9 md:px-0 md:py-14">
             <p role="status" className="mb-5 rounded-xl border border-[#B88A44]/20 p-3 text-sm text-[#E2C188]">{loading?'Recupero del testo dalla fonte…':content.status==='full'?'Testo completo fornito dalla fonte':content.status==='partial'?'Contenuto parziale · consulta la fonte per il testo integrale':'Testo estratto dalla fonte · completezza non verificata'}</p>
             {contentError&&<p className="mb-5 text-sm text-neutral-400">{contentError}</p>}
-            {content.body ? <div className="whitespace-pre-line text-lg leading-9 text-neutral-300">{content.body}</div> : <p className="text-neutral-400">Testo non disponibile. Puoi aprire la fonte originale.</p>}
+            <div className="mb-5 flex flex-wrap gap-3"><button disabled={loading||translating||!content.body} onClick={()=>{void translate()}} aria-pressed={showTranslation} className="min-h-11 rounded-xl border border-[#B88A44]/30 px-4 text-[#E2C188]">{translating?'Traduzione…':'Traduci in italiano'}</button><button onClick={()=>setShowTranslation(false)} aria-pressed={!showTranslation} className="min-h-11 rounded-xl border border-white/15 px-4">Testo originale</button></div>
+            {showTranslation&&translation&&<p className="mb-4 text-sm text-neutral-400">Traduzione IA · può contenere errori · {new Date(translation.translatedAt).toLocaleString('it-IT')}{content.status==='partial'?' · tradotto soltanto il testo parziale disponibile':''}</p>}
+            {translationError&&<p role="alert" className="mb-4 text-amber-300">{translationError}</p>}
+            {content.body ? <div className="whitespace-pre-line text-lg leading-9 text-neutral-300">{showTranslation&&translation?translation.body:content.body}</div> : <p className="text-neutral-400">Testo non disponibile. Puoi aprire la fonte originale.</p>}
 
           </div>
         </article>
