@@ -1,3 +1,4 @@
+vi.mock('./meter',()=>({MeterError:class extends Error{},reserveAttempt:vi.fn(async()=>'attempt'),settleAttempt:vi.fn(async()=>{})}))
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ events: [] as { created_at: string }[], feedback: [] as { preference: string | null; updated_at: string }[], existing: null as null | { updated_at: string; interests?: {topic:string;score:number;origin?:string;learned_at?:string}[] }, upsert: vi.fn(), create: vi.fn() }))
 vi.mock('@/lib/server/clients', () => ({ getOpenAI: () => ({ chat: { completions: { create: mocks.create } } }), getServiceSupabase: () => ({ from: (table: string) => {

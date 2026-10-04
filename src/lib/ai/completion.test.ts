@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-const mocks = vi.hoisted(() => ({ create: vi.fn() }))
+const mocks = vi.hoisted(() => ({ create: vi.fn(), reserve:vi.fn(async ()=>'attempt'), settle:vi.fn(async()=>{}) }))
 vi.mock('@/lib/server/clients', () => ({ getOpenAI: () => ({ chat: { completions: { create: mocks.create } } }) }))
+vi.mock('./meter', () => ({ MeterError:class extends Error { constructor(public code:string){super(code)} }, reserveAttempt:mocks.reserve, settleAttempt:mocks.settle }))
+import { MeterError } from './meter'
 import { AICompletionError, createAICompletion } from './completion'
 const params = { model: 'gpt-4o-mini', messages: [{ role: 'user' as const, content: 'JSON' }], max_completion_tokens: 2_000 }
 const valid = { choices: [{ finish_reason: 'stop', message: { content: '{"picks":[]}' } }] }
@@ -41,10 +43,22 @@ describe('bounded IA requests', () => {
     const call = createAICompletion(params, { stage: 'picks' })
     await vi.runAllTimersAsync(); await call
     expect(mocks.create.mock.calls[1][0].max_completion_tokens).toBe(3_000)
+    expect(mocks.settle).toHaveBeenCalledTimes(2)
   })
   it('does not retry a refusal', async () => {
     mocks.create.mockResolvedValue({ choices: [{ finish_reason: 'stop', message: { content: null, refusal: 'Refused' } }] })
     await expect(createAICompletion(params, { stage: 'picks' })).rejects.toMatchObject({ code: 'refusal' })
     expect(mocks.create).toHaveBeenCalledTimes(1)
   })
+})
+
+it('never calls the provider when the monthly cap blocks reservation',async()=>{
+ mocks.reserve.mockRejectedValueOnce(new MeterError('budget'))
+ await expect(createAICompletion(params,{stage:'picks'})).rejects.toMatchObject({code:'budget'})
+ expect(mocks.create).not.toHaveBeenCalled()
+})
+it('does not retry a charged completion when recording usage fails',async()=>{
+ mocks.create.mockResolvedValueOnce(valid);mocks.settle.mockRejectedValueOnce(new MeterError('metering'))
+ await expect(createAICompletion(params,{stage:'picks'})).rejects.toMatchObject({code:'metering'})
+ expect(mocks.create).toHaveBeenCalledTimes(1)
 })
