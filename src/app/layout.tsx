@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import './globals.css'
+import './reading.css'
 import { PwaRegistration } from './components/pwa-registration'
 
 export const metadata: Metadata = {
