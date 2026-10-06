@@ -72,6 +72,16 @@ export default function HomePage({ initialSector, initialSection = 'today', init
   const [archiveArticles, setArchiveArticles] = useState<Article[]>([])
   const [archiveTotal, setArchiveTotal] = useState(0)
   const [archiveLoading, setArchiveLoading] = useState(false)
+  const [archiveError, setArchiveError] = useState('')
+  function changeSearch(value: string) {
+    setQuery(value)
+    if (value.trim() && !['feed', 'sectors', 'events'].includes(activeSection)) {
+      sectionPositions.current.set(activeSection, window.scrollY)
+      setSourceFilter('')
+      setPeriod('all')
+      setActiveSection('feed')
+    }
+  }
   const [sourceFilter, setSourceFilter] = useState('')
   const [period, setPeriod] = useState('all')
   const [updateStatus, setUpdateStatus] = useState('')
@@ -127,11 +137,13 @@ export default function HomePage({ initialSector, initialSection = 'today', init
     if (activeSection !== 'feed') return
     const key = JSON.stringify([query, sourceFilter, period, archiveVersion])
     if (loadedArchiveKey.current === key) return
+    setArchiveLoading(true)
+    setArchiveError('')
     const timer = window.setTimeout(() => {
       searchArchive().catch((error) => {
         if (error instanceof Error && error.name === 'AbortError') return
         setArchiveLoading(false)
-        setUpdateStatus('Ricerca archivio non disponibile.')
+        setArchiveError('Ricerca archivio non disponibile. Riprova.')
       })
     }, 300)
     return () => { window.clearTimeout(timer); archiveAbort.current?.abort() }
@@ -231,6 +243,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
     const controller = new AbortController()
     archiveAbort.current = controller
     setArchiveLoading(true)
+    setArchiveError('')
     try {
       const params = new URLSearchParams({ q: query, period, offset: String(offset) })
       if (sourceFilter) params.set('source', sourceFilter)
@@ -490,7 +503,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
             activeSection={activeSection}
             sectorTitle={initialSector ? getSector(initialSector)?.name : undefined}
             query={query}
-            setQuery={setQuery}
+            setQuery={changeSearch}
             refreshData={refreshData}
             refreshAI={refreshAI}
             logout={logout}
@@ -589,19 +602,22 @@ export default function HomePage({ initialSector, initialSection = 'today', init
 
           {activeSection === 'feed' && (
             <>
+              {archiveError ? <div><p role="alert">{archiveError}</p><button className="min-h-11 text-accent" onClick={() => setArchiveVersion(value => value + 1)}>Riprova ricerca</button></div> : archiveLoading ? <p role="status">Ricerca in corso…</p> : null}
+              {!archiveError && !archiveLoading && <>
               <FeedList
                 articles={archiveArticles}
                 savedIds={savedIds}
                 toggleSave={toggleSave}
                 openReader={openArticle}
-                title="Archivio"
+                title={query.trim() ? 'Risultati della ricerca' : 'Archivio'}
                 subtitle={`${archiveTotal.toLocaleString('it-IT')} risultati nell’intero archivio.`}
               />
               {archiveArticles.length < archiveTotal && (
-                <button disabled={archiveLoading} onClick={() => searchArchive(archiveNextOffset, true)} className="mt-5 w-full rounded-2xl border border-line bg-surface px-5 py-3 text-sm text-foreground hover:bg-surface disabled:opacity-50">
+                <button disabled={archiveLoading} onClick={() => searchArchive(archiveNextOffset, true).catch(() => setArchiveError('Ricerca archivio non disponibile. Riprova.'))} className="mt-5 w-full rounded-2xl border border-line bg-surface px-5 py-3 text-sm text-foreground hover:bg-surface disabled:opacity-50">
                   {archiveLoading ? 'Caricamento…' : 'Carica altri risultati'}
                 </button>
               )}
+              </>}
             </>
           )}
 
