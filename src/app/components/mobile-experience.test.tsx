@@ -62,3 +62,28 @@ it('returning to the archive keeps loaded pages and restores the previous positi
  await waitFor(()=>expect(window.scrollTo).toHaveBeenCalledWith({top:800,behavior:'instant'}))
  expect(fetchMock.mock.calls.filter(([input])=>input.startsWith('/api/articles'))).toHaveLength(2)
 })
+it('search from home opens the full archive and replaces results when the query changes',async()=>{
+ const data={success:true,entries:[],sources:[],articles:[article],aiPicks:[],savedArticles:[],trendingTopics:[],digests:[],update:null}
+ const fetchMock=vi.fn(async(input:string)=>new Response(JSON.stringify(input.startsWith('/api/articles')?{articles:input.includes('q=Capcom')?[{...article,id:'older',title:'Capcom: articolo oltre le notizie recenti'}]:[],total:input.includes('q=Capcom')?1:0,nextOffset:1}:data),{status:200}))
+ vi.stubGlobal('fetch',fetchMock)
+ render(<Dashboard/> )
+ await screen.findByText(article.title)
+ fireEvent.change(screen.getByRole('textbox',{name:'Cerca notizie'}),{target:{value:'Capcom'}})
+ await screen.findByText('Capcom: articolo oltre le notizie recenti')
+ expect(screen.getByRole('heading',{name:'Risultati della ricerca'})).toBeTruthy()
+ expect(screen.queryByText(article.title)).toBeNull()
+ fireEvent.change(screen.getByRole('textbox',{name:'Cerca notizie'}),{target:{value:'nessunrisultato'}})
+ await screen.findByText('Nessun articolo trovato.')
+ expect(screen.queryByText('Capcom: articolo oltre le notizie recenti')).toBeNull()
+})
+it('archive failures are visible and can be retried without changing the query',async()=>{
+ const data={success:true,entries:[],sources:[],articles:[],aiPicks:[],savedArticles:[],trendingTopics:[],digests:[],update:null}
+ let failed=true
+ vi.stubGlobal('fetch',vi.fn(async(input:string)=>new Response(JSON.stringify(input.startsWith('/api/articles')?{articles:[article],total:1,nextOffset:1}:data),{status:input.startsWith('/api/articles')&&failed?500:200})))
+ render(<Dashboard initialSection="feed"/> )
+ expect(await screen.findByRole('alert')).toBeTruthy()
+ expect(screen.queryByText('Nessun articolo trovato.')).toBeNull()
+ failed=false
+ fireEvent.click(screen.getByRole('button',{name:'Riprova ricerca'}))
+ await screen.findByText(article.title)
+})
