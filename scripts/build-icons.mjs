@@ -8,19 +8,30 @@ import sharp from 'sharp'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const C = { signal: '#ff5a1f', ink: '#141413', cream: '#efede7' }
 
+const mirror = (d) => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${1024 - x} ${y}`)
+const TUFT = 'M296 380 Q262 236 168 104 Q338 166 440 258 Z'
+
 /**
- * Civetta stilizzata come pannello hi-fi: sagoma nera con piccoli ciuffi, occhi ad anello crema
- * con indicatore arancio, becco. detail=false semplifica per le dimensioni minime (favicon).
- * shape: 'rounded' (any), 'square' (full-bleed per iOS e maschere Android, contenuto ridotto
- * per restare nella zona sicura).
+ * Civetta stilizzata come pannello hi-fi: sagoma nera con ciuffi svettanti, sopracciglio inclinato,
+ * occhi crema con indicatore arancio, becco, trespolo. detail=false semplifica per le dimensioni
+ * minime (favicon). shape: 'rounded' (any) oppure 'square' (full-bleed per iOS e maschere Android,
+ * con contenuto ridotto per restare nella zona sicura).
  */
 export function iconSvg({ shape = 'rounded', detail = true } = {}) {
-  const body = 'M200 330 L262 214 L408 288 Q512 262 616 288 L762 214 L824 330 L824 640 Q824 850 512 850 Q200 850 200 640 Z'
-  const eye = (cx) => `<circle cx="${cx}" cy="548" r="${detail ? 120 : 112}" fill="none" stroke="${C.cream}" stroke-width="${detail ? 36 : 52}"/>${
-    detail ? `<circle cx="${cx}" cy="548" r="40" fill="${C.signal}"/>` : ''}`
-  const art = `<path d="${body}" fill="${C.ink}"/>${eye(360)}${eye(664)}<path d="M468 612 L556 612 L512 706 Z" fill="${C.signal}"/>`
-  const scale = shape === 'rounded' ? 1 : 0.84
-  const g = `<g transform="translate(512 ${512 - 20 * scale}) scale(${scale}) translate(-512 -512)">${art}</g>`
+  const eye = (sx, id) => {
+    const cx = 512 - sx * 112
+    const cy = 492
+    const x = (v) => 512 - sx * (512 - v)
+    return `<clipPath id="${id}"><polygon points="${x(270)},${cy - 84} ${x(520)},${cy - 8} ${x(520)},${cy + 120} ${x(270)},${cy + 120}"/></clipPath>
+      <circle cx="${cx}" cy="${cy}" r="${detail ? 104 : 112}" fill="${C.cream}" clip-path="url(#${id})"/>${
+      detail ? `<circle cx="${cx}" cy="${cy + 28}" r="36" fill="${C.signal}"/>` : ''}`
+  }
+  const art = `<path d="${TUFT}" fill="${C.ink}"/><path d="${mirror(TUFT)}" fill="${C.ink}"/>
+    <circle cx="512" cy="450" r="250" fill="${C.ink}"/><ellipse cx="512" cy="680" rx="292" ry="206" fill="${C.ink}"/>
+    ${eye(1, 'l')}${eye(-1, 'r')}<path d="M482 552 L542 552 L512 628 Z" fill="${C.signal}"/>
+    ${detail ? `<rect x="140" y="868" width="744" height="34" fill="${C.cream}"/>` : ''}`
+  const scale = shape === 'rounded' ? 0.9 : 0.76
+  const g = `<g transform="translate(512 512) scale(${scale}) translate(-512 -503)">${art}</g>`
   const bg = shape === 'rounded'
     ? `<rect width="1024" height="1024" rx="228" fill="${C.signal}"/>`
     : `<rect width="1024" height="1024" fill="${C.signal}"/>`
