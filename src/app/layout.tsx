@@ -12,13 +12,16 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
   },
   icons: {
-    icon: '/icons/icon-192.png',
+    icon: [
+      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
     apple: '/icons/apple-touch-icon.png',
   },
 }
 
 export const viewport: Viewport = {
-  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#f7f7f4' }, { media: '(prefers-color-scheme: dark)', color: '#171b1e' }],
+  themeColor: [{ media: '(prefers-color-scheme: light)', color: '#dedcd5' }, { media: '(prefers-color-scheme: dark)', color: '#141413' }],
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',

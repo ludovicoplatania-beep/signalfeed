@@ -7,9 +7,25 @@ SignalFeed (Athena) è una PWA privata monoutente che raccoglie feed RSS, selezi
 Athena è un feed consultato principalmente su cellulare e tablet; il desktop è secondario.
 Le modifiche grafiche devono partire da schermi da 320–390 px e tablet da 768–1024 px,
 mantenere le notizie vicine all’inizio della pagina, evitare scorrimento orizzontale e
-usare controlli tattili di almeno 44 px. Categorie, filtri e schede condividono le superfici
-scure, i bordi discreti e gli accenti dorati/viola dell’app. Titoli e testi devono restare
-leggibili senza essere compressi dalle azioni.
+usare controlli tattili di almeno 44 px. Titoli e testi devono restare leggibili senza essere compressi dalle azioni.
+
+## Identità visiva
+
+Stile hi-fi ispirato a Teenage Engineering: corpo grigio caldo, superfici color crema, un solo
+colore segnale arancio, etichette in monospace maiuscolo, angoli quasi vivi e bordi netti da 1px.
+Non servono font esterni: sans di sistema (Helvetica/Arial) e monospace di sistema.
+
+- Palette, raggi e font sono variabili in `src/app/reading.css`; i componenti usano solo token
+  semantici (`bg-surface`, `border-line`, `text-accent`, `bg-signal`…), quindi il tema si cambia lì.
+- `--accent` colora il testo (contrasto ≥ 4,5:1 su `--surface`); `--signal` è riservato a elementi
+  grafici (LED, indicatori attivi, icona).
+- L'icona deriva dal logo in `design/athena-logo-source.png` (civetta tecnica in un anello, nero caldo, grigi e arancio
+  segnale). `npm run icons` ritaglia l'anello e rigenera `public/icons/*` e `src/app/favicon.ico`; per cambiare logo si
+  sostituisce il sorgente (riquadro dell'anello e colore di fondo sono in `scripts/build-icons.mjs`). I loghi precedenti
+  sono in `design/legacy-*.png`.
+- Dopo ogni cambio di icone o shell statica va aumentata la versione di `CACHE_NAME` in
+  `public/sw.js`: gli asset statici sono serviti cache-first.
+- L'icona precedente è conservata in `design/legacy-owl-master.png` (non servita dall'app).
 
 ## Requisiti
 

@@ -470,8 +470,8 @@ export default function HomePage({ initialSector, initialSection = 'today', init
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
         <div className="space-y-3">
-          <div className="h-5 w-52 animate-pulse rounded-full bg-surface" />
-          <div className="h-5 w-40 animate-pulse rounded-full bg-surface" />
+          <div className="h-5 w-52 animate-pulse rounded-lg bg-surface" />
+          <div className="h-5 w-40 animate-pulse rounded-lg bg-surface" />
         </div>
       </main>
     )

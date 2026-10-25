@@ -1,5 +1,5 @@
-const CACHE_NAME = 'athena-offline-shell-v2'
-const STATIC_ASSETS = ['/offline.html', '/offline.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png']
+const CACHE_NAME = 'athena-offline-shell-v3'
+const STATIC_ASSETS = ['/offline.html', '/offline.js', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-512-maskable.png', '/icons/apple-touch-icon.png']
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)))
   self.skipWaiting()

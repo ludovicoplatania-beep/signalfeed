@@ -79,7 +79,7 @@ export function SourcesPanel(props: SourcesPanelProps) {
         <div className="space-y-3">
           {props.sources.map((source: Source) => (
             <div key={source.id} className="rounded-2xl border border-line bg-surface p-4">
-              <div className={`mb-3 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium ${sourceHealth(source).className}`}>
+              <div className={`mb-3 inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${sourceHealth(source).className}`}>
                 {sourceHealth(source).label}
               </div>
               <div className="flex items-start justify-between gap-3">

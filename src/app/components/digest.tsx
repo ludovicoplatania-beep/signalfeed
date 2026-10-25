@@ -29,7 +29,7 @@ export function DigestPanel({
 
       <div className="relative z-10 space-y-6">
         <div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-[10px] font-medium uppercase tracking-[0.2em] text-accent">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1 text-[10px] font-medium font-mono uppercase tracking-[0.2em] text-accent">
             <Sparkles size={13} />
             Briefing di oggi
           </div>

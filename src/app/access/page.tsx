@@ -38,7 +38,7 @@ export default function AccessPage() {
         <section className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
             <Brand />
-            <div className="mt-12 inline-flex rounded-full border border-line bg-accent-soft px-4 py-2 text-sm text-accent">
+            <div className="mt-12 inline-flex rounded-lg border border-line bg-accent-soft px-4 py-2 text-sm text-accent">
               Accesso personale
             </div>
             <h1 className="mt-8 max-w-4xl text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
@@ -57,7 +57,7 @@ export default function AccessPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="rounded-2xl border border-line bg-surface p-7   "
           >
-            <p className="text-sm uppercase tracking-[0.22em] text-accent">Accesso privato</p>
+            <p className="text-sm font-mono uppercase tracking-[0.22em] text-accent">Accesso privato</p>
             <h2 className="mt-3 text-3xl font-medium tracking-tight">Apri Athena</h2>
             <input
               type="password"

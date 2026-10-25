@@ -8,18 +8,19 @@ export function Brand() {
     <div className="flex items-center gap-3">
       <Image
         src="/icons/icon-192.png"
-        alt="Athena"
+        alt=""
         width={44}
         height={44}
-        className="h-9 w-9 rounded-lg"
+        className="h-10 w-10 rounded-lg"
       />
 
-      <div>
-        <div className="text-sm font-semibold tracking-[0.32em] text-foreground">
+      <div className="font-mono leading-none">
+        <div className="text-sm font-bold tracking-[0.3em] text-foreground">
           ATHENA
         </div>
-        <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-accent">
-          Il tuo briefing personale
+        <div className="mt-1.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-muted">
+          <span aria-hidden="true" className="h-1.5 w-1.5 bg-signal" />
+          SF-01 · briefing
         </div>
       </div>
     </div>
@@ -29,12 +30,12 @@ export function Brand() {
 export function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div
-      className="flex min-h-[120px] flex-col justify-between rounded-2xl border border-line bg-surface p-4  md:min-h-[145px] md:rounded-2xl md:p-5"
+      className="flex min-h-[120px] flex-col justify-between rounded-2xl border border-line bg-surface p-4 md:min-h-[145px] md:p-5"
     >
-      <div className="text-[10px] font-medium uppercase tracking-[0.16em] text-muted md:text-xs md:tracking-[0.18em]">
+      <div className="text-[10px] font-medium font-mono uppercase tracking-[0.16em] text-muted md:text-xs md:tracking-[0.18em]">
         {label}
       </div>
-      <div className="mt-4 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+      <div className="mt-4 font-mono text-3xl font-semibold tabular-nums tracking-tight text-foreground md:text-4xl">
         {value}
       </div>
     </div>
@@ -43,7 +44,7 @@ export function Metric({ label, value }: { label: string; value: number }) {
 
 export function Score({ value }: { value: number }) {
   return (
-    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-line bg-surface text-sm font-semibold text-accent ">
+    <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-foreground bg-surface font-mono text-sm font-bold tabular-nums text-foreground">
 
       <span className="relative z-10">{value}</span>
     </div>
@@ -51,7 +52,7 @@ export function Score({ value }: { value: number }) {
 }
 export function Pill({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-foreground ">
+    <div className="rounded-lg border border-line bg-surface px-3 py-1 font-mono text-xs text-foreground">
       {children}
     </div>
   )
@@ -95,8 +96,8 @@ export function ArticleThumbnail({ imageUrl, compact = false }: { imageUrl?: str
 
 export function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5 ">
-      <h3 className="mb-5 text-lg font-medium tracking-tight text-foreground">
+    <div className="rounded-2xl border border-line bg-surface p-5">
+      <h3 className="mb-5 border-l-2 border-signal pl-3 text-lg font-medium tracking-tight text-foreground">
         {title}
       </h3>
       {children}
