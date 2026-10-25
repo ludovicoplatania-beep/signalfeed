@@ -21,8 +21,8 @@ Non servono font esterni: sans di sistema (Helvetica/Arial) e monospace di siste
   grafici (LED, indicatori attivi, icona).
 - L'icona deriva dal logo in `design/athena-logo-source.png` (civetta tecnica in un anello, nero caldo, grigi e arancio
   segnale). `npm run icons` ritaglia l'anello e rigenera `public/icons/*` e `src/app/favicon.ico`; per cambiare logo si
-  sostituisce il sorgente (centro, raggio e colore di fondo sono in `scripts/build-icons.mjs`). Il logo precedente è
-  in `design/legacy-navy-ring-owl.png`, la prima civetta in `design/legacy-owl-master.png`.
+  sostituisce il sorgente (riquadro dell'anello e colore di fondo sono in `scripts/build-icons.mjs`). I loghi precedenti
+  sono in `design/legacy-*.png`.
 - Dopo ogni cambio di icone o shell statica va aumentata la versione di `CACHE_NAME` in
   `public/sw.js`: gli asset statici sono serviti cache-first.
 - L'icona precedente è conservata in `design/legacy-owl-master.png` (non servita dall'app).

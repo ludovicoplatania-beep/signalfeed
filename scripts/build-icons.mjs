@@ -11,14 +11,16 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const out = (...p) => join(root, ...p)
 
 const SOURCE = out('design/athena-logo-source.png')
-const PLATE = { r: 22, g: 21, b: 17, alpha: 1 } // fondo del sorgente, misurato fuori dall'anello
-const CROP = { left: 82, top: 82, size: 860 } // quadrato attorno all'anello (raggio ≈ 422, centro ≈ 511.5, 511.5)
-const MASK_R = 424
+const PLATE = { r: 21, g: 22, b: 17, alpha: 1 } // fondo del sorgente, misurato fuori dall'anello
+// L'anello nel sorgente (1024x559) misura 475x483 px: si ritaglia un rettangolo e lo si porta a quadrato
+// così il cerchio risulta perfetto. Centro ≈ (512, 279), raggio esterno ≈ 241.
+const BOX = { left: 269, top: 32, width: 486, height: 494 }
+const SIDE = BOX.height
+const MASK_R = 243.5
 
 async function circleBuffer() {
-  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${CROP.size}" height="${CROP.size}"><circle cx="${511.5 - CROP.left}" cy="${511.5 - CROP.top}" r="${MASK_R}" fill="#fff"/></svg>`)
-  return sharp(SOURCE)
-    .extract({ left: CROP.left, top: CROP.top, width: CROP.size, height: CROP.size })
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${SIDE}" height="${SIDE}"><circle cx="${SIDE / 2}" cy="${SIDE / 2}" r="${MASK_R}" fill="#fff"/></svg>`)
+  return sharp(await sharp(SOURCE).extract(BOX).resize(SIDE, SIDE, { fit: 'fill', kernel: 'lanczos3' }).png().toBuffer())
     .ensureAlpha()
     .composite([{ input: mask, blend: 'dest-in' }])
     .png()
