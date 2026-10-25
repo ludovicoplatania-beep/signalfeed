@@ -9,32 +9,32 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const C = { signal: '#ff5a1f', ink: '#141413', cream: '#efede7' }
 
 const mirror = (d) => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${1024 - x} ${y}`)
-const TUFT = 'M296 380 Q262 236 168 104 Q338 166 440 258 Z'
+const O = C.signal, K = C.ink, GR = '#8f8d86', RG = '#a8a69e'
 
 /**
- * Civetta stilizzata come pannello hi-fi: sagoma nera con ciuffi svettanti, sopracciglio inclinato,
- * occhi crema con indicatore arancio, becco, trespolo. detail=false semplifica per le dimensioni
- * minime (favicon). shape: 'rounded' (any) oppure 'square' (full-bleed per iOS e maschere Android,
- * con contenuto ridotto per restare nella zona sicura).
+ * Civetta "tecnica" dentro un anello: testa a scudo grigia con sopracciglio, occhi-quadrante arancio
+ * con tacche, becco, petto a scudo arancio, tracce circuitali, ciuffi a fiamma. Piatta, senza
+ * sfumature. detail=false semplifica per le dimensioni minime (favicon). shape: 'rounded' (any) oppure
+ * 'square' (full-bleed per iOS e maschere Android, contenuto ridotto per la zona sicura).
  */
-export function iconSvg({ shape = 'rounded', detail = true } = {}) {
-  const eye = (sx, id) => {
-    const cx = 512 - sx * 112
-    const cy = 492
-    const x = (v) => 512 - sx * (512 - v)
-    return `<clipPath id="${id}"><polygon points="${x(270)},${cy - 84} ${x(520)},${cy - 8} ${x(520)},${cy + 120} ${x(270)},${cy + 120}"/></clipPath>
-      <circle cx="${cx}" cy="${cy}" r="${detail ? 104 : 112}" fill="${C.cream}" clip-path="url(#${id})"/>${
-      detail ? `<circle cx="${cx}" cy="${cy + 28}" r="36" fill="${C.signal}"/>` : ''}`
-  }
-  const art = `<path d="${TUFT}" fill="${C.ink}"/><path d="${mirror(TUFT)}" fill="${C.ink}"/>
-    <circle cx="512" cy="450" r="250" fill="${C.ink}"/><ellipse cx="512" cy="680" rx="292" ry="206" fill="${C.ink}"/>
-    ${eye(1, 'l')}${eye(-1, 'r')}<path d="M482 552 L542 552 L512 628 Z" fill="${C.signal}"/>
-    ${detail ? `<rect x="140" y="868" width="744" height="34" fill="${C.cream}"/>` : ''}`
-  const scale = shape === 'rounded' ? 0.9 : 0.76
-  const g = `<g transform="translate(512 512) scale(${scale}) translate(-512 -503)">${art}</g>`
-  const bg = shape === 'rounded'
-    ? `<rect width="1024" height="1024" rx="228" fill="${C.signal}"/>`
-    : `<rect width="1024" height="1024" fill="${C.signal}"/>`
+export function iconSvg({ detail = true, shape = 'rounded' } = {}){
+  const ticks=detail?Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;if(Math.abs(((a+Math.PI)%(2*Math.PI))-Math.PI)<1.3)return '';return `<line x1="${Math.sin(a)*90}" y1="${-Math.cos(a)*90}" x2="${Math.sin(a)*106}" y2="${-Math.cos(a)*106}" stroke="${O}" stroke-width="9" stroke-linecap="round"/>`}).join(''):''
+  const eye=(cx)=>`<g transform="translate(${cx} 556)">${ticks}<circle r="70" fill="${K}" stroke="${O}" stroke-width="${detail?16:24}"/>${detail?`<circle r="30" fill="none" stroke="${GR}" stroke-width="9"/><circle r="12" fill="${O}"/>`:`<circle r="22" fill="${O}"/>`}</g>`
+  const head='M270 430 Q270 336 380 308 Q512 276 644 308 Q754 336 754 430 L754 620 Q754 780 512 900 Q270 780 270 620 Z'
+  const flameL='M312 372 Q236 304 290 214 Q300 166 332 112 Q342 186 384 222 Q432 264 412 330 Q372 360 312 372 Z'
+  const flameC='M512 338 Q448 276 486 196 Q496 232 512 206 Q522 148 546 128 Q552 190 566 214 Q592 280 512 338 Z'
+  const trace=(d)=>`<path d="${d}" fill="none" stroke="${K}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="${mirror(d)}" fill="none" stroke="${K}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>`
+  const art=`<circle cx="512" cy="520" r="392" fill="none" stroke="${RG}" stroke-width="${detail?26:40}"/>
+  <path d="${flameL}" fill="${O}"/><path d="${mirror(flameL)}" fill="${O}"/><path d="${flameC}" fill="${O}"/>
+  <path d="${head}" fill="${GR}"/>
+  <path d="M284 404 L512 490 L740 404" fill="none" stroke="${K}" stroke-width="${detail?22:30}" stroke-linejoin="miter"/>
+  ${eye(386)}${eye(638)}
+  <path d="M484 566 L540 566 L512 650 Z" fill="${C}"/>
+  <path d="M512 858 L408 742 L408 700 L512 748 L616 700 L616 742 Z" fill="${O}"/>
+  ${detail?trace('M318 680 L318 760 L378 826')+trace('M356 690 L356 750')+`<circle cx="378" cy="826" r="12" fill="${K}"/><circle cx="646" cy="826" r="12" fill="${K}"/>`:''}`
+  const s = shape === 'rounded' ? 1 : 0.8
+  const g=`<g transform="translate(512 512) scale(${s}) translate(-512 -512)">${art}</g>`
+  const bg=shape==='rounded'?`<rect width="1024" height="1024" rx="228" fill="${K}"/>`:`<rect width="1024" height="1024" fill="${K}"/>`
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${bg}${g}</svg>`
 }
 
