@@ -17,8 +17,8 @@ export function MobileNav({ activeSection, setActiveSection }: { activeSection: 
       {items.map(item => {
         const Icon = item.icon
         const active = item.id === 'today' ? ['today', 'feed', 'ai', 'topic', 'events'].includes(activeSection) : item.id === 'more' ? ['more', 'sources'].includes(activeSection) : activeSection === item.id
-        return <button key={item.id} aria-label={item.label} aria-current={active ? 'page' : undefined} aria-haspopup={item.id === 'sectors' ? 'dialog' : undefined} onClick={() => item.id === 'sectors' ? picker.current?.showModal() : setActiveSection(item.id)} className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl ${active ? 'text-accent' : 'text-muted hover:text-foreground'}`}>
-          <Icon size={21} strokeWidth={active ? 2 : 1.7} aria-hidden="true" /><span className="text-xs font-medium">{item.label}</span>
+        return <button key={item.id} aria-label={item.label} aria-current={active ? 'page' : undefined} aria-haspopup={item.id === 'sectors' ? 'dialog' : undefined} onClick={() => item.id === 'sectors' ? picker.current?.showModal() : setActiveSection(item.id)} className={`flex min-h-12 flex-1 flex-col items-center justify-center gap-1 rounded-xl border-t-2 ${active ? 'border-signal text-foreground' : 'border-transparent text-muted hover:text-foreground'}`}>
+          <Icon size={21} strokeWidth={active ? 2 : 1.7} aria-hidden="true" /><span className="font-mono text-[11px] font-medium uppercase tracking-wider">{item.label}</span>
         </button>
       })}
     </nav>

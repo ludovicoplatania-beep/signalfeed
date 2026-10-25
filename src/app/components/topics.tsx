@@ -75,7 +75,7 @@ export function TopicView({
           </p>
         )}
 
-        <div className="mt-5 inline-flex rounded-full bg-accent px-3 py-1 text-sm font-semibold text-on-accent">
+        <div className="mt-5 inline-flex rounded-lg bg-accent px-3 py-1 text-sm font-semibold text-on-accent">
           Score {topic.score}
         </div>
       </div>

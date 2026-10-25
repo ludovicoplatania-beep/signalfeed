@@ -1,4 +1,4 @@
-import { Compass, Cpu, LogOut, Newspaper, Search, Sparkles, Star, RefreshCw, LayoutGrid } from 'lucide-react'
+import { CalendarDays, Cpu, LogOut, Newspaper, Rss, Search, Settings, Sparkles, Star, RefreshCw, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 import { sectors } from '@/lib/sectors/catalog'
@@ -12,9 +12,9 @@ const sections = [
   { id: 'ai', label: 'Scelte AI', icon: Cpu },
   { id: 'sectors', label: 'Settori', icon: LayoutGrid },
   { id: 'saved', label: 'Salvati', icon: Star },
-  { id: 'events', label: 'Eventi', icon: Newspaper },
-  { id: 'sources', label: 'Fonti', icon: Compass },
-  { id: 'more', label: 'Impostazioni', icon: Compass },
+  { id: 'events', label: 'Eventi', icon: CalendarDays },
+  { id: 'sources', label: 'Fonti', icon: Rss },
+  { id: 'more', label: 'Impostazioni', icon: Settings },
 ]
 
 type NavigationProps = {
@@ -38,7 +38,7 @@ export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
               onClick={() => setActiveSection(section.id as Section)}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition ${
                 active
-                  ? 'border border-line  text-accent  '
+                  ? 'border border-foreground bg-background text-foreground shadow-[inset_3px_0_0_var(--signal)]'
                   : 'border border-transparent text-muted hover:border-line hover:bg-surface hover:text-foreground'
               }`}
             >
@@ -49,7 +49,7 @@ export function Sidebar({ activeSection, setActiveSection }: NavigationProps) {
         })}
       </nav>
 
-      <nav aria-label="Pagine tematiche" className="mb-6 mt-5 space-y-1"><p className="px-4 py-2 text-xs uppercase tracking-widest text-muted">Settori</p>{sectors.map(sector => <Link key={sector.slug} href={`/settori/${sector.slug}`} className="block rounded-xl px-4 py-2 text-sm text-muted hover:bg-surface hover:text-foreground">{sector.name}</Link>)}</nav>
+      <nav aria-label="Pagine tematiche" className="mb-6 mt-5 space-y-1"><p className="px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted">Settori</p>{sectors.map(sector => <Link key={sector.slug} href={`/settori/${sector.slug}`} className="block rounded-xl px-4 py-2 text-sm text-muted hover:bg-surface hover:text-foreground">{sector.name}</Link>)}</nav>
     </aside>
   )
 }
@@ -90,7 +90,7 @@ export function Header({
     <header className="mb-5 flex min-w-0 flex-col gap-4 sm:mb-7 xl:flex-row xl:items-start xl:justify-between">
       <div className="flex min-w-0 items-center justify-between gap-3">
       <div className="min-w-0">
-        <div className="text-xs uppercase tracking-[0.24em] text-accent">
+        <div className="text-xs font-mono uppercase tracking-[0.24em] text-accent">
           Athena
         </div>
 

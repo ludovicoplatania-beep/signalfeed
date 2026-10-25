@@ -1,32 +1,42 @@
 @import "tailwindcss";
 
+/*
+  Athena · identità visiva "hi-fi" ispirata a Teenage Engineering.
+  Corpo in grigio caldo, tasti color crema, un solo colore segnale (arancio),
+  etichette in monospace maiuscolo, angoli quasi vivi e bordi netti da 1px.
+  --accent colora il testo (contrasto ≥ 4.5:1); --signal è solo grafico (LED, indicatori, icona).
+*/
 :root {
   color-scheme: light;
-  --background: #f7f7f4;
-  --foreground: #202629;
-  --surface: #ffffff;
-  --muted: #626b72;
-  --line: #dfe3e5;
-  --accent: #285d8e;
-  --accent-soft: #e9f0f7;
+  --background: #dedcd5;
+  --foreground: #1a1a18;
+  --surface: #efede7;
+  --muted: #5a5851;
+  --line: #b4b1a6;
+  --accent: #ad2f08;
+  --accent-soft: #f6dccf;
   --on-accent: #ffffff;
-  --warning: #86520b;
-  --danger: #b33131;
-  --success: #237447;
+  --signal: #ff5a1f;
+  --warning: #7d5200;
+  --danger: #b3261e;
+  --success: #2b6a3b;
+  --grid-dot: rgb(26 26 24 / 0.1);
 }
 html[data-theme="dark"] {
   color-scheme: dark;
-  --background: #171b1e;
-  --foreground: #e9edef;
-  --surface: #20262b;
-  --muted: #a4afb8;
-  --line: #38424a;
-  --accent: #9bc6ef;
-  --accent-soft: #293c4e;
-  --on-accent: #17212b;
-  --warning: #ebbf79;
-  --danger: #f4a4a4;
-  --success: #91d5ab;
+  --background: #141413;
+  --foreground: #ecebe6;
+  --surface: #1d1d1b;
+  --muted: #a3a199;
+  --line: #3d3c37;
+  --accent: #ff6a2b;
+  --accent-soft: #3a2216;
+  --on-accent: #141413;
+  --signal: #ff6a2b;
+  --warning: #f2b84b;
+  --danger: #ff8f86;
+  --success: #8fd39f;
+  --grid-dot: rgb(236 235 230 / 0.07);
 }
 @theme inline {
   --color-background: var(--background);
@@ -37,33 +47,48 @@ html[data-theme="dark"] {
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-on-accent: var(--on-accent);
+  --color-signal: var(--signal);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-success: var(--success);
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Roboto Mono", Menlo, Consolas, monospace;
+}
+/* Angoli quasi vivi: le classi rounded-* esistenti ereditano la nuova scala. */
+@theme {
+  --radius-md: 2px;
+  --radius-lg: 3px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
+  --radius-3xl: 8px;
 }
 * { box-sizing: border-box; }
-html { background: var(--background); scroll-behavior: smooth; scroll-padding-bottom: 6rem; }
+html {
+  background: var(--background);
+  scroll-behavior: smooth;
+  scroll-padding-bottom: 6rem;
+}
 body {
   margin: 0;
-  background: var(--background);
+  background-color: var(--background);
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 16px 16px;
   color: var(--foreground);
-  font-family: var(--font-geist-sans, system-ui), sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   line-height: 1.5;
 }
+h1, h2, h3 { letter-spacing: -0.02em; }
 button, input, select, textarea { font-family: inherit; }
 button, a, summary { -webkit-tap-highlight-color: transparent; }
+/* Tasti: pressione netta, senza animazioni decorative. */
+button:not(:disabled):active { transform: translateY(1px); }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
-textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-::selection { background: var(--accent-soft); color: var(--foreground); }
+textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+::selection { background: var(--signal); color: #141413; }
 a { color: inherit; }
 img { max-width: 100%; }
-.line-clamp-2, .line-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-.line-clamp-2 { -webkit-line-clamp: 2; }
-.line-clamp-3 { -webkit-line-clamp: 3; }
-.article-row { content-visibility: auto; contain-intrinsic-size: auto 210px; }
-dialog::backdrop { background: rgba(15, 23, 30, .5); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
