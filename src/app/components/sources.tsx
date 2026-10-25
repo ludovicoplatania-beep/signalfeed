@@ -27,11 +27,11 @@ type SourcesPanelProps = {
 
 export function SourcesPanel(props: SourcesPanelProps) {
   function sourceHealth(source: Source) {
-    if (!source.is_active) return { label: 'In pausa', className: 'text-foreground bg-surface' }
-    if (source.last_error) return { label: 'Da controllare', className: 'text-danger bg-rose-500/10' }
-    if (source.is_stale) return { label: 'Da aggiornare', className: 'text-warning bg-amber-500/10' }
-    if (source.last_success_at) return { label: 'Operativa', className: 'text-success bg-emerald-500/10' }
-    return { label: 'Non verificata', className: 'text-warning bg-amber-500/10' }
+    if (!source.is_active) return { label: 'In pausa', className: '!text-muted' }
+    if (source.last_error) return { label: 'Da controllare', className: '!text-danger !border-danger' }
+    if (source.is_stale) return { label: 'Da aggiornare', className: '!text-warning !border-warning' }
+    if (source.last_success_at) return { label: 'Operativa', className: '!text-success !border-success' }
+    return { label: 'Non verificata', className: '!text-warning !border-warning' }
   }
 
   return (
@@ -46,7 +46,7 @@ export function SourcesPanel(props: SourcesPanelProps) {
           <select
             value={props.priority}
             onChange={(e) => props.setPriority(Number(e.target.value))}
-            className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none"
+            className="min-h-11 w-full border border-line bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-signal"
           >
             <option value={1}>Priorità 1 · bassa</option>
             <option value={2}>Priorità 2</option>
@@ -57,16 +57,16 @@ export function SourcesPanel(props: SourcesPanelProps) {
 
           <button
             onClick={props.addSource}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-3 text-sm font-medium text-on-accent transition hover:opacity-90"
+            className="te-key w-full !border-foreground !bg-foreground !text-background"
           >
             <Plus size={16} />
             Salva fonte
           </button>
 
-          {props.editing && <button onClick={props.cancelEdit} className="text-sm text-muted">Annulla modifica</button>}
+          {props.editing && <button onClick={props.cancelEdit} className="te-label min-h-11">Annulla modifica</button>}
           {!props.editing && props.expandSources && <div className="mt-4 border-t border-line pt-4">
             <p className="mb-3 text-sm leading-6 text-muted">Amplia IA, tecnologia, videogiochi, Sicilia, diritto e altri settori. Vengono aggiunti feed o elenchi ufficiali verificati con notizie recenti; le fonti già presenti restano gestibili singolarmente.</p>
-            <button disabled={props.expanding} onClick={props.expandSources} className="w-full rounded-2xl border border-line px-4 py-3 text-sm text-accent disabled:opacity-50">{props.expanding ? 'Verifica delle nuove fonti…' : 'Amplia con fonti verificate'}</button>
+            <button disabled={props.expanding} onClick={props.expandSources} className="te-key w-full text-accent">{props.expanding ? 'Verifica delle nuove fonti…' : 'Amplia con fonti verificate'}</button>
           </div>}
           {props.message && <p className="text-sm leading-6 text-muted">{props.message}</p>}
         </div>
@@ -78,8 +78,8 @@ export function SourcesPanel(props: SourcesPanelProps) {
       <Panel title="Fonti">
         <div className="space-y-3">
           {props.sources.map((source: Source) => (
-            <div key={source.id} className="rounded-2xl border border-line bg-surface p-4">
-              <div className={`mb-3 inline-flex rounded-lg px-2.5 py-1 text-[11px] font-medium ${sourceHealth(source).className}`}>
+            <div key={source.id} className="border border-line bg-background p-3">
+              <div className={`te-label mb-3 inline-flex border border-line px-2 py-1 ${sourceHealth(source).className}`}>
                 {sourceHealth(source).label}
               </div>
               <div className="flex items-start justify-between gap-3">
@@ -99,12 +99,12 @@ export function SourcesPanel(props: SourcesPanelProps) {
                 </div>
 
                 <div className="flex gap-2">
-                  <button aria-label={`Modifica ${source.name}`} onClick={() => props.editSource(source)} className="rounded-xl bg-surface p-2"><Pencil size={14} /></button>
-                  <button aria-label={`${source.is_active ? "Sospendi" : "Attiva"} ${source.name}`} onClick={() => props.toggleSource(source)} className="rounded-xl bg-surface p-2">
+                  <button aria-label={`Modifica ${source.name}`} onClick={() => props.editSource(source)} className="flex min-h-11 min-w-11 items-center justify-center border border-line text-muted transition hover:border-foreground hover:text-foreground"><Pencil size={14} /></button>
+                  <button aria-label={`${source.is_active ? "Sospendi" : "Attiva"} ${source.name}`} onClick={() => props.toggleSource(source)} className="flex min-h-11 min-w-11 items-center justify-center border border-line text-muted transition hover:border-foreground hover:text-foreground">
                     <Power size={14} className={source.is_active ? 'text-success' : 'text-muted'} />
                   </button>
 
-                  <button aria-label={`Elimina ${source.name}`} onClick={() => props.deleteSource(source.id)} className="rounded-xl bg-surface p-2">
+                  <button aria-label={`Elimina ${source.name}`} onClick={() => props.deleteSource(source.id)} className="flex min-h-11 min-w-11 items-center justify-center border border-line text-muted transition hover:border-foreground hover:text-foreground">
                     <Trash2 size={14} className="text-muted" />
                   </button>
                 </div>

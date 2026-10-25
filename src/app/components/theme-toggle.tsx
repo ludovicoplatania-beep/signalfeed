@@ -14,5 +14,5 @@ export function ThemeToggle() {
     document.documentElement.dataset.theme = theme
     try { localStorage.setItem('athena-theme', theme) } catch { /* Storage is optional. */ }
   }
-  return <button onClick={toggle} aria-label={dark ? 'Attiva tema chiaro' : 'Attiva tema scuro'} title={dark ? 'Tema chiaro' : 'Tema scuro'} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl text-muted hover:bg-accent-soft hover:text-accent">{dark ? <Sun size={20} /> : <Moon size={20} />}</button>
+  return <button onClick={toggle} aria-label={dark ? 'Attiva tema chiaro' : 'Attiva tema scuro'} title={dark ? 'Tema chiaro' : 'Tema scuro'} className="inline-flex min-h-11 min-w-11 items-center justify-center text-muted transition hover:text-foreground">{dark ? <Sun size={20} /> : <Moon size={20} />}</button>
 }

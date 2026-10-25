@@ -89,10 +89,10 @@ export function ReaderMode({
 
       <div className="relative mx-auto max-w-3xl px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] sm:px-5 md:px-8 md:py-8">
         <div className="mb-5 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 sm:flex sm:flex-wrap sm:justify-between">
-          <button onClick={close} className="flex min-h-11 items-center gap-2 rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm text-foreground  transition hover:border-line hover:text-foreground">
+          <button onClick={close} className="te-key">
             <ArrowLeft size={16} />Torna
           </button>
-          <a href={article.url} target="_blank" rel="noopener noreferrer" className="flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-line  px-3 py-2.5 text-sm font-medium text-accent  transition hover:border-line sm:order-last">
+          <a href={article.url} target="_blank" rel="noopener noreferrer" className="te-key text-accent  transition hover:border-line sm:order-last">
             <ExternalLink size={16} className="shrink-0" />Fonte originale
           </a>
           <div className="col-span-full flex justify-end sm:ml-auto"><ArticleActions articleId={article.id} saved={saved} onClick={() => toggleSave(article.id)} small /></div>
@@ -109,11 +109,11 @@ export function ReaderMode({
           </header>
 
           <div className="mx-auto max-w-3xl py-6 md:py-8">
-            <p role="status" className="mb-5 rounded-xl border border-line p-3 text-sm text-accent">{loading?'Recupero del testo dalla fonte…':content.status==='full'?'Testo completo fornito dalla fonte':content.status==='partial'?'Contenuto parziale · consulta la fonte per il testo integrale':'Testo estratto dalla fonte · completezza non verificata'}</p>
+            <p role="status" className="mb-5 border border-line p-3 text-sm text-accent">{loading?'Recupero del testo dalla fonte…':content.status==='full'?'Testo completo fornito dalla fonte':content.status==='partial'?'Contenuto parziale · consulta la fonte per il testo integrale':'Testo estratto dalla fonte · completezza non verificata'}</p>
             {contentError&&<p className="mb-5 text-sm text-muted">{contentError}</p>}
-            <details className="mb-6 border-y border-line py-1"><summary className="min-h-11 cursor-pointer py-2 text-sm text-accent">Lettura, traduzione e audio</summary><div className="pt-3">        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-foreground"><span>{entries[article.id]?.read_at?'Letto':'Da leggere'}</span><button disabled={pending} onClick={()=>{void toggleRead()}} className="min-h-11 rounded-xl border border-line px-4">{entries[article.id]?.read_at?'Segna da leggere':'Segna letto'}</button>{libraryError&&<p role="alert">{libraryError}</p>}</div>
+            <details className="mb-6 border-y border-line py-1"><summary className="min-h-11 cursor-pointer py-2 text-sm text-accent">Lettura, traduzione e audio</summary><div className="pt-3">        <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-foreground"><span>{entries[article.id]?.read_at?'Letto':'Da leggere'}</span><button disabled={pending} onClick={()=>{void toggleRead()}} className="min-h-11 border border-line px-4">{entries[article.id]?.read_at?'Segna da leggere':'Segna letto'}</button>{libraryError&&<p role="alert">{libraryError}</p>}</div>
         {saved&&<div className="mb-4"><OfflineDownload article={article} translation={translation??undefined}/></div>}
-            <div className="mb-5 flex flex-wrap gap-3"><button disabled={loading||translating||!content.body} onClick={()=>{void translate()}} aria-pressed={showTranslation} className="min-h-11 rounded-xl border border-line px-4 text-accent">{translating?'Traduzione…':'Traduci in italiano'}</button><button onClick={()=>setShowTranslation(false)} aria-pressed={!showTranslation} className="min-h-11 rounded-xl border border-line px-4">Testo originale</button></div>
+            <div className="mb-5 flex flex-wrap gap-3"><button disabled={loading||translating||!content.body} onClick={()=>{void translate()}} aria-pressed={showTranslation} className="min-h-11 border border-line px-4 text-accent">{translating?'Traduzione…':'Traduci in italiano'}</button><button onClick={()=>setShowTranslation(false)} aria-pressed={!showTranslation} className="min-h-11 border border-line px-4">Testo originale</button></div>
             {showTranslation&&translation&&<p className="mb-4 text-sm text-muted">Traduzione IA · può contenere errori · {new Date(translation.translatedAt).toLocaleString('it-IT')}{content.status==='partial'?' · tradotto soltanto il testo parziale disponibile':''}</p>}
             {translationError&&<p role="alert" className="mb-4 text-warning">{translationError}</p>}
             <AudioPlayer key={`${article.id}:${showTranslation}:${loading}:${content.body.length}`} text={loading?'':(showTranslation&&translation?translation.body:content.body)} />

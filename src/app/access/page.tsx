@@ -38,10 +38,10 @@ export default function AccessPage() {
         <section className="grid w-full gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}>
             <Brand />
-            <div className="mt-12 inline-flex rounded-lg border border-line bg-accent-soft px-4 py-2 text-sm text-accent">
+            <div className="mt-12 te-label inline-flex items-center gap-2 border border-line px-3 py-2 text-foreground">
               Accesso personale
             </div>
-            <h1 className="mt-8 max-w-4xl text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+            <h1 className="mt-8 max-w-4xl text-3xl font-semibold leading-tight tracking-tight md:text-5xl">
               Il tuo briefing,
               <br />
               solo tuo.
@@ -55,7 +55,7 @@ export default function AccessPage() {
             onSubmit={login}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border border-line bg-surface p-7   "
+            className="border border-line bg-surface p-7   "
           >
             <p className="text-sm font-mono uppercase tracking-[0.22em] text-accent">Accesso privato</p>
             <h2 className="mt-3 text-3xl font-medium tracking-tight">Apri Athena</h2>
@@ -66,12 +66,12 @@ export default function AccessPage() {
               autoComplete="current-password"
               autoFocus
               placeholder="Password"
-              className="mt-7 w-full rounded-2xl border border-line bg-surface px-4 py-4 text-foreground outline-none placeholder:text-muted focus:border-line"
+              className="mt-7 min-h-12 w-full border border-line bg-background px-4 py-3 text-foreground outline-none placeholder:text-muted focus:border-signal"
             />
             <button
               type="submit"
               disabled={loading || !password}
-              className="mt-3 w-full rounded-2xl bg-accent px-4 py-4 font-medium text-on-accent transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+              className="te-key mt-3 w-full !border-foreground !bg-foreground !text-background disabled:cursor-not-allowed"
             >
               {loading ? 'Accesso…' : 'Entra'}
             </button>

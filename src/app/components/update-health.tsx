@@ -10,8 +10,8 @@ export function UpdateHealth({ sources, job, now, error }: { sources: Source[]; 
   const warning = Boolean(error || health.issues.length || job?.status === 'failed' || job?.status === 'partial')
   const lags = (job?.result?.rss ?? []).flatMap(s => s.ingestionLagSamplesMs ?? []).filter(n => Number.isFinite(n) && n >= 0).sort((a,b) => a-b)
   const median = lags.length ? Math.round((lags[Math.floor((lags.length - 1) / 2)] + lags[Math.floor(lags.length / 2)]) / 2 / 60_000) : null
-  return <details className={`mb-3 rounded-lg px-0 py-1 text-xs ${warning ? 'bg-accent-soft px-3 py-2 text-warning' : 'text-muted'}`}>
-    <summary className="cursor-pointer leading-5">Aggiornamenti · {error ? 'Verifica non disponibile' : health.issues.length ? `${health.issues.length}/${health.active} fonti da controllare` : `${health.active} fonti senza errori o ritardi rilevati`}{job ? ` · ${states[job.status]}` : ''}</summary>
+  return <details className={`mb-3 border-l-2 pl-3 text-xs ${warning ? 'border-warning text-warning' : 'border-line text-muted'}`}>
+    <summary className="te-label min-h-8 cursor-pointer py-1.5 text-inherit">Aggiornamenti · {error ? 'Verifica non disponibile' : health.issues.length ? `${health.issues.length}/${health.active} fonti da controllare` : `${health.active} fonti senza errori o ritardi rilevati`}{job ? ` · ${states[job.status]}` : ''}</summary>
     <div className="mt-3 space-y-2 leading-5" aria-live="polite">
       {error && <p role="alert">{error} I dati mostrati possono essere precedenti all’ultimo ciclo.</p>}
       <p>Ultimo controllo di una fonte: {date(health.lastCheck)}. Controllo meno recente: {date(health.oldestCheck)}.</p>

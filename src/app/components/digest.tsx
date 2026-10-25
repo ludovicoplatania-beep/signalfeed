@@ -1,4 +1,5 @@
-import { BookOpen, Sparkles } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
+import { Led, Module } from './ui'
 import type { Article, Digest, OpenReader, RecommendedArticle } from './types'
 
 export function DigestPanel({
@@ -25,44 +26,38 @@ export function DigestPanel({
   }
 
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-line bg-surface p-5   ">
-
-      <div className="relative z-10 space-y-6">
+    <Module label={<span className="flex items-center gap-2"><Led />Briefing di oggi</span>}>
+      <div className="space-y-5 p-3 sm:p-4">
         <div>
-          <div className="mb-4 inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1 text-[10px] font-medium font-mono uppercase tracking-[0.2em] text-accent">
-            <Sparkles size={13} />
-            Briefing di oggi
-          </div>
-
-          <h3 className="text-2xl font-semibold leading-tight tracking-tight text-foreground">
+          <h3 className="text-lg font-semibold leading-tight tracking-tight text-foreground">
             {digest.title}
           </h3>
 
-          <p className="mt-4 text-sm leading-7 text-muted">
+          <p className="mt-2 text-sm leading-6 text-muted">
             {digest.summary}
           </p>
         </div>
 
         {keyPoints.length > 0 && (
-          <div className="space-y-2">
+          <ol className="border-t border-line">
             {keyPoints.map((point: string, index: number) => (
-              <div
+              <li
                 key={index}
-                className="rounded-2xl border border-line bg-surface p-3 text-sm leading-6 text-foreground"
+                className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-2 border-b border-line py-2.5 text-sm leading-6 text-foreground"
               >
-                <span className="mr-2 text-accent">
+                <span className="te-label pt-1 tabular-nums">
                   {String(index + 1).padStart(2, '0')}
                 </span>
                 {point}
-              </div>
+              </li>
             ))}
-          </div>
+          </ol>
         )}
 
         {recommended.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium text-accent">
-              <BookOpen size={15} />
+          <div>
+            <div className="te-label mb-1 flex items-center gap-2 text-foreground">
+              <BookOpen size={13} aria-hidden="true" />
               Letture consigliate
             </div>
 
@@ -74,14 +69,14 @@ export function DigestPanel({
                   key={index}
                   onClick={() => article && openReader(article)}
                   disabled={!article}
-                  className="group w-full rounded-2xl border border-line bg-surface p-3 text-left transition hover:border-line hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50"
+                  className="group block w-full border-b border-line py-3 text-left transition hover:bg-background disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="line-clamp-2 text-sm font-medium leading-5 text-foreground">
                     {item.title}
                   </div>
 
                   {item.reason && (
-                    <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted group-hover:text-muted">
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted">
                       {item.reason}
                     </p>
                   )}
@@ -91,6 +86,6 @@ export function DigestPanel({
           </div>
         )}
       </div>
-    </section>
+    </Module>
   )
 }

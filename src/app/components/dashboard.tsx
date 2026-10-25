@@ -27,7 +27,7 @@ import { EmptyState } from './ui'
 import { Header, Sidebar } from './app-layout'
 import { MobileNav } from './mobile-nav'
 import { ReaderMode } from './reader-mode'
-import { Metrics } from './metrics'
+import { Metrics, StatusBar } from './metrics'
 import { HeroPick, SidePick, AiSideList, AiCurationView } from './picks'
 import { FeedList, SavedView } from './feed'
 import { clearOffline } from '@/lib/offline/storage'
@@ -469,10 +469,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
-        <div className="space-y-3">
-          <div className="h-5 w-52 animate-pulse rounded-lg bg-surface" />
-          <div className="h-5 w-40 animate-pulse rounded-lg bg-surface" />
-        </div>
+        <div role="status" className="te-label flex items-center gap-2"><span aria-hidden="true" className="inline-block h-1.5 w-1.5 animate-pulse bg-signal" />Caricamento</div>
       </main>
     )
   }
@@ -514,6 +511,7 @@ export default function HomePage({ initialSector, initialSection = 'today', init
             setSourceFilter={setSourceFilter}
             period={period}
             setPeriod={setPeriod}
+            now={healthNow}
           />
 
           {!loading && <UpdateHealth sources={sources} job={latestJob} now={healthNow} error={healthError} />}
@@ -523,10 +521,12 @@ export default function HomePage({ initialSector, initialSection = 'today', init
           <CostBackup onChanged={loadEverything} />
           <PreferencesPanel entries={feedbackEntries} />
           <Metrics sources={sources} articles={articles} aiPicks={validPicks} savedArticles={savedArticles} />
-          <button onClick={() => navigateSection('sources')} className="mt-4 min-h-11 rounded-xl border border-line bg-surface px-4 text-sm text-accent">Gestisci le fonti</button>
+          <button onClick={() => navigateSection('sources')} className="te-key mt-4 text-accent">Gestisci le fonti</button>
           </>}
 
-          {['today', 'feed', 'ai', 'events'].includes(activeSection) && <nav aria-label="Modalità di lettura" className="mb-5 flex gap-1 overflow-x-auto border-b border-line">{([{id:'today',label:'Per te'},{id:'feed',label:'Recenti'},{id:'ai',label:'Scelte IA'},{id:'events',label:'Eventi'}] as const).map(mode => <button key={mode.id} onClick={() => navigateSection(mode.id)} aria-current={activeSection === mode.id ? 'page' : undefined} className={`min-h-11 shrink-0 border-b-2 px-3 text-sm ${activeSection === mode.id ? 'border-accent font-medium text-accent' : 'border-transparent text-muted'}`}>{mode.label}</button>)}</nav>}
+          {['today', 'feed', 'ai', 'events'].includes(activeSection) && <nav aria-label="Modalità di lettura" className="mb-4 grid grid-cols-4 divide-x divide-line border border-line">{([{id:'today',label:'Per te'},{id:'feed',label:'Recenti'},{id:'ai',label:'Scelte IA'},{id:'events',label:'Eventi'}] as const).map(mode => <button key={mode.id} onClick={() => navigateSection(mode.id)} aria-current={activeSection === mode.id ? 'page' : undefined} className={`te-label relative min-h-11 px-1 transition ${activeSection === mode.id ? 'text-foreground after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-signal' : 'hover:text-foreground'}`}>{mode.label}</button>)}</nav>}
+
+          {activeSection === 'today' && !loading && <StatusBar sources={sources} articles={articles} aiPicks={validPicks} savedArticles={savedArticles} now={healthNow} syncing={refreshing} />}
 
           {activeSection === 'sectors' && initialSector && <SectorView key={initialSector} slug={initialSector} query={query} source={sourceFilter} period={period} version={archiveVersion} savedIds={savedIds} toggleSave={toggleSave} openReader={openArticle} />}
 
