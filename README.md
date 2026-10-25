@@ -19,8 +19,9 @@ Non servono font esterni: sans di sistema (Helvetica/Arial) e monospace di siste
   semantici (`bg-surface`, `border-line`, `text-accent`, `bg-signal`…), quindi il tema si cambia lì.
 - `--accent` colora il testo (contrasto ≥ 4,5:1 su `--surface`); `--signal` è riservato a elementi
   grafici (LED, indicatori attivi, icona).
-- L'icona è definita in `scripts/build-icons.mjs` (civetta tecnica in un anello: ciuffi a fiamma, occhi-quadrante, petto a scudo). `npm run icons`
-  rigenera `public/icons/*`, `src/app/favicon.ico` e `design/athena-icon.svg`.
+- L'icona deriva dal logo in `design/athena-logo-source.png` (civetta tecnica in un anello, blu notte e arancio). `npm run icons`
+  ritaglia l'anello e rigenera `public/icons/*` e `src/app/favicon.ico`; per cambiare logo si sostituisce il sorgente
+  (centro e raggio dell'anello sono in `scripts/build-icons.mjs`).
 - Dopo ogni cambio di icone o shell statica va aumentata la versione di `CACHE_NAME` in
   `public/sw.js`: gli asset statici sono serviti cache-first.
 - L'icona precedente è conservata in `design/legacy-owl-master.png` (non servita dall'app).

@@ -1,44 +1,43 @@
-// Genera icona e favicon di Athena (civetta stilizzata, stile hi-fi / Teenage Engineering) da un'unica definizione SVG.
+// Genera icone e favicon di Athena dal logo sorgente in design/athena-logo-source.png.
 // Uso: npm run icons   (richiede `sharp`)
+// Il logo è un cerchio (centro e raggio misurati sul sorgente) su fondo blu notte: lo si ritaglia,
+// si maschera fuori dall'anello e lo si ricompone su una piastra tinta unita.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const C = { signal: '#ff5a1f', ink: '#141413', cream: '#efede7' }
+const out = (...p) => join(root, ...p)
 
-const mirror = (d) => d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${1024 - x} ${y}`)
-const O = C.signal, K = C.ink, GR = '#8f8d86', RG = '#a8a69e'
+const SOURCE = out('design/athena-logo-source.png')
+const PLATE = { r: 14, g: 35, b: 59, alpha: 1 } // blu notte del sorgente, misurato fuori dall'anello
+const CROP = { left: 288, top: 60, size: 448 } // quadrato attorno all'anello (raggio ≈ 220, centro ≈ 512, 283.5)
+const MASK_R = 222
 
-/**
- * Civetta "tecnica" dentro un anello: testa a scudo grigia con sopracciglio, occhi-quadrante arancio
- * con tacche, becco, petto a scudo arancio, tracce circuitali, ciuffi a fiamma. Piatta, senza
- * sfumature. detail=false semplifica per le dimensioni minime (favicon). shape: 'rounded' (any) oppure
- * 'square' (full-bleed per iOS e maschere Android, contenuto ridotto per la zona sicura).
- */
-export function iconSvg({ detail = true, shape = 'rounded' } = {}){
-  const ticks=detail?Array.from({length:16},(_,i)=>{const a=i*Math.PI/8;if(Math.abs(((a+Math.PI)%(2*Math.PI))-Math.PI)<1.3)return '';return `<line x1="${Math.sin(a)*90}" y1="${-Math.cos(a)*90}" x2="${Math.sin(a)*106}" y2="${-Math.cos(a)*106}" stroke="${O}" stroke-width="9" stroke-linecap="round"/>`}).join(''):''
-  const eye=(cx)=>`<g transform="translate(${cx} 556)">${ticks}<circle r="70" fill="${K}" stroke="${O}" stroke-width="${detail?16:24}"/>${detail?`<circle r="30" fill="none" stroke="${GR}" stroke-width="9"/><circle r="12" fill="${O}"/>`:`<circle r="22" fill="${O}"/>`}</g>`
-  const head='M270 430 Q270 336 380 308 Q512 276 644 308 Q754 336 754 430 L754 620 Q754 780 512 900 Q270 780 270 620 Z'
-  const flameL='M312 372 Q236 304 290 214 Q300 166 332 112 Q342 186 384 222 Q432 264 412 330 Q372 360 312 372 Z'
-  const flameC='M512 338 Q448 276 486 196 Q496 232 512 206 Q522 148 546 128 Q552 190 566 214 Q592 280 512 338 Z'
-  const trace=(d)=>`<path d="${d}" fill="none" stroke="${K}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="${mirror(d)}" fill="none" stroke="${K}" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>`
-  const art=`<circle cx="512" cy="520" r="392" fill="none" stroke="${RG}" stroke-width="${detail?26:40}"/>
-  <path d="${flameL}" fill="${O}"/><path d="${mirror(flameL)}" fill="${O}"/><path d="${flameC}" fill="${O}"/>
-  <path d="${head}" fill="${GR}"/>
-  <path d="M284 404 L512 490 L740 404" fill="none" stroke="${K}" stroke-width="${detail?22:30}" stroke-linejoin="miter"/>
-  ${eye(386)}${eye(638)}
-  <path d="M484 566 L540 566 L512 650 Z" fill="${C}"/>
-  <path d="M512 858 L408 742 L408 700 L512 748 L616 700 L616 742 Z" fill="${O}"/>
-  ${detail?trace('M318 680 L318 760 L378 826')+trace('M356 690 L356 750')+`<circle cx="378" cy="826" r="12" fill="${K}"/><circle cx="646" cy="826" r="12" fill="${K}"/>`:''}`
-  const s = shape === 'rounded' ? 1 : 0.8
-  const g=`<g transform="translate(512 512) scale(${s}) translate(-512 -512)">${art}</g>`
-  const bg=shape==='rounded'?`<rect width="1024" height="1024" rx="228" fill="${K}"/>`:`<rect width="1024" height="1024" fill="${K}"/>`
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${bg}${g}</svg>`
+async function circleBuffer() {
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${CROP.size}" height="${CROP.size}"><circle cx="${CROP.size / 2}" cy="${283.5 - CROP.top}" r="${MASK_R}" fill="#fff"/></svg>`)
+  return sharp(SOURCE)
+    .extract({ left: CROP.left, top: CROP.top, width: CROP.size, height: CROP.size })
+    .ensureAlpha()
+    .composite([{ input: mask, blend: 'dest-in' }])
+    .png()
+    .toBuffer()
 }
 
-const render = (svg, size) => sharp(Buffer.from(svg), { density: 384 }).resize(size, size).png({ compressionLevel: 9 }).toBuffer()
+/** shape 'rounded' = icona "any" con angoli arrotondati; 'square' = full-bleed (iOS, maschere Android). */
+async function render(circle, size, { shape = 'rounded', fill = 0.88 } = {}) {
+  const d = Math.round(size * fill)
+  const logo = await sharp(circle).resize(d, d, { kernel: 'lanczos3' }).png().toBuffer()
+  let img = sharp({ create: { width: size, height: size, channels: 4, background: PLATE } })
+    .composite([{ input: logo, left: Math.round((size - d) / 2), top: Math.round((size - d) / 2) }])
+  if (shape === 'rounded') {
+    const r = Math.round(size * 0.223)
+    const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><rect width="${size}" height="${size}" rx="${r}" fill="#fff"/></svg>`)
+    img = sharp(await img.png().toBuffer()).composite([{ input: mask, blend: 'dest-in' }])
+  }
+  return img.png({ compressionLevel: 9 }).toBuffer()
+}
 
 // ICO con voci PNG (supportato da tutti i browser attuali).
 function ico(entries) {
@@ -60,26 +59,20 @@ function ico(entries) {
   return Buffer.concat([head, ...dir, ...entries.map((e) => e.data)])
 }
 
-const out = (...p) => join(root, ...p)
 await mkdir(out('public/icons'), { recursive: true })
-await mkdir(out('design'), { recursive: true })
-
-const full = iconSvg()
-const square = iconSvg({ shape: 'square' })
-const small = iconSvg({ detail: false })
-await writeFile(out('design/athena-icon.svg'), full)
+const circle = await circleBuffer()
 
 const files = [
-  ['public/icons/icon-512.png', full, 512],
-  ['public/icons/icon-192.png', full, 192],
-  ['public/icons/icon-512-maskable.png', square, 512],
-  ['public/icons/apple-touch-icon.png', square, 180],
-  ['public/icons/favicon-64.png', small, 64],
-  ['public/icons/favicon-32.png', small, 32],
-  ['public/icons/favicon-16.png', small, 16],
+  ['public/icons/icon-512.png', 512, { fill: 0.88 }],
+  ['public/icons/icon-192.png', 192, { fill: 0.88 }],
+  ['public/icons/icon-512-maskable.png', 512, { shape: 'square', fill: 0.76 }],
+  ['public/icons/apple-touch-icon.png', 180, { shape: 'square', fill: 0.8 }],
+  ['public/icons/favicon-64.png', 64, { fill: 0.94 }],
+  ['public/icons/favicon-32.png', 32, { fill: 0.94 }],
+  ['public/icons/favicon-16.png', 16, { fill: 0.96 }],
 ]
-for (const [file, svg, size] of files) await writeFile(out(file), await render(svg, size))
+for (const [file, size, opts] of files) await writeFile(out(file), await render(circle, size, opts))
 
 const sizes = [16, 32, 48]
-await writeFile(out('src/app/favicon.ico'), ico(await Promise.all(sizes.map(async (size) => ({ size, data: await render(small, size) })))))
+await writeFile(out('src/app/favicon.ico'), ico(await Promise.all(sizes.map(async (size) => ({ size, data: await render(circle, size, { fill: 0.94 }) })))))
 console.log('Icone generate:', files.map(([f]) => f).join(', '), '+ src/app/favicon.ico')
