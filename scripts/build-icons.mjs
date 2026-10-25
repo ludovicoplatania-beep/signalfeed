@@ -1,4 +1,4 @@
-// Genera icona e favicon di Athena (stile hi-fi / Teenage Engineering) da un'unica definizione SVG.
+// Genera icona e favicon di Athena (civetta stilizzata, stile hi-fi / Teenage Engineering) da un'unica definizione SVG.
 // Uso: npm run icons   (richiede `sharp`)
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -9,22 +9,22 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const C = { signal: '#ff5a1f', ink: '#141413', cream: '#efede7' }
 
 /**
- * Due occhi-manopola e un becco: il gufo di Athena letto come pannello di un apparecchio hi-fi.
- * detail=false semplifica per le dimensioni minime (favicon): niente indicatori né fila di LED.
- * shape: 'rounded' (any), 'square' (full-bleed per iOS e maschere Android).
+ * Civetta stilizzata come pannello hi-fi: sagoma nera con piccoli ciuffi, occhi ad anello crema
+ * con indicatore arancio, becco. detail=false semplifica per le dimensioni minime (favicon).
+ * shape: 'rounded' (any), 'square' (full-bleed per iOS e maschere Android, contenuto ridotto
+ * per restare nella zona sicura).
  */
 export function iconSvg({ shape = 'rounded', detail = true } = {}) {
-  const eye = (cx, angle) => `
-    <circle cx="${cx}" cy="430" r="172" fill="${C.cream}" stroke="${C.ink}" stroke-width="${detail ? 22 : 34}"/>
-    <circle cx="${cx}" cy="430" r="${detail ? 92 : 104}" fill="${C.ink}"/>
-    ${detail ? `<line x1="${cx}" y1="430" x2="${cx}" y2="366" stroke="${C.signal}" stroke-width="18" stroke-linecap="round" transform="rotate(${angle} ${cx} 430)"/>` : ''}`
-  const leds = detail
-    ? [0, 1, 2, 3, 4].map((i) => `<rect x="${372 + i * 60}" y="780" width="40" height="40" fill="${i === 2 ? C.cream : C.ink}"/>`).join('')
-    : ''
+  const body = 'M200 330 L262 214 L408 288 Q512 262 616 288 L762 214 L824 330 L824 640 Q824 850 512 850 Q200 850 200 640 Z'
+  const eye = (cx) => `<circle cx="${cx}" cy="548" r="${detail ? 120 : 112}" fill="none" stroke="${C.cream}" stroke-width="${detail ? 36 : 52}"/>${
+    detail ? `<circle cx="${cx}" cy="548" r="40" fill="${C.signal}"/>` : ''}`
+  const art = `<path d="${body}" fill="${C.ink}"/>${eye(360)}${eye(664)}<path d="M468 612 L556 612 L512 706 Z" fill="${C.signal}"/>`
+  const scale = shape === 'rounded' ? 1 : 0.84
+  const g = `<g transform="translate(512 ${512 - 20 * scale}) scale(${scale}) translate(-512 -512)">${art}</g>`
   const bg = shape === 'rounded'
     ? `<rect width="1024" height="1024" rx="228" fill="${C.signal}"/>`
     : `<rect width="1024" height="1024" fill="${C.signal}"/>`
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${bg}${eye(328, -22)}${eye(696, 22)}<path d="M452 556 L572 556 L512 676 Z" fill="${C.ink}"/>${leds}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">${bg}${g}</svg>`
 }
 
 const render = (svg, size) => sharp(Buffer.from(svg), { density: 384 }).resize(size, size).png({ compressionLevel: 9 }).toBuffer()

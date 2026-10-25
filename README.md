@@ -19,7 +19,7 @@ Non servono font esterni: sans di sistema (Helvetica/Arial) e monospace di siste
   semantici (`bg-surface`, `border-line`, `text-accent`, `bg-signal`…), quindi il tema si cambia lì.
 - `--accent` colora il testo (contrasto ≥ 4,5:1 su `--surface`); `--signal` è riservato a elementi
   grafici (LED, indicatori attivi, icona).
-- L'icona è definita in `scripts/build-icons.mjs` (gufo come due manopole e un becco). `npm run icons`
+- L'icona è definita in `scripts/build-icons.mjs` (civetta stilizzata: sagoma con ciuffi, occhi ad anello, becco). `npm run icons`
   rigenera `public/icons/*`, `src/app/favicon.ico` e `design/athena-icon.svg`.
 - Dopo ogni cambio di icone o shell statica va aumentata la versione di `CACHE_NAME` in
   `public/sw.js`: gli asset statici sono serviti cache-first.
