@@ -62,6 +62,34 @@ html[data-theme="dark"] {
   --radius-2xl: 6px;
   --radius-3xl: 8px;
 }
+/* Etichette stampate sul pannello e tasti piatti: il linguaggio comune dei moduli. */
+@utility te-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+@utility te-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: border-color 120ms, color 120ms;
+  &:hover { border-color: var(--foreground); }
+  &:disabled { opacity: 0.45; }
+}
 * { box-sizing: border-box; }
 html {
   background: var(--background);

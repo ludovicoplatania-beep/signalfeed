@@ -22,5 +22,5 @@ export function ReadingDensity() {
     try { localStorage.setItem('athena-density', value ? 'compact' : 'comfortable') } catch { /* Storage is optional. */ }
     window.dispatchEvent(new Event('athena-density'))
   }
-  return <div role="group" aria-label="Densità del feed" className="flex shrink-0 gap-1 text-xs">{[{label:'Comoda',value:false},{label:'Compatta',value:true}].map(option => <button key={option.label} aria-pressed={selected === option.value} onClick={() => choose(option.value)} className={`min-h-11 rounded-lg px-3 ${selected === option.value ? 'bg-accent-soft text-accent' : 'text-muted'}`}>{option.label}</button>)}</div>
+  return <div role="group" aria-label="Densità del feed" className="flex shrink-0 divide-x divide-line border border-line">{[{label:'Comoda',value:false},{label:'Compatta',value:true}].map(option => <button key={option.label} aria-pressed={selected === option.value} onClick={() => choose(option.value)} className={`te-label relative min-h-11 px-3 ${selected === option.value ? 'text-foreground after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-signal' : 'hover:text-foreground'}`}>{option.label}</button>)}</div>
 }

@@ -1,12 +1,12 @@
 import { formatDistanceToNow } from 'date-fns'
 import { it } from 'date-fns/locale'
-import { ArticleThumbnail, ArticleActions } from './ui'
+import { ArticleThumbnail, ArticleActions, Led, Meter } from './ui'
 import type { AiPick, OpenReader, ToggleSave } from './types'
 
 function PickExplanation({ pick }: { pick: AiPick }) {
-  return <details className="text-sm text-muted">
-    <summary className="flex min-h-11 cursor-pointer items-center text-accent">Perché questa scelta</summary>
-    <div className="space-y-2 pb-2 leading-6">
+  return <details className="min-w-0 flex-1 text-sm text-muted">
+    <summary className="te-label flex min-h-11 cursor-pointer items-center text-accent">Perché questa scelta</summary>
+    <div className="space-y-2 pb-3 pr-3 leading-6">
       <p>{pick.reason || 'Selezionata per attualità, interessi e priorità della fonte.'}</p>
       <p>Selezionata il <time dateTime={pick.created_at}>{new Date(pick.created_at).toLocaleString('it-IT')}</time> · {pick.selection_method === 'automatic' ? 'automatica' : 'IA'} · rilevanza {pick.score}/100.</p>
     </div>
@@ -17,23 +17,26 @@ type PickProps = { pick: AiPick; saved: boolean; toggleSave: ToggleSave; openRea
 function PickCard({ pick, saved, toggleSave, openReader, featured = false }: PickProps & { featured?: boolean }) {
   const article = pick.articles
   if (!article) return null
-  return <article className="min-w-0 rounded-2xl border border-line bg-surface p-4 sm:p-5">
-    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs leading-5 text-muted">
-      <span>{article.sources?.name ?? 'Fonte'}</span>
-      {article.published_at && <span>· {formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: it })}</span>}
-      <span className="rounded-md bg-accent-soft px-2 py-0.5 text-accent">{pick.selection_method === 'automatic' ? 'Per te' : 'Scelta IA'}</span>
-    </div>
-    <button onClick={() => openReader(article)} className="flex w-full items-start gap-4 text-left">
+  return <article className="min-w-0 border border-line bg-surface">
+    <header className="flex items-center justify-between gap-3 border-b border-line px-3 py-2">
+      <span className="te-label flex items-center gap-2 text-foreground"><Led />{pick.selection_method === 'automatic' ? 'Per te' : 'Scelta IA'}</span>
+      <span className="te-label flex items-center gap-2 tabular-nums">Rel {pick.score}<Meter value={pick.score} segments={5} className="w-10" /></span>
+    </header>
+    <button onClick={() => openReader(article)} className="flex w-full items-start gap-3 p-3 text-left sm:p-4">
       <div className="min-w-0 flex-1">
-        <h2 className={`${featured ? 'text-[22px] sm:text-2xl' : 'text-lg sm:text-xl'} font-semibold leading-snug tracking-tight text-foreground [overflow-wrap:anywhere]`}>{article.title}</h2>
+        <div className="te-label mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-foreground">{article.sources?.name ?? 'Fonte'}</span>
+          {article.published_at && <><span aria-hidden="true">/</span><span>{formatDistanceToNow(new Date(article.published_at), { addSuffix: true, locale: it })}</span></>}
+        </div>
+        <h2 className={`${featured ? 'text-lg sm:text-xl' : 'text-base sm:text-lg'} font-semibold leading-snug tracking-[-0.01em] text-foreground [overflow-wrap:anywhere]`}>{article.title}</h2>
         {featured && pick.summary && <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted">{pick.summary}</p>}
       </div>
-      {article.image_url && <div className="w-20 shrink-0 sm:w-24"><ArticleThumbnail imageUrl={article.image_url} compact /></div>}
+      {article.image_url && <div className="w-16 shrink-0 sm:w-20"><ArticleThumbnail imageUrl={article.image_url} compact /></div>}
     </button>
-    <div className="mt-2 flex flex-wrap items-start justify-between gap-x-3">
+    <footer className="flex items-start justify-between gap-x-3 border-t border-line pl-3">
       <PickExplanation pick={pick} />
-      <ArticleActions articleId={article.id} saved={saved} onClick={() => toggleSave(article.id)} small />
-    </div>
+      <ArticleActions articleId={article.id} saved={saved} onClick={() => toggleSave(article.id)} small framed={false} />
+    </footer>
   </article>
 }
 export function HeroPick(props: PickProps) { return <PickCard {...props} featured /> }
@@ -44,5 +47,5 @@ export function AiCurationView({ picks, savedIds, toggleSave, openReader }: Pick
 }
 export function AiSideList(props: PickListProps) {
   if (!props.picks.length) return null
-  return <section><h2 className="mb-3 text-lg font-semibold">Altre scelte per te</h2><AiCurationView {...props} /></section>
+  return <section><h2 className="te-label mb-3 text-foreground">Altre scelte per te</h2><AiCurationView {...props} /></section>
 }

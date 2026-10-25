@@ -1,4 +1,5 @@
 'use client'
+import { Led } from './ui'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BrainCircuit, ChevronDown, LayoutGrid, Cpu, Gamepad2, Scale, MapPin, Landmark, TrendingUp, FlaskConical, Clapperboard, type LucideIcon } from 'lucide-react'
@@ -22,21 +23,21 @@ export function SectorLinks({ active }: { active?: string }) {
       const Icon = sectorIcons[sector.slug]
       const selected = active === sector.slug
       return <Link key={sector.slug} href={`/settori/${sector.slug}`} aria-current={selected ? 'page' : undefined}
-        className={`flex min-h-14 min-w-0 items-center gap-2.5 rounded-2xl border px-3 py-3 text-sm transition ${selected
-          ? 'border-line  text-accent '
-          : 'border-line bg-surface text-foreground  hover:border-line hover:bg-surface'}`}>
-        <Icon size={18} aria-hidden="true" className="shrink-0 text-accent" />
+        className={`relative flex min-h-14 min-w-0 items-center gap-2.5 border bg-surface px-3 py-3 text-sm transition ${selected
+          ? 'border-foreground text-foreground after:absolute after:inset-x-0 after:top-0 after:h-0.5 after:bg-signal'
+          : 'border-line text-foreground hover:border-foreground'}`}>
+        <Icon size={18} aria-hidden="true" className="shrink-0 text-muted" />
         <span className="min-w-0 text-xs leading-5 sm:text-sm">{sector.name}</span>
       </Link>
     })}
   </nav>
   const current = active ? getSector(active) : undefined
   const Icon = active ? sectorIcons[active] : LayoutGrid
-  return <details key={active ?? 'all'} className="group rounded-2xl border border-line  ">
-    <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
-      <Icon size={20} aria-hidden="true" className="shrink-0 text-accent" />
-      <span className="min-w-0 flex-1 text-sm font-medium text-accent">{current?.name ?? 'Esplora i tuoi settori'}</span>
-      <span className="text-xs text-muted">{active ? 'Cambia' : '9 settori'}</span>
+  return <details key={active ?? 'all'} className="group border border-line bg-surface">
+    <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+      <Icon size={20} aria-hidden="true" className="shrink-0 text-muted" />
+      <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">{current?.name ?? 'Esplora i tuoi settori'}</span>
+      <span className="te-label">{active ? 'Cambia' : '9 settori'}</span>
       <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-muted transition group-open:rotate-180" />
     </summary>
     <div className="border-t border-line p-3">{links}</div>
@@ -107,10 +108,10 @@ export function SectorView({ slug, query, source, period, version, savedIds, tog
   }
   return <div className="space-y-5 sm:space-y-6">
     <div className="space-y-3"><SectorLinks active={slug} /><p className="hidden px-1 text-xs leading-5 text-muted sm:block sm:text-sm">{sector.description}</p></div>
-    <section className="rounded-2xl border border-line  p-3 sm:p-5" aria-label="Selezione IA del settore">
+    <section className="border border-line bg-surface p-3 sm:p-4" aria-label="Selezione IA del settore">
       <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0"><h2 className="text-base font-medium tracking-tight sm:text-xl">Scelte IA del settore</h2><p className="mt-1 hidden text-xs text-muted sm:block">Dalle notizie recenti del settore, secondo interessi e preferenze.</p></div>
-        <button onClick={generate} disabled={generating || loading || total === 0} className="min-h-11 shrink-0 rounded-2xl border border-line  px-4 py-2.5 text-sm text-accent disabled:opacity-50">{generating ? 'Selezione in corso…' : curation ? 'Ricalcola IA' : 'Seleziona con IA'}</button>
+        <div className="min-w-0"><h2 className="te-label flex items-center gap-2 text-foreground"><Led />Scelte IA del settore</h2><p className="mt-1 hidden text-xs text-muted sm:block">Dalle notizie recenti del settore, secondo interessi e preferenze.</p></div>
+        <button onClick={generate} disabled={generating || loading || total === 0} className="te-key shrink-0 text-accent">{generating ? 'Selezione in corso…' : curation ? 'Ricalcola IA' : 'Seleziona con IA'}</button>
       </div>
       {curation ? <>
         <p className="mb-2 text-xs text-muted">{curation.picks.filter(p => p.selection_method === 'ai').length} scelte IA · {curation.picks.filter(p => p.selection_method === 'automatic').length} automatiche · {new Date(curation.created_at).toLocaleString('it-IT')}{curation.warning ? ` · ${curation.warning}` : ''}</p>
@@ -119,13 +120,13 @@ export function SectorView({ slug, query, source, period, version, savedIds, tog
           {publisherCount >= 5 ? ' · obiettivo di varietà raggiunto' : publisherCount < curation.diversity.selectedPublishers ? ' · alcune fonti non sono più attive: ricalcola la selezione' : ` · meno di cinque editori con notizie distinte disponibili negli ultimi ${curation.diversity.windowDays} giorni, dopo le tue esclusioni e le aperture`}
         </p>}
         <AiCurationView picks={showAllPicks ? curation.picks : curation.picks.slice(0, 2)} savedIds={savedIds} toggleSave={toggleSave} openReader={openReader} />
-        {curation.picks.length > 2 && <button onClick={() => setShowAllPicks(value => !value)} aria-expanded={showAllPicks} className="mt-3 min-h-11 w-full rounded-2xl border border-line bg-surface px-4 py-2.5 text-sm text-accent">{showAllPicks ? 'Mostra meno scelte' : `Mostra le altre ${curation.picks.length - 2} scelte`}</button>}
+        {curation.picks.length > 2 && <button onClick={() => setShowAllPicks(value => !value)} aria-expanded={showAllPicks} className="te-key mt-3 w-full text-accent">{showAllPicks ? 'Mostra meno scelte' : `Mostra le altre ${curation.picks.length - 2} scelte`}</button>}
       </> : <p className="text-sm text-muted">Avvia la selezione per ottenere le scelte IA di questo settore. Il risultato resta disponibile anche sugli altri dispositivi.</p>}
     </section>
-    {error && <div role="alert" className="rounded-xl border border-red-500/30 p-4 text-sm text-danger">{error} <button onClick={() => void load()} className="ml-3 underline">Riprova</button></div>}
+    {error && <div role="alert" className="border border-red-500/30 p-4 text-sm text-danger">{error} <button onClick={() => void load()} className="ml-3 underline">Riprova</button></div>}
     <div aria-busy={loading}>
       <FeedList articles={articles} savedIds={savedIds} toggleSave={toggleSave} openReader={openReader} title="Notizie del settore" subtitle={loading ? 'Caricamento notizie…' : `${total.toLocaleString('it-IT')} articoli · più recenti prima.`} />
-      {next < total && <button disabled={loading} onClick={() => void load(next)} className="mt-5 w-full rounded-xl border border-line p-3 text-sm disabled:opacity-50">{loading ? 'Caricamento…' : 'Carica altre notizie'}</button>}
+      {next < total && <button disabled={loading} onClick={() => void load(next)} className="te-key mt-5 w-full">{loading ? 'Caricamento…' : 'Carica altre notizie'}</button>}
     </div>
   </div>
 }

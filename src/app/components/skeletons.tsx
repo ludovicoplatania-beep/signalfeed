@@ -1,4 +1,4 @@
 function Pulse({ className = '' }: { className?: string }) { return <div className={`animate-pulse rounded bg-line ${className}`} /> }
 export function FeedSkeleton() { return <div aria-label="Caricamento notizie" role="status">{Array.from({length:4},(_,index)=><div key={index} className="border-b border-line py-5"><Pulse className="mb-3 h-3 w-32"/><Pulse className="h-5 w-full"/><Pulse className="mt-2 h-5 w-4/5"/><Pulse className="mt-3 h-3 w-2/3"/></div>)}</div> }
-export function HeroSkeleton() { return <div aria-label="Caricamento selezione" role="status" className="mb-6 rounded-2xl border border-line bg-surface p-5"><Pulse className="mb-3 h-3 w-32"/><Pulse className="h-6 w-full"/><Pulse className="mt-3 h-6 w-4/5"/><Pulse className="mt-4 h-4 w-2/3"/></div> }
+export function HeroSkeleton() { return <div aria-label="Caricamento selezione" role="status" className="mb-6 border border-line bg-surface p-5"><Pulse className="mb-3 h-3 w-32"/><Pulse className="h-6 w-full"/><Pulse className="mt-3 h-6 w-4/5"/><Pulse className="mt-4 h-4 w-2/3"/></div> }
 export function MetricsSkeleton() { return <Pulse className="my-4 h-5 w-2/3"/> }
