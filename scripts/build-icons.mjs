@@ -1,6 +1,6 @@
 // Genera icone e favicon di Athena dal logo sorgente in design/athena-logo-source.png.
 // Uso: npm run icons   (richiede `sharp`)
-// Il logo è un cerchio (centro e raggio misurati sul sorgente) su fondo blu notte: lo si ritaglia,
+// Il logo è un cerchio (centro e raggio misurati sul sorgente) su fondo nero caldo: lo si ritaglia,
 // si maschera fuori dall'anello e lo si ricompone su una piastra tinta unita.
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -11,12 +11,12 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const out = (...p) => join(root, ...p)
 
 const SOURCE = out('design/athena-logo-source.png')
-const PLATE = { r: 14, g: 35, b: 59, alpha: 1 } // blu notte del sorgente, misurato fuori dall'anello
-const CROP = { left: 288, top: 60, size: 448 } // quadrato attorno all'anello (raggio ≈ 220, centro ≈ 512, 283.5)
-const MASK_R = 222
+const PLATE = { r: 22, g: 21, b: 17, alpha: 1 } // fondo del sorgente, misurato fuori dall'anello
+const CROP = { left: 82, top: 82, size: 860 } // quadrato attorno all'anello (raggio ≈ 422, centro ≈ 511.5, 511.5)
+const MASK_R = 424
 
 async function circleBuffer() {
-  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${CROP.size}" height="${CROP.size}"><circle cx="${CROP.size / 2}" cy="${283.5 - CROP.top}" r="${MASK_R}" fill="#fff"/></svg>`)
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${CROP.size}" height="${CROP.size}"><circle cx="${511.5 - CROP.left}" cy="${511.5 - CROP.top}" r="${MASK_R}" fill="#fff"/></svg>`)
   return sharp(SOURCE)
     .extract({ left: CROP.left, top: CROP.top, width: CROP.size, height: CROP.size })
     .ensureAlpha()
